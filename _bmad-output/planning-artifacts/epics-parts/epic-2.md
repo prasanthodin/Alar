@@ -8,9 +8,9 @@ A Shopper browses, filters and searches about 100 Designs on the website without
 **Conventions for every story in this epic**
 
 - Shopper-facing screens are described by behaviour only; they are styled from DESIGN.md when it exists.
-- No Shopper-facing text is written in code (spine, Consistency Conventions). Until Story 2.11, new Shopper-facing text goes in the website's translation file; from Story 2.12 it is read through `packages/api-client`.
+- No Shopper-facing text is written in code (spine, Consistency Conventions). Interface text goes in the website's translation files; translated Design and Weaver text is stored with the Design and Weaver in commerce and arrives in view models through `packages/api-client` (AD-28). Nothing in this epic reads translations from the content application, whose documents and message templates arrive in Epic 3.
 - Every state-changing Admin request writes a `shop-audit` event with actor, time, action, before and after (AD-14), and every state change runs as a named workflow (AD-4). Stories do not repeat this in each criterion.
-- Items tagged `[ASSUMPTION]` are choices made while writing the stories where the PRD and spine are silent.
+- Items tagged `[ASSUMPTION]` are choices made while writing the stories where the PRD and spine are still silent; each says what is assumed.
 
 ---
 
@@ -75,9 +75,14 @@ So that the Design page can state exactly what the saree is and Shoppers can fil
 **And** a Design cannot be saved with two Weavers
 
 **Given** the Design form
-**When** the Owner chooses fibre, weave, colour or occasion
+**When** the Owner chooses fibre, weave or occasion tags
 **Then** she chooses from lists of options that she can add to and rename on an Admin page, without a release
-**And** colour and occasion accept several options; fibre and weave accept one each
+**And** occasion accepts several tags; fibre and weave accept one each
+
+**Given** the Design form
+**When** the Owner chooses colour
+**Then** she chooses one or more colours from the fixed list of colours defined in `packages/contracts` (AD-28); the Admin offers no way to add to or rename that list
+**And** a colour that is not on the fixed list is refused with `design_attributes.invalid`
 
 **Given** an option that is used by at least one Design
 **When** the Owner tries to delete it
@@ -97,8 +102,8 @@ So that the Design page can state exactly what the saree is and Shoppers can fil
 
 **Requirements:** FR-34, FR-3, FR-4, FR-1 (the filterable attributes); AD-3, AD-14, AD-19, AD-28
 **Notes for the developer:**
-- Extends the `design-attributes` module and its schema in `packages/contracts`: adds by migration whichever of these fields Epic 1 did not already create, the link to `weaver`, and an attribute-option table for fibre, weave, colour and occasion.
-- Colour and occasion are not in AD-28's field list but FR-1 filters by them; they are added here as typed fields `[ASSUMPTION]`. Colour is held on the Design at launch because a saree has one Variant.
+- Extends the `design-attributes` module and its schema in `packages/contracts`: adds by migration whichever of these fields Epic 1 did not already create, the link to `weaver`, an attribute-option table for fibre, weave and occasion tags, and the fixed colour list as an enum in `packages/contracts`.
+- Colour (from the fixed list) and occasion tags are Design attributes under AD-28, and the filters of Story 2.13 use them. The colours on the fixed list are chosen with the founder when this story starts `[ASSUMPTION: about 15 everyday colour names; the spine fixes that there is a list, not its contents]`. Labels of the fixed colours are interface text in the translation files.
 - Tax codes are those Epic 1 seeded; managing their rates is Story 2.5. Claims and evidence are Story 2.3.
 
 ---
@@ -141,7 +146,7 @@ So that Alar never publishes a claim it cannot back.
 **Notes for the developer:**
 - Extends `design-attributes` (claims with evidence) and adds the claim check as a step of the `publish-design` workflow from Epic 1.
 - An evidence document is stored in the private `documents` bucket and opened in the Admin through a short-lived signed link.
-- The list of protected regional names is an Owner-editable option list like those in Story 2.2 `[ASSUMPTION]`. The rest of the publish gate is Story 2.10.
+- `[ASSUMPTION: the list of protected regional names is an Owner-editable option list like those in Story 2.2; neither the PRD nor the spine says where the names come from]`. The rest of the publish gate is Story 2.10.
 
 ---
 
@@ -202,8 +207,8 @@ So that a change in the law or in my accountant's advice changes a setting, not 
 
 **Given** the Owner opens the Tax page in the Admin
 **When** the page loads
-**Then** she sees each tax code with its value bands (per-piece value range and rate) and the date each set of bands took effect
-**And** the two codes seeded from the PRD's working assumptions are present: unstitched saree at 5% at any value; stitched garment at 5% up to Rs 2,500 per piece and 18% above
+**Then** she sees each tax code with its value bands (range of per-piece taxable value, after discount and before tax, and rate) and the date each set of bands took effect
+**And** the two codes seeded from the PRD's working assumptions are present: unstitched saree at 5% at any value; stitched garment at 5% up to a taxable value of Rs 2,500 per piece and 18% above
 
 **Given** a tax code
 **When** the Owner adds a new set of bands with an effective date of today or later in the business time zone
@@ -218,10 +223,10 @@ So that a change in the law or in my accountant's advice changes a setting, not 
 **Then** the taxable value is 285,714 paise and the tax is 14,286 paise, and together they equal 300,000 paise exactly
 **And** the Shopper's price stays Rs 3,000
 
-**Given** a stitched Variant priced at Rs 2,800 with a discount of Rs 400 per piece
+**Given** a stitched Variant priced at Rs 3,200 with a discount of Rs 800 per piece
 **When** the money functions choose the rate
-**Then** the rate is taken from the band for the per-piece value after the discount, here the 5% band
-**And** the same Variant with no discount falls in the 18% band
+**Then** the rate is taken from the band that holds the per-piece taxable value after the discount and before tax (AD-5): Rs 2,400 at 5% has a taxable value under Rs 2,500, so the 5% band applies
+**And** the same Variant with no discount has a taxable value above Rs 2,500 at either rate, so the 18% band applies
 
 **Given** new bands that take effect on a future date
 **When** a Checkout snapshot is made before that date and another on or after it
@@ -235,7 +240,8 @@ So that a change in the law or in my accountant's advice changes a setting, not 
 **Requirements:** FR-37; AD-5, AD-13, AD-14, AD-25
 **Notes for the developer:**
 - Extends the `settings` module's dated tax bands, the `tax` provider in `apps/commerce/src/providers` and the money functions in `packages/contracts` that Epic 1 created for the invoice; adds the Tax admin page.
-- Add table-driven tests for the money functions: flat rate, threshold rule, boundary at Rs 2,500, a dated change. Whether the band applies to the tax-inclusive or the taxable per-piece value is the accountant's question (PRD §8); keep it one switch inside the money functions.
+- Add table-driven tests for the money functions: flat rate, threshold rule, boundary at Rs 2,500, a dated change. Bands are on the per-piece taxable value after discount and before tax (AD-5).
+- Because tax is derived backwards from a tax-inclusive price, a stitched price between about Rs 2,626 and Rs 2,950 fits neither band: at 5% its taxable value is above Rs 2,500 and at 18% it is below. `[ASSUMPTION: for such a price the higher rate is used; the spine does not say, and this is a question for the accountant]`. Keep the choice in one place inside the money functions. No saree at launch is stitched.
 - Discounts themselves are Story 2.18; this story only makes the functions accept a per-piece discount.
 
 ---
@@ -264,7 +270,7 @@ So that Shoppers never see paise and the lowest price of the previous 30 days ca
 
 **Given** the Variants that existed before this story
 **When** it is deployed
-**Then** each has one price-history row recording its current price from its creation time
+**Then** each has at least one price-history row recording its current price; a Variant that somehow has none gets one from its creation time
 
 **Given** any client or admin screen
 **When** it tries to change a price through a kernel route instead of the shop route
@@ -285,7 +291,7 @@ So that Shoppers never see paise and the lowest price of the previous 30 days ca
 
 **Requirements:** FR-5, FR-37; AD-4, AD-5, AD-14, AD-21
 **Notes for the developer:**
-- Creates the `price-history` module and table, the `set-variant-price` workflow, the shop admin route for prices and the lowest-price function used by the catalogue read.
+- Builds on Story 1.6, which created the `price-history` module and wrote its first rows: this story adds the `set-variant-price` workflow as the only way a price changes, the shop admin route for prices, the price-history view and the lowest-price function used by the catalogue read.
 - Remove the kernel's direct price-edit routes from the allow-list in `packages/contracts` and hide the matching built-in admin control.
 - Showing the 30-day lowest price beside a discount is Stories 2.18 and 2.19.
 
@@ -332,7 +338,7 @@ So that it can be made ready for the Full saree view.
 **Requirements:** FR-7; AD-4, AD-13, AD-14, AD-22
 **Notes for the developer:**
 - Adds full-length image fields to `design-attributes` (object key, version, width, height, status: none, uploaded, processing, ready, failed), an `admin/shop/*` route that issues the upload link, and the `attach-full-image` workflow.
-- The original is stored in the `catalog` bucket, which is versioned and backed up (NFR-8). Accepted types are JPEG and PNG `[ASSUMPTION]`.
+- The original is stored in the `catalog` bucket, which is versioned and backed up (NFR-8). `[ASSUMPTION: accepted types are JPEG and PNG; the PRD names none]`.
 - Cutting tiles and the "ready" status are Story 2.8; the viewer and preview are Story 2.9.
 
 ---
@@ -430,8 +436,8 @@ So that I can inspect the body, border and pallu as if the saree were laid out i
 
 **Requirements:** FR-6, FR-7; AD-2, AD-18, AD-28
 **Notes for the developer:**
-- One viewer page in `apps/web` using OpenSeadragon 6.1.1, reading the tile descriptor location from the Design view model through `packages/api-client`. Build it as a self-contained page so that Epic 6 can load the same page in the Android web view (AD-18).
-- Adds an `admin/shop/*` route that issues the signed Design preview link; Story 2.10 reuses it for the Design page preview. The 15-minute validity is `[ASSUMPTION]`.
+- One viewer page in `apps/web` using OpenSeadragon 6.1.1, reading the tile descriptor location from the Design view model through `packages/api-client`. Build it as a self-contained page so that Epic 6 can load the same page in the Android web view (AD-18). It replaces the sample page of Story 1.24, which proved the touch behaviour.
+- Reuses the signed Design preview link that Story 1.8 built for an unpublished Design and extends it to the viewer page; Story 2.10 uses the same link. `[ASSUMPTION: the link is valid for 15 minutes; Story 1.8 set no period]`.
 - Placing the entry point so that it is visible without scrolling is Story 2.17. Styled from DESIGN.md when it exists.
 
 ---
@@ -446,7 +452,7 @@ So that every listing is complete and honest, and listing one takes me under 15 
 
 **Given** a draft Design
 **When** the Owner chooses "Preview"
-**Then** the website's Design page opens for that Design through the signed preview link from Story 2.9
+**Then** the website's Design page opens for that Design through the signed preview link from Story 1.8, as extended in Story 2.9
 **And** the Design is not visible to Shoppers or in the catalogue read
 
 **Given** a Design that lacks any of: a Weaver, a fibre, a length and a width, a tax code, a whole-rupee price on every Variant, a photo marked as the fabric close-up, and at least one other photo
@@ -493,51 +499,50 @@ So that every listing is complete and honest, and listing one takes me under 15 
 
 ---
 
-### Story 2.11: The Owner translates the shop's text without a release
+### Story 2.11: The Owner translates Design and Weaver text, and the website's wording has a file per language
 
 As an Owner,
-I want to enter translations of the shop's wording and of each Design's and Weaver's text,
-So that Shoppers can read Alar in their language without waiting for a release.
+I want to enter translations of each Design's and Weaver's text in the Admin, and to have the website's own wording held in one file per language,
+So that Shoppers can read Alar in their language.
 
 **Acceptance Criteria:**
 
-**Given** the Owner is signed in to the content admin, reached through the access gate (AD-15)
-**When** she opens Translations
-**Then** she can edit, for English and Tamil, the value of each interface text key used by the website
-**And** she can enter, for a Design chosen by its commerce id, a translated name, description and care text; for a Weaver, a translated name, place and story; and for an attribute option, a translated label
+**Given** the Owner is signed in to the Admin with a second factor
+**When** she edits a Design, a Weaver or an Owner-editable attribute option
+**Then** she can enter, for each configured language other than English, a translated name, description and care text for a Design; a translated name, place and story for a Weaver; and a translated label for an option
+**And** the translated text is stored with the Design, the Weaver or the option in commerce (AD-28), by a workflow, and a `shop-audit` event records the before and after values
 
 **Given** a translation has been saved
 **When** commerce next builds a Shopper-facing response in that language
-**Then** the translated text is used within 60 seconds of the save, with no release and no restart
+**Then** the translated text is used at once, with no release and no restart
 
-**Given** a text with no translation in the Shopper's language
+**Given** a Design, Weaver or option text with no translation in the Shopper's language
 **When** it is requested in that language
 **Then** the English text is returned
-**And** a text key is never shown to a Shopper in place of text
 
-**Given** the website's interface texts
-**When** a client asks for them in a language through a `/store/shop/*` read
-**Then** commerce returns every key with its text in that language, with English for missing ones
-**And** clients never call the content application directly (AD-2)
+**Given** the website's interface text
+**When** the source is inspected
+**Then** every piece of it is a key in the translation files in `apps/web`, one file for English and one for Tamil, and the English file is complete
+**And** the labels of the fixed colour list are keys in the same files
+**And** a key with no Tamil text falls back to English; a key is never shown to a Shopper in place of text
 
-**Given** content refers to a Design, a Weaver or an option
-**When** the record is stored
-**Then** it holds only the commerce id, never a copy of price, stock or attributes (AD-3)
+**Given** the configured languages
+**When** code needs the list
+**Then** it reads it from the `settings` module: English and Tamil (PRD §10, working answer 3)
 
-**Given** the Owner saves or deletes a translation
-**When** the change is stored
-**Then** content writes an audit event to its append-only collection with her email, the time, the action and the before and after values (AD-14)
-**And** no content route updates or deletes an audit event
+**Given** this story's code
+**When** it is inspected
+**Then** nothing in it reads from or writes to the content application; documents and message templates get their translations in content in Epic 3 (AD-28)
 
-**Given** the content application cannot be reached
-**When** commerce builds a catalogue response
-**Then** the response is still returned, with English text from commerce's own records
+**Given** a published Design
+**When** the Owner changes only its translated text
+**Then** the Design stays published and the true-colour confirmation is not asked for again
 
-**Requirements:** NFR-14; AD-2, AD-3, AD-14, AD-15, AD-19
+**Requirements:** NFR-14; AD-2, AD-3, AD-4, AD-14, AD-19, AD-28
 **Notes for the developer:**
-- Creates in `apps/content` the translations collection (interface texts, and Design, Weaver and option texts by commerce id) and the content audit-event collection; creates in `apps/commerce` the read of content over HTTP and a `/store/shop/*` route for interface texts. Schemas go in `packages/contracts`.
-- Seed the interface-text keys from the translation file used by earlier stories, with English values. English and Tamil are the configured languages (PRD §10, working answer 3).
-- The 60-second freshness uses the kernel's in-memory cache, as AD-12 allows for layout. The website's use of these texts and the language choice are Story 2.12.
+- Adds translated-text fields to the `design-attributes` and `weaver` modules and to the attribute-option table, the language list to `settings`, translation inputs on the Design, Weaver and option admin pages, and the Tamil translation file beside the English one that Epic 1 began in `apps/web`. Schemas go in `packages/contracts`.
+- AD-28 puts interface text in the clients' translation files, so changing a piece of the website's own wording needs a deploy of the website, while NFR-14 asks that all Shopper-facing text can be translated without a release. `[ASSUMPTION: AD-28 is followed; only Design, Weaver and option text here, and documents and message templates in Epic 3, change without a release. The difference is reported to the founder]`.
+- The website's use of these texts and the language choice are Story 2.12.
 
 ---
 
@@ -562,25 +567,25 @@ So that I can read about a saree in the language I am most comfortable with.
 **When** `packages/api-client` makes any request
 **Then** the request carries that language, and the response's text is in it
 
-**Given** the Owner changes a translation in the content admin
-**When** a Shopper loads a page more than 60 seconds later
+**Given** the Owner changes a Design's or a Weaver's translated text in the Admin (Story 2.11)
+**When** a Shopper next loads a page that shows it in that language
 **Then** she sees the new text, with no release
 
 **Given** the website's source code
 **When** the build runs
-**Then** a check fails the build if a Shopper-facing page contains literal text instead of a text key
+**Then** a check fails the build if a Shopper-facing page contains literal text instead of a text key from the translation files
 
 **Given** a price, a date or a measurement
 **When** it is shown in any language
 **Then** the price is a whole number of rupees and the value is the one the server returned; only its formatting follows the language
 
-**Given** the interface texts cannot be fetched
-**When** a page is rendered
-**Then** the website uses the last set of texts it received, and English from its translation file if it has none
+**Given** an interface text key with no Tamil text in the translation file
+**When** a page is rendered in Tamil
+**Then** the English text is shown, never the key
 
-**Requirements:** NFR-14; AD-2, AD-19
+**Requirements:** NFR-14; AD-2, AD-19, AD-28
 **Notes for the developer:**
-- Touches `packages/api-client` (send the language on every request, fetch interface texts) and `apps/web` (language control, text lookup, the build check).
+- Touches `packages/api-client` (send the language on every request) and `apps/web` (language control, text lookup from the translation files of Story 2.11, the build check). This story does not depend on the content application.
 - Replace the literal texts on the pages Epic 1 built (Design page, cart, checkout, order pages) with text keys.
 - Styled from DESIGN.md when it exists.
 
@@ -601,7 +606,7 @@ So that what I see on any device is the same and true.
 
 **Given** filters for fibre, weave, colour, occasion, Weaver and a price range in whole rupees
 **When** several are sent together
-**Then** options within one filter are alternatives and different filters must all hold `[ASSUMPTION]`
+**Then** options within one filter are alternatives and different filters must all hold `[ASSUMPTION: this way of combining; FR-1 says only that filters combine]`
 **And** the total and the option counts reflect the combination
 
 **Given** a set of filters
@@ -627,7 +632,7 @@ So that what I see on any device is the same and true.
 
 **Given** 100 published Designs on staging
 **When** the route is called with any combination of filters
-**Then** 95% of responses are sent within 500 milliseconds `[ASSUMPTION]`
+**Then** 95% of responses are sent within 500 milliseconds `[ASSUMPTION: the 500-millisecond figure; the PRD sets only the 3-second page target]`
 
 **Given** UI code in `apps/web`
 **When** it needs catalogue data
@@ -636,7 +641,7 @@ So that what I see on any device is the same and true.
 **Requirements:** FR-1, FR-5; AD-2, AD-5, AD-6, AD-19, AD-28
 **Notes for the developer:**
 - Extends `/store/shop/designs` in `apps/commerce/src/api/store/shop`, the `DesignCard` and listing schemas and the availability enum in `packages/contracts`, and the function in `packages/api-client`.
-- Default order is newest first and the page size is 24 `[ASSUMPTION]`. Text comes in the request's language (Story 2.11).
+- `[ASSUMPTION: the default order is newest first and the page size is 24]`. Design and Weaver text comes in the request's language from commerce (Story 2.11). The colour filter's options are the fixed list of Story 2.2; the occasion filter's are the occasion tags.
 - Search is Story 2.15. Discount fields on the card are Story 2.18. Add a seed script that creates about 100 Designs for tests.
 
 ---
@@ -711,7 +716,7 @@ So that I can go straight to the kind of saree I have in mind.
 
 **Given** a search of several words
 **When** it is run
-**Then** a Design matches only if every word is found in at least one of the four fields `[ASSUMPTION]`
+**Then** a Design matches only if every word is found in at least one of the four fields `[ASSUMPTION: every word must match; FR-2 does not say]`
 
 **Given** about 100 published Designs on staging
 **When** a Shopper submits a search
@@ -719,8 +724,8 @@ So that I can go straight to the kind of saree I have in mind.
 
 **Given** a search that matches no Design
 **When** the results page loads
-**Then** it says nothing matched and offers the nearest filters: the fibre, weave, colour, occasion and Weaver options whose labels resemble a search word, or, if none does, the options with the most Designs `[ASSUMPTION]`
-**And** choosing one opens the Designs page with that filter applied
+**Then** it says nothing matched and shows, instead of an empty page, the filter panel with each option's count of Designs and the three weaves that have the most Designs (FR-2)
+**And** choosing a filter option or one of the three weaves opens the Designs page with that filter applied
 
 **Given** search results
 **When** she applies filters
@@ -740,8 +745,8 @@ So that I can go straight to the kind of saree I have in mind.
 
 **Requirements:** FR-2, FR-1; AD-2, AD-28
 **Notes for the developer:**
-- Adds a search parameter and a `suggested_filters` field to `/store/shop/designs` using Postgres full-text search inside commerce (spine, Deferred: no separate search engine); adds the search box and results state to `apps/web`.
-- Search covers the text held in commerce (the default language). Translated text lives in the content database and is not searched in this story `[ASSUMPTION]`.
+- Adds a search parameter and a `top_weaves` field (the three weaves with the most published Designs) to `/store/shop/designs` using Postgres full-text search inside commerce (spine, Deferred: no separate search engine); a search with no results still returns the unfiltered option counts for the filter panel. Adds the search box and results state to `apps/web`.
+- `[ASSUMPTION: search covers the English text and the translated text of the request's language, both held in commerce; FR-2 does not mention languages]`.
 - Styled from DESIGN.md when it exists.
 
 ---
@@ -812,7 +817,7 @@ So that I can judge the saree without having to ask.
 **Given** the page
 **When** it loads
 **Then** it shows the maker's name and address, a consumer-care contact, and the return, refund, delivery and payment terms
-**And** these come from settings and from text the Owner can change without a release
+**And** these come from settings and from text held outside code (the translation files until Epic 3 puts the policies in content)
 
 **Given** a phone with a screen 360 pixels wide and 640 pixels tall
 **When** the page of a Design with a ready full-length image loads
@@ -840,7 +845,7 @@ So that I can judge the saree without having to ask.
 **Requirements:** FR-3, FR-4, FR-5, FR-35; AD-2, AD-5, AD-13, AD-28
 **Notes for the developer:**
 - Completes the Design detail view model in `packages/contracts`, the single-Design read under `/store/shop/designs`, and the Design page in `apps/web` that Epic 1 began.
-- Until Epic 3, the delivery estimate is the earliest and latest number of days for the delivery region, and the maker's name and address and consumer-care contact are the shop's own, all read from the `settings` module `[ASSUMPTION]`; the terms are interface texts from Story 2.11. Epic 3 adds the pincode check (FR-17) and the numbered policies (FR-59).
+- `[ASSUMPTION: until Epic 3, the delivery estimate is the earliest and latest number of days for the delivery region, and the maker's name and address and consumer-care contact are the shop's own, all seeded in the `settings` module]`; the terms are interface text in the translation files of Story 2.11. Epic 3 adds the pincode check (FR-17, Story 3.9) and replaces the terms with links to the numbered policies in content (FR-59, Story 3.3).
 - The region below the fixed content that the Owner arranges from Blocks is Epic 5. Styled from DESIGN.md when it exists.
 
 ---
@@ -882,7 +887,7 @@ So that I can run an offer without breaking whole-rupee prices or the tax calcul
 
 **Given** a Design with an automatic discount and a code that also applies
 **When** the cart is priced
-**Then** only the larger of the two discounts applies to that Piece `[ASSUMPTION]`
+**Then** only the larger of the two discounts applies to that Piece `[ASSUMPTION: discounts do not add up; FR-58 does not say]`
 
 **Given** a Checkout whose Hold has begun
 **When** the discount ends or is edited
@@ -896,7 +901,7 @@ So that I can run an offer without breaking whole-rupee prices or the tax calcul
 **Notes for the developer:**
 - A discount is a kernel record (AD-3). Add the shop's Discounts admin page, the kernel routes it needs to the allow-list, the per-piece discount step in the money functions, and discount fields on `DesignCard` and the Design detail schema in `packages/contracts`.
 - If the kernel's own percentage calculation cannot round each piece down to a whole rupee, compute the per-piece amount with the money functions and hand the kernel a fixed amount; the shop's tax provider remains the only tax calculation.
-- "The lowest price of the previous 30 days" means the lowest price at which the Variant was offered in the 30 days before this discount began `[ASSUMPTION]`. Showing it to Shoppers is Story 2.19.
+- `[ASSUMPTION: "the lowest price of the previous 30 days" means the lowest price at which the Variant was offered in the 30 days before this discount began]`. Showing it to Shoppers is Story 2.19.
 
 ---
 
@@ -916,7 +921,7 @@ So that I can trust that the price is real and nothing is added later.
 **Given** a discounted price that is not lower than the lowest price of the previous 30 days
 **When** it is shown
 **Then** no "percent off" figure and no crossed-out price are shown; only the price and the 30-day lowest price
-**And** any "percent off" figure that is shown is supplied by the server, measured against the 30-day lowest price `[ASSUMPTION]`
+**And** any "percent off" figure that is shown is supplied by the server, measured against the 30-day lowest price `[ASSUMPTION: the base of any "percent off" figure; FR-5 does not say]`
 
 **Given** a discount with an end date
 **When** it is shown
@@ -975,7 +980,7 @@ So that I can look at a saree without waiting.
 **And** photos below the first screen are requested only as the Shopper approaches them
 
 **Given** a Design page on staging with 6 photos, a ready full-length image and all attributes
-**When** it is loaded in a test that emulates a mid-range Android phone on a 4G connection
+**When** it is loaded in a test that emulates the spine's test profile: an Android phone with 4 GB of memory on a throttled 4G connection of 10 Mbit/s down with 100 ms delay
 **Then** the first photo, the name, the price and a working "add to cart" control are present within 3 seconds, as the median of 5 runs
 **And** the result and the emulation settings used are recorded in `docs/`
 
@@ -993,6 +998,6 @@ So that I can look at a saree without waiting.
 
 **Requirements:** NFR-1; AD-2, AD-8, AD-22; Consistency Conventions (Speed)
 **Notes for the developer:**
-- The copies are made by a job on the shop queue in `apps/worker` (name and payload added to `packages/contracts`, deterministic id, safe to run twice), enqueued by the workflow that attaches a photo; widths are 320, 640, 960, 1280 and 1920 pixels `[ASSUMPTION]`.
-- Use the end-to-end test runner from Epic 1 with processor and network throttling for the measurement; the PRD does not define "mid-range" or the 4G speed, so write down the profile chosen.
+- The copies are made by a job on the shop queue in `apps/worker` (name and payload added to `packages/contracts`, deterministic id, safe to run twice), enqueued by the workflow that attaches a photo; `[ASSUMPTION: widths are 320, 640, 960, 1280 and 1920 pixels]`.
+- Use Playwright, the end-to-end test runner from Story 1.23, with processor and network throttling for the measurement. The profile is the spine's (Consistency Conventions, "Test profiles") and is read from settings, not written into the test.
 - The Android app's own measurement is Epic 6. A CDN is deferred by the spine.

@@ -10,7 +10,8 @@ The Owner builds the home, category and campaign screens, and one region of the 
 - Screens and Blocks are owned by the content application (AD-3). Content refers to a Design or a Weaver only by its commerce id and never stores price, stock or attributes.
 - Every create, save, publish, schedule and restore in the content admin writes an audit event to content's append-only collection with the Owner's email, the time, the action and the before and after values (AD-14). Stories do not repeat this in each criterion.
 - The content admin is reached through the access gate and the Owner's content sign-in (AD-15).
-- Items tagged `[ASSUMPTION]` are choices made while writing the stories where the PRD and spine are silent.
+- Items tagged `[ASSUMPTION]` are choices made while writing the stories where the PRD and spine are still silent; each says what is assumed.
+- This epic builds on the content application of Stories 1.19 and 3.1 (gate, audit rule, versioning helper, content reader in commerce) and on the first `ScreenV1` schema and `packages/blocks` of Story 1.24.
 
 ---
 
@@ -43,8 +44,8 @@ So that I can prepare the home screen or a campaign without it going live.
 
 **Given** a banner or image Block
 **When** she gives it an action
-**Then** she chooses one action from the fixed list in `packages/contracts`: open a Design, open a Weaver, open the Designs page with filters, open another Server-driven screen, or open a policy or notice `[ASSUMPTION: the list]`
-**And** there is no field in which an address outside the shop, code, markup or an expression can be entered as an action
+**Then** she chooses one action from the fixed list in `packages/contracts`, which is AD-12's: `open-design`, `open-weaver`, `open-category` (a category screen), `open-screen` (another Server-driven screen), `open-search` (the Designs page with a search or filters) and `open-link` (an address on the same site only, such as a policy or notice page)
+**And** `open-link` refuses any address that is not on the shop's own site, and there is no field in which code, markup or an expression can be entered as an action
 
 **Given** a text, banner or image Block
 **When** she enters its wording
@@ -61,7 +62,7 @@ So that I can prepare the home screen or a campaign without it going live.
 
 **Requirements:** FR-30, FR-31 (draft), FR-33; AD-3, AD-12, AD-14, AD-15, AD-19
 **Notes for the developer:**
-- Creates the `ScreenV1` schema and the fixed action list in `packages/contracts`; creates `packages/blocks` with the properties of banner, text and image (no UI code); creates the screens collection with drafts in `apps/content`.
+- Completes the `ScreenV1` schema that Story 1.24 began in `packages/contracts` and adds the fixed action list of AD-12 to it; completes `packages/blocks`, which Story 1.24 created for its sample, with the full properties of banner, text and image (no UI code); creates the screens collection with drafts in `apps/content`, using the versioning helper and audit rule of Story 3.1.
 - `ScreenV1` and Block properties may only ever gain optional fields (AD-12); write the schema so that unknown fields are ignored by readers.
 - Blocks that show Designs or Weavers are Story 5.2. Publishing is Story 5.3. The Design-page region is Story 5.5.
 
@@ -112,7 +113,7 @@ So that the screen shows the sarees and Weavers I choose and stays current witho
 **Requirements:** FR-30; AD-3, AD-9, AD-12, AD-14, AD-28
 **Notes for the developer:**
 - Adds the three Block types to `packages/blocks` and to the screens collection in `apps/content`; the rule's filter uses the same filter names as `/store/shop/designs` (Epic 2).
-- The pickers read Designs and Weavers from commerce over the private network with content's service token. AD-9 says each `/internal/*` route starts a workflow; this one is a read-only lookup, which is recorded here as a deliberate exception.
+- The pickers read Designs and Weavers from commerce over the private network with content's service token, through a read-only lookup route under `/internal/*`, which AD-9 allows and names as its example.
 - Resolving ids and rules into Design cards is Story 5.3.
 
 ---
@@ -200,7 +201,7 @@ So that I see the shop's current sarees and stories as soon as I arrive.
 
 **Given** a Block with an action
 **When** the Shopper activates it
-**Then** the website performs that action from the fixed list: it opens the Design, the Weaver, the Designs page with those filters, the other screen, or the policy or notice
+**Then** the website performs that action from the fixed list of AD-12: `open-design`, `open-weaver`, `open-category`, `open-screen`, `open-search` or `open-link` to a same-site address
 **And** a Block with no action is not shown as something to press
 
 **Given** a Weaver story Block
@@ -246,7 +247,7 @@ So that I can add a Weaver's story or related sarees there without touching what
 
 **Given** the region
 **When** it is created
-**Then** there is exactly one, and it applies to every Design page `[ASSUMPTION]`
+**Then** there is exactly one, and it applies to every Design page `[ASSUMPTION: one region shared by all Designs, not one per Design; PRD §4.7 says only "one region"]`
 
 **Given** a Weaver story Block in the region
 **When** the Owner sets it up
@@ -419,7 +420,7 @@ So that I never meet an error or a blank page because the Owner changed somethin
 **When** it contains a Block type absent from `packages/blocks`, an action absent from the fixed list, or a property that the type does not define
 **Then** the save is refused; a screen can only arrange components and actions already built in
 
-**Given** a Block action that opens Try-on, checkout or any other built-in flow, now or in future
+**Given** a Block action that leads to Try-on, checkout or any other built-in flow, for example `open-design` or `open-link`
 **When** it is activated
 **Then** it only navigates to that built-in screen, which applies its own rules, including current Try-on consent under AD-11; screen data cannot grant consent, skip a step or switch on a capability
 
@@ -440,5 +441,5 @@ So that I never meet an error or a blank page because the Owner changed somethin
 **Requirements:** FR-32, FR-33; AD-11, AD-12, AD-19, AD-27
 **Notes for the developer:**
 - `apps/web`: skip rules in the screen renderer and a server-side store of the last good response per screen and language; `packages/contracts` and `packages/blocks`: recorded-response fixtures and the additive-only check; `apps/content`: the strict save check.
-- Record the fixtures in a place Epic 6 can reuse for the Android app's replay under AD-27; the `X-Client` header and the minimum app version (FR-55) are Epic 6.
-- FR-32 speaks of the app; on the website "the last screen it received" is taken to mean the last copy held by the website's server `[ASSUMPTION]`.
+- Record the fixtures in a place Epic 6 can reuse for the Android app's replay under AD-27. The `X-Client` header is sent since Story 1.2; the minimum app version check (FR-55) is Story 6.2.
+- `[ASSUMPTION: FR-32 speaks of the app; on the website "the last screen it received" is taken to mean the last copy held by the website's server]`.

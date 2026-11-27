@@ -5,52 +5,56 @@ A Shopper signs in with a one-time code, checks delivery to her pincode, follows
 **FRs covered:** FR-16 (complete), FR-17, FR-21 (complete), FR-22, FR-23 (complete), FR-26, FR-27, FR-28, FR-29, FR-47 (complete), FR-48 (complete), FR-49, FR-53, FR-54, FR-56, FR-59
 **NFRs:** NFR-5, NFR-6, NFR-13
 
-**Starting point.** Epic 1 left a working prepaid purchase (Hold, `confirm-payment`, invoice, basic Order states, shipping label and tracking, a basic Return with inspection, refund and credit note, admin sign-in with second factor, the route allow-list). Epic 2 left the full catalogue. This epic stands up `apps/content` for the first time and completes the shop around those parts. Try-on does not exist yet; where a story touches consent or erasure it says what Epic 4 adds to the same code.
+**Starting point.** Epic 1 left a working prepaid purchase (Hold, `confirm-payment`, invoice, basic Order states, shipping label and tracking, a basic Return with inspection, refund and credit note, admin sign-in with second factor, the route allow-list). Epic 1 also stood up `apps/content` behind its access gate, with admin accounts and an audit collection only (Story 1.19). Epic 2 left the full catalogue. This epic gives the content application its first documents and message templates and completes the shop around those parts. Try-on does not exist yet; where a story touches consent or erasure it says what Epic 4 adds to the same code.
 
-**Conventions for every story in this epic.** Every new route, job payload, state and error code is first a zod schema in `packages/contracts` (AD-19). Every state change is a named workflow with tests for success, each failure and compensation (AD-4). Every state-changing Shopper request carries an `Idempotency-Key`. Shop routes change additively only (AD-27). No Shopper-facing text is in code; it comes from content or a translation file. Shopper-facing screens are described by behaviour only and are styled from DESIGN.md when it exists.
+**Conventions for every story in this epic.** Every new route, job payload, state and error code is first a zod schema in `packages/contracts` (AD-19). Every state change is a named workflow with tests for success, each failure and compensation (AD-4). Every state-changing Shopper request carries an `Idempotency-Key`. Shop routes change additively only (AD-27). No Shopper-facing text is in code: documents and message templates come from content, interface text from the clients' translation files, and Design and Weaver text from commerce (AD-28). Shopper-facing screens are described by behaviour only and are styled from DESIGN.md when it exists.
 
 ---
 
-### Story 3.1: Stand up the content application behind its gate, with an audit trail
+### Story 3.1: Extend the content application: service calls to commerce and an audit trail on every document
 
 As an Owner,
-I want a content admin that only I can reach and that records every change I make,
+I want the content admin that Epic 1 stood up to talk to the shop safely and to record every change I make to any document,
 So that notices, policies and message texts have one home and no edit to them goes untraced.
 
 **Acceptance Criteria:**
 
-**Given** the repository from Epic 1
-**When** the compose file is started locally or on staging
-**Then** `apps/content` runs as a Payload application on its own `content` database on the shared Postgres server, migrates only that database, and exposes a health route
-**And** it has no connection string for the `commerce` database, and a test fails the build if one is configured (AD-1, AD-3)
-**And** its configuration comes from environment variables checked at start against a zod schema; a missing variable stops the container with a message naming the variable
+**Given** the content application of Story 1.19, already running on its own `content` database behind the access gate, with admin accounts, the lockout rule and an append-only audit collection
+**When** this story is complete
+**Then** nothing of Story 1.19 has been built again: the same application, database, gate and audit collection are extended
+**And** content's configuration comes from environment variables checked at start against a zod schema; a missing variable stops the container with a message naming the variable
+**And** it still has no connection string for the `commerce` database, and a test fails the build if one is configured (AD-1, AD-3)
 
 **Given** a browser outside the private network
-**When** it requests the content admin through Caddy without passing the proxy access gate
-**Then** the request is refused before it reaches Payload
-**And** only the admin path is routed by Caddy; content's data API is reachable only on the private network
-
-**Given** the Owner has passed the proxy gate
-**When** the Owner enters a wrong password five times
-**Then** the content account is locked for 15 minutes, the same rule as the commerce Admin (FR-60, AD-15)
-**And** a Shopper token or a commerce admin session is never accepted by content
+**When** it requests anything of content through Caddy
+**Then** only the admin path is routed, and only past the access gate of Story 1.19; content's data API is reachable only on the private network
 
 **Given** commerce or the worker calls content, or content calls commerce
 **When** the call carries no service token or a wrong one
 **Then** it is refused with the error envelope `{ code, message }`
-**And** `/internal/*` on commerce accepts only a service token and is not routed by Caddy (AD-9)
+**And** `/internal/*` on commerce accepts only a service token and is not routed by Caddy; each `/internal/*` route either starts a workflow or is a read-only lookup (AD-9)
+**And** a Shopper token or a commerce admin session is never accepted by content (AD-15)
 
-**Given** the Owner creates, changes, publishes or deletes any content document
+**Given** commerce needs a document or a message template from content
+**When** it reads one
+**Then** it does so through one read-only content reader in commerce, over the private network with a service token; no client and no worker job calls content directly (AD-2, AD-26)
+
+**Given** the Owner creates, changes, publishes or deletes any content document, in any collection added from this story on
 **When** the change is saved
-**Then** one event is appended to content's audit collection with actor (the admin's email), time, action, before and after, in the same shape as a `shop-audit` event defined in `packages/contracts`
+**Then** one event is appended to content's audit collection with actor (the admin's email), time, action, before and after, in the same shape as a `shop-audit` event defined in `packages/contracts`, by one rule shared by every collection
+**And** a test fails the build if a collection is added without that rule
 **And** no user, including the Owner, can update or delete an audit event through the admin or the API; a test proves both are refused (AD-14)
 
-**Requirements:** FR-59 (foundation), NFR-5, AD-1, AD-3, AD-9, AD-14, AD-15, AD-16, AD-19
+**Given** a document collection that carries numbered versions
+**When** it is defined
+**Then** it uses one shared versioning helper created here: a draft, an integer version, a published time, and published versions that can no longer be edited; Story 3.2 gives it its first documents
+
+**Requirements:** FR-59 (foundation), NFR-5, AD-1, AD-2, AD-3, AD-9, AD-14, AD-15, AD-16, AD-19
 **Notes for the developer:**
-- Touches `apps/content` (new), `infra/` (compose service, Caddy route and gate), `packages/contracts` (audit event shape, service-token header).
-- If spike item 7 gave the content admin a second factor, enforce it and keep the gate configurable; otherwise the gate stays on. Gate credentials are environment variables.
-- Only the admin user collection and the audit collection are created here. Document, template and screen collections come in the stories that first need them (screens in Epic 5).
-- Use the versions in the spine's Stack table; do not add a second scheduler to content (AD-4, AD-12).
+- Builds on Story 1.19. Touches `apps/content` (environment check, the shared audit rule, the versioning helper, the service-token check), `apps/commerce` (the content reader, the service-token check on `/internal/*` if Story 1.14 left it for the worker only), `infra/` (Caddy routes only the admin path), `packages/contracts` (audit event shape, service-token header).
+- The gate, the lockout and the second-factor outcome of spike item 7 are as Story 1.19 left them; keep the gate configurable. Gate credentials are environment variables.
+- No document, template or screen collection is created here. They come in the stories that first need them (documents in Story 3.2, templates in Story 3.4, screens in Epic 5).
+- Use the versions in the spine's Stack table; do not add a scheduler to content (AD-4, AD-12).
 
 ---
 
@@ -84,7 +88,7 @@ So that I can correct a policy or add a language without a release and always kn
 **Given** a Try-on consent notice draft
 **When** the Owner publishes a new version
 **Then** it must carry a list of AI-service ids, and content calls `/internal/content/notice-published` on commerce with document key, version, service ids and time
-**And** commerce stores that record through a workflow, idempotent on key and version; if the call fails, the publish is not shown as complete and the Owner sees that commerce was not told and can retry
+**And** commerce stores that record through the `record-notice-version` workflow, idempotent on key and version; if the call fails, the publish is not shown as complete, the previous version stays the published one, and the Owner sees that commerce was not told and can retry
 
 **Given** any other document type is published
 **When** publishing completes
@@ -96,8 +100,8 @@ So that I can correct a policy or add a language without a release and always kn
 
 **Requirements:** FR-59, NFR-14, AD-3, AD-9, AD-11, AD-13, AD-14
 **Notes for the developer:**
-- Touches `apps/content` (document collections, publish hooks), `apps/commerce` (`internal/content/*` routes, a workflow that records published versions in the `consent` module for the notice and the `settings` module for other documents), `packages/contracts`.
-- The rule "a new notice version makes every Shopper accept again before her next Try-on" is enforced by Epic 4's consent check against the record stored here; this story only stores it.
+- Touches `apps/content` (document collections, publish hooks), `apps/commerce` (`internal/content/*` routes, the `record-notice-version` workflow that records notice versions in the `consent` module, and a workflow that records other documents' published versions in the `settings` module), `packages/contracts`.
+- The rule "a new notice version makes every Shopper accept again before her next Try-on" is enforced by Epic 4's consent check against the record stored here; this story only stores it. Story 4.1 adds the retention period to the notice and the Shopper's read of it; it does not build the publish path again.
 - No Shopper-facing page yet; that is Story 3.3. No message templates yet; that is Story 3.4.
 
 ---
@@ -190,7 +194,7 @@ So that message wording never needs a release and nothing is sent twice.
 - Touches `apps/content` (templates collection), `apps/commerce` (`providers/notification`, `internal/messages/*`, template read route for the worker), `apps/worker` (`jobs/message.send`, `providers/sms`, `providers/email`), `packages/contracts` (job payload, template keys).
 - SMS and email vendors are undecided: write the `SmsSender` and `EmailSender` interfaces and a test-mode adapter for each; a real vendor is a later adapter.
 - Only the sign-in code template is created here. Order, Return, refund and complaint templates are created by the stories that raise those events.
-- If Epic 1 sent the Order confirmation by another path, leave it; Story 3.18 moves it onto this job.
+- Epic 1 sent no messages; it only recorded events such as `payment.auto-refunded`. Story 3.18 attaches messages to them.
 
 ---
 
@@ -204,8 +208,12 @@ So that a business or legal decision changes a setting, not the software.
 
 **Given** the Owner is signed in to the Admin with a second factor
 **When** the Owner opens Shop settings
-**Then** the page shows, each with its current value and effective date: delivery region; shipping charge rule; return period in days; return conditions; Try-on limit per Shopper per day; sign-in code rules; working days; dispatch time in working days; the Owner's alert email and mobile number; business time zone
-**And** on a fresh environment the values are: delivery region Tamil Nadu, Kerala, Karnataka, Andhra Pradesh, Telangana and Puducherry; return period 7 days; Try-on limit 10 per day; code expiry 5 minutes; 3 codes per number in 10 minutes
+**Then** the page shows, each with its current value and effective date: delivery region; shipping charge rule; return period in days; return conditions; Try-on limit per Shopper per day; sign-in code rules; working days and the list of holidays; dispatch time in working days; the Owner's alert email and mobile number; business time zone
+**And** on a fresh environment the values are: delivery region Tamil Nadu, Kerala, Karnataka, Andhra Pradesh, Telangana and Puducherry; return period 7 days; Try-on limit 10 per day; code expiry 5 minutes; 3 codes per number in 10 minutes; working days Monday to Saturday with no holidays listed
+
+**Given** the working days and holidays
+**When** any deadline in working days is worked out
+**Then** a working day is Monday to Saturday in the business time zone, excluding the holidays listed in settings, and one function in `packages/contracts` does the counting for every caller
 
 **Given** the delivery region setting
 **When** the Owner edits it
@@ -237,8 +245,8 @@ So that a business or legal decision changes a setting, not the software.
 
 **Requirements:** FR-56, NFR-10, AD-4, AD-13, AD-14, AD-20
 **Notes for the developer:**
-- Touches the `settings` module in `apps/commerce` (add these keys to the dated-settings mechanism Epics 1–2 used for Hold length and tax bands; create the keys only), `src/admin` (settings page), `packages/contracts` (setting schemas).
-- Working days and dispatch time are `[ASSUMPTION]` additions: the PRD speaks of "2 working days" and delivery dates but defines neither. Defaults: Monday to Saturday; 2 working days.
+- Touches the `settings` module in `apps/commerce` (add these keys to the dated-settings mechanism Epics 1–2 used for Hold length, tax bands and working days; create only the keys that do not exist yet), `src/admin` (settings page), `packages/contracts` (setting schemas, the working-day function).
+- Working days follow the spine's Consistency Conventions; Story 1.17 seeded them and this story makes them editable. `[ASSUMPTION: a dispatch time of 2 working days, used for delivery dates; the PRD gives none]`.
 - The Try-on limit is stored and audited here; Epic 4 enforces it and adds the daily spending cap.
 - The settings are consumed in later stories: region and charge in 3.9, return period and conditions in 3.13, code rules in 3.6.
 
@@ -297,7 +305,8 @@ So that I can check out and see my Orders without remembering a password.
 **Requirements:** FR-26, FR-54 (sign-in code), NFR-13, AD-13, AD-15, AD-19, AD-26
 **Notes for the developer:**
 - Touches `apps/commerce` (`providers/one-time-code`, rate-limit middleware, `store/shop/auth/*`), `packages/api-client`, `apps/web` (sign-in step).
-- Replaces whatever interim Shopper identification Epic 1's checkout used; `begin-checkout` now requires a signed-in Shopper.
+- Replaces the email-and-password customer sign-in of Story 1.2 behind the same `api-client` functions and removes its sign-up page; `begin-checkout` already requires a signed-in Shopper.
+- The reviewer account with a fixed sign-in code (spine, Consistency Conventions: App-store review) is added to this provider by Story 7.13; leave one place in the verification step where it can be checked.
 - An anonymous cart is attached to the account at sign-in when the account has no cart; merging two carts is Story 3.8. Terms acceptance is Story 3.7.
 - Test through the SMS adapter's test sink. Styled from DESIGN.md when it exists.
 
@@ -318,7 +327,7 @@ So that I know what I agreed to and my invoices and messages reach me.
 
 **Given** she accepts
 **When** the acceptance is stored
-**Then** a terms acceptance record holds the Shopper, the terms version, the privacy policy version, the language shown and the time, written by the workflow `record-terms-acceptance`
+**Then** the workflow `record-terms-acceptance` writes two records of the `consent` module, one for the terms of use and one for the privacy policy, each holding the Shopper, the document type, the version, the language shown and the time (AD-31)
 **And** she continues to where she was going
 
 **Given** she has not accepted
@@ -345,10 +354,10 @@ So that I know what I agreed to and my invoices and messages reach me.
 **Then** she is asked for an email address so the invoice can be sent, she can leave it empty and continue, and nothing about the email is pre-filled or pre-ticked
 **And** an address that is not a valid email is refused with the field named; a valid one is saved on her account by a workflow and can be changed or removed from her account page
 
-**Requirements:** FR-26, FR-29, NFR-13, AD-4, AD-11 (versions), AD-15, AD-26
+**Requirements:** FR-26, FR-29, NFR-13, AD-4, AD-11 (versions), AD-15, AD-26, AD-31
 **Notes for the developer:**
-- Touches the `consent` module in `apps/commerce` (create the terms acceptance entity here; Epic 4 adds the Try-on consent entity to the same module), `store/shop/account/*`, `packages/api-client`, `apps/web` (acceptance step, account page, checkout contact step).
-- The spine's entity table does not name a terms acceptance record; it is placed in `consent` as an `[ASSUMPTION]`.
+- Touches the `consent` module in `apps/commerce` (the acceptance record with document type, version, language and time; Story 3.2 already keeps notice versions in this module, and Epic 4 records Try-on consent as the same kind of record), `store/shop/account/*`, `packages/api-client`, `apps/web` (acceptance step, account page, checkout contact step).
+- Acceptances of terms, policies and the Try-on consent notice all live in the `consent` module (AD-31).
 - The PRD asks for acceptance at first sign-in only; asking again when a new terms version is published is not built.
 - Adds the template `account.mobile-changed`. Styled from DESIGN.md when it exists.
 
@@ -465,7 +474,7 @@ So that what I see is true without anyone at the shop typing it in.
 
 **Given** `packages/contracts`
 **When** this story is complete
-**Then** the Order state enum holds exactly Paid, Packed, Dispatched, Out for delivery, Delivered, Delivery failed, Returned to shop, Cancelled, Refunded, with one table of allowed transitions: Paid→Packed; Paid→Cancelled; Packed→Dispatched; Packed→Cancelled; Dispatched→Out for delivery; Dispatched→Delivery failed; Out for delivery→Delivered; Out for delivery→Delivery failed; Delivery failed→Out for delivery; Delivery failed→Returned to shop; Cancelled→Refunded; Returned to shop→Refunded; and Dispatched, Out for delivery, Delivery failed or Delivered→Refunded only when the refunded total equals the amount paid (AD-24)
+**Then** the Order state enum holds exactly Paid, Packed, Dispatched, Out for delivery, Delivered, Delivery failed, Returned to shop, Cancelled, Refunded, with one table of allowed transitions: Paid→Packed; Paid→Cancelled; Packed→Dispatched; Packed→Cancelled; Dispatched→Out for delivery; Dispatched→Delivery failed; Out for delivery→Delivered; Out for delivery→Delivery failed; Delivery failed→Out for delivery; Delivery failed→Returned to shop; Cancelled→Refunded; Returned to shop→Refunded; and Dispatched, Out for delivery, Delivery failed or Delivered→Refunded only when every item in the Order has been refunded; a partial refund shows on the Return and the Order keeps its state (AD-24, AD-31)
 **And** one workflow performs each transition, refuses any transition not in the table with `order.transition_not_allowed`, and writes a state-history row with the time and the cause
 
 **Given** an Order in Dispatched
@@ -503,7 +512,8 @@ So that what I see is true without anyone at the shop typing it in.
 **Requirements:** FR-21, FR-24, FR-25, AD-4, AD-6, AD-7, AD-24, AD-25
 **Notes for the developer:**
 - Touches `packages/contracts` (states, transition table, events), `apps/commerce` (`order-state` module, transition workflows, `providers/shipping` event mapping, `api/webhooks/shipping`).
-- Extends Epic 1's basic states; migrate existing Orders without changing their state.
+- Extends the states, transition workflows and shipping mapping table of Stories 1.13 and 1.15; migrate existing Orders without changing their state.
+- `refund-undeliverable-order` reuses the refund-to-source and credit-note steps of `refund-order` (Story 1.17). It replaces Story 1.17's rule that an Order in Returned to shop is refunded when the Owner records its inspection: the refund now starts from the shipping event, and inspection governs only restocking (Story 3.15).
 - Test with the adapter's test mode and recorded events. Paid→Packed, Packed→Dispatched and the two Cancelled transitions are exercised from the Shopper side in Story 3.12 and from the Admin in Story 3.15; inspection of undelivered Pieces is in Story 3.15.
 - Messages for these events are added in Story 3.18; raise the events (`order.dispatched`, `order.delivered` and so on) here.
 
@@ -597,8 +607,8 @@ So that a change of mind costs me nothing.
 
 **Requirements:** FR-22, FR-24, FR-36, AD-4, AD-6, AD-7, AD-24, AD-25
 **Notes for the developer:**
-- Touches `apps/commerce` (`workflows/cancel-order` completed with refund and credit-note steps, `store/shop/orders/{id}/cancel`, `providers/shipping` cancel-shipment), `packages/api-client`, `apps/web` (Order page).
-- Reuses Epic 1's refund-to-source and credit-note steps; do not write a second refund path.
+- Touches `apps/commerce` (`workflows/cancel-order`, created here as the stock workflow AD-6 names, with refund and credit-note steps; `store/shop/orders/{id}/cancel`; `providers/shipping` cancel-shipment), `packages/api-client`, `apps/web` (Order page).
+- Reuses the refund-to-source and credit-note steps of `refund-order` (Story 1.17); do not write a second refund path. Working days are counted by the function of Story 3.5.
 - Raise `order.cancelled` and `refund.started`; their messages are added in Story 3.18. The overdue list itself appears on the Owner's refund page in Story 3.17; here, store what that page will need (cancelled time, refund started time).
 
 ---
@@ -698,7 +708,7 @@ So that I can show who saw what and when if a Shopper or an authority asks.
 **Requirements:** NFR-5, NFR-6, AD-4, AD-14, AD-22, AD-17
 **Notes for the developer:**
 - Touches `apps/commerce` (`shop-audit` module: access event entity; an admin middleware and a route declaration helper; `src/admin` access log page), `packages/contracts`, `infra/` (Caddy and backup configuration checks, a short security note).
-- Uses the `shop-audit` module Epic 1 created for admin changes; this story adds only the access event.
+- Uses the `shop-audit` module of Story 1.18, which already records a first access event when the Owner opens an Order; this story gives the access event its schema, the route declaration helper, the masking rule and the log page, and brings that first event under them.
 - Purging events older than one year is not built: how the one-year duty sits with erasure is a question for the lawyer (NFR-6).
 - Every later Admin story in this epic declares its routes with this helper. Shopper photos do not exist until Epic 4, which marks its own routes the same way.
 
@@ -783,6 +793,7 @@ So that a fair return is refunded quickly and an unfair one is explained with ev
 **When** the Owner records the inspection as passed
 **Then** the workflow `accept-return` moves it to Accepted and starts the refund to the payment method used: the price paid for the returned items, less the return shipping charge stored on the Return (zero for "Not as shown" and "Defective or wrong item")
 **And** a credit note linked to the original invoice is created, and the Return moves to Refunded when the payment service accepts the refund (FR-24)
+**And** the Order moves to Refunded only if every item in it has now been refunded; otherwise the refund shows on the Return and the Order keeps its state (AD-31)
 **And** the Owner then records each Piece as "sellable" or "damaged"; only "sellable" runs `restock-return` (FR-25)
 
 **Given** a Return in Received
@@ -796,7 +807,7 @@ So that a fair return is refunded quickly and an unfair one is explained with ev
 
 **Given** an inspection photo is uploaded
 **When** it is stored
-**Then** it is uploaded with a single-use signed upload link limited by size and image type, kept in the private `documents` bucket, and is never reachable by a public URL (AD-22)
+**Then** it is uploaded with a single-use signed upload link limited by size and image type, kept as a file in the private `documents` bucket linked to the Return (AD-31), and is never reachable by a public URL (AD-22)
 
 **Given** the payment service refuses the refund in `accept-return`
 **When** the workflow reaches that step
@@ -807,10 +818,11 @@ So that a fair return is refunded quickly and an unfair one is explained with ev
 **Then** it is refused with `return.transition_not_allowed`
 **And** every transition made by the Owner records a `shop-audit` event
 
-**Requirements:** FR-47, FR-23, FR-24, FR-25, AD-4, AD-6, AD-14, AD-22, AD-24, AD-25
+**Requirements:** FR-47, FR-23, FR-24, FR-25, AD-4, AD-6, AD-14, AD-22, AD-24, AD-25, AD-31
 **Notes for the developer:**
 - Touches `apps/commerce` (`workflows/accept-return`, `workflows/reject-return`, `admin/shop/returns/*`, `src/admin` Returns pages, upload-link route), `packages/api-client` and `apps/web` (Rejected view on the Return).
-- The spine's four buckets do not name inspection photos; `documents` is used as an `[ASSUMPTION]` because it is private and versioned.
+- Builds on the inspection, refund and restock of Story 1.17: `accept-return` and `reject-return` replace its single inspection action and reuse the refund-to-source and credit-note steps of `refund-order`.
+- Inspection photos are files in the `documents` bucket, linked to the Return (AD-31).
 - Who pays to send a rejected saree back is a founder decision; no charge is made to the Shopper here.
 - Raise `return.state-changed` for each transition; its messages are added in Story 3.18.
 
@@ -837,10 +849,10 @@ So that I can put things right for a Shopper and never miss a dispute deadline.
 **When** the Owner submits
 **Then** it is refused with `refund.amount_exceeds_paid`, `refund.amount_invalid` or `refund.reason_required`, and nothing is refunded
 
-**Given** a refund that brings the refunded total to the amount paid on an Order that is Dispatched, Out for delivery, Delivery failed or Delivered
+**Given** a refund after which every item in an Order that is Dispatched, Out for delivery, Delivery failed or Delivered has been refunded
 **When** the refund is started
-**Then** the Order moves to Refunded
-**And** a part refund never changes the Order's state
+**Then** the Order moves to Refunded (AD-31)
+**And** a part refund never changes the Order's state; when it belongs to a Return it shows on the Return
 **And** a full refund of an Order in Paid or Packed is refused with a pointer to cancel the Order instead
 
 **Given** the Owner submits the same refund twice, or the page is sent twice
@@ -858,7 +870,7 @@ So that I can put things right for a Shopper and never miss a dispute deadline.
 
 **Given** the payment service sends a verified dispute event for a payment
 **When** it is handled
-**Then** the workflow `record-payment-dispute` stores or updates a dispute with the payment service's dispute id, amount, reason, status and respond-by date, linked to the Order of that payment, idempotent on the event id
+**Then** the workflow `record-payment-dispute` stores or updates a dispute, a record of the `checkout` module (AD-31), with the payment service's dispute id, amount, reason, status and respond-by date, linked to the Order of that payment, idempotent on the event id
 **And** the Owner is alerted when a dispute is opened
 **And** a dispute whose payment matches no Order is stored unlinked and the Owner is alerted
 
@@ -866,10 +878,11 @@ So that I can put things right for a Shopper and never miss a dispute deadline.
 **When** the page loads
 **Then** each dispute is listed with its Order, amount, reason, status and respond-by date, and links to the Order; the dispute also appears on the Order's page
 
-**Requirements:** FR-48, FR-24, NFR-4, AD-4, AD-5, AD-7, AD-14, AD-21, AD-25
+**Requirements:** FR-48, FR-24, NFR-4, AD-4, AD-5, AD-7, AD-14, AD-21, AD-25, AD-31
 **Notes for the developer:**
-- Touches `apps/commerce` (`workflows/refund-order`, `workflows/record-payment-dispute`, `providers/razorpay` dispute events through the kernel's payment hook route, `src/jobs` refund-deadline job, `admin/shop/refunds/*`, `admin/shop/disputes/*`, `src/admin` pages).
-- The spine names no home for a dispute record; create the entity in the `order-state` module as an `[ASSUMPTION]`.
+- Touches `apps/commerce` (`workflows/refund-order` from Story 1.17, completed here; `workflows/record-payment-dispute`; the `checkout` module's dispute record; `providers/razorpay` dispute events through the kernel's payment hook route; `src/jobs` refund-deadline job; `admin/shop/refunds/*`, `admin/shop/disputes/*`, `src/admin` pages).
+- A payment dispute is a record of the `checkout` module, linked to the Order (AD-31).
+- Which refunds make an item "refunded" when a part refund is not tied to an item is not said by AD-31. `[ASSUMPTION: an item counts as refunded when refunds tied to it, through a Return or by the Owner naming the item, cover the price paid for it]`.
 - Answering a dispute is done at the payment service; this story shows and links, it does not submit evidence.
 - How tax is split on a part refund that is not tied to an item is for the accountant; implement one money function that spreads it across the invoice lines in proportion and sums exactly.
 
@@ -898,9 +911,10 @@ So that I never have to wonder what is happening with my money or my saree.
 **Then** the tax invoice is attached, read by the worker through a signed link from commerce valid for at most 10 minutes; if the invoice file is not yet rendered the job waits and retries rather than sending without it
 **And** the SMS gives the Order number and points to order history, where the invoice can be downloaded
 
-**Given** a payment confirmed after its Hold ended with the Pieces gone
-**When** the automatic refund is started
-**Then** the "payment refunded automatically" message is enqueued in the same workflow and, in a test with the worker running, reaches the test sink within 5 minutes (FR-19)
+**Given** the event `payment.auto-refunded`, which Epic 1 (Stories 1.10 and 1.11) records and logs without sending anything
+**When** it is raised for a payment confirmed after its Hold ended with the Pieces gone, or for any other automatic refund
+**Then** this story's subscriber enqueues the "payment refunded automatically" message for it, to the mobile number in the Checkout snapshot, and, in a test with the worker running, the message reaches the test sink within 5 minutes of the webhook (FR-19)
+**And** from this story on, an automatic refund without that message enqueued fails a test
 
 **Given** a delivery failed or a Rejected Return
 **When** the message is sent
@@ -925,7 +939,7 @@ So that I never have to wonder what is happening with my money or my saree.
 **Requirements:** FR-54, FR-20, FR-19, NFR-9 (path), AD-8, AD-22, AD-26
 **Notes for the developer:**
 - Touches `apps/commerce` (`src/subscribers` mapping events to `message.send`, one table of event → template key in `packages/contracts`), `apps/content` (seeded templates), `apps/worker` (invoice attachment in the email path).
-- Moves Epic 1's Order confirmation onto this path if it was sent another way, so there is one sender (AD-26).
+- Epic 1 sent no messages. This story is where `payment.auto-refunded` (Story 1.11) and the Order confirmation are first delivered, so there is one sender (AD-26).
 - "Try-on result ready" is shown in the app and belongs to Epic 4. Complaint and account-deletion messages are added by Stories 3.20 and 3.21 with their own events.
 - No template may contain a one-time code, a photo or a signed link to Shopper media.
 
@@ -975,7 +989,7 @@ So that the shop learns when its photos mislead and fixes them.
 - Touches `apps/commerce` (`rating` module created here, `workflows/record-rating`, `store/shop/orders/{id}/ratings`, `src/jobs` rating reminder, `admin/shop/ratings`, `src/admin` page), `packages/api-client`, `apps/web` (Order page).
 - Epic 4 changes only the "used Try-on" function to read its Try-on requests; the schema already holds the field.
 - Ratings are not shown to other Shoppers; the PRD asks only that the Owner sees them. A comment shown in the Admin is linked to an Order, so the ratings route is declared as returning personal data (Story 3.14).
-- Adds the setting "ask for rating after" (`[ASSUMPTION]`: 2 days) and the template `order.rate-request`. Styled from DESIGN.md when it exists.
+- Adds the setting "ask for rating after" `[ASSUMPTION: 2 days after delivery; FR-53 says only "after delivery"]` and the template `order.rate-request`. Styled from DESIGN.md when it exists.
 
 ---
 
@@ -1024,7 +1038,7 @@ So that I can use my rights and know when I will be answered.
 **Requirements:** FR-28, FR-29, FR-54, AD-4, AD-13, AD-19, AD-26
 **Notes for the developer:**
 - Touches `apps/commerce` (`complaint` module created here, `workflows/file-complaint`, `store/shop/complaints`, `src/jobs` complaint-deadline job), `packages/api-client`, `apps/web` (grievance page, account requests list), `apps/content` (templates `complaint.acknowledged`, `complaint.resolved`, Owner alerts).
-- The three complaint states and the two alert lead times are `[ASSUMPTION]`; the lead times are settings.
+- `[ASSUMPTION: the three complaint states Open, Acknowledged and Resolved, and alert lead times of 12 hours and 7 days; the PRD gives only the two deadlines]`. The lead times are settings.
 - The Owner's reply, closing a ticket, and carrying out a data request are in Story 3.22, which sends `complaint.resolved`. The account deletion page is built in Story 3.21; until then the pointer names the grievance contact.
 - Epic 4 adds a request type for a person who appears in a Try-on result without agreeing (FR-9). Styled from DESIGN.md when it exists.
 
@@ -1055,9 +1069,11 @@ So that the shop stops holding my details when I no longer want it to.
 **And** it removes her personal details from the account, deletes her cart, removes the comment from and the Shopper link to her ratings while keeping the rating value and Design, and blanks the recipient on stored message records
 **And** invoices, credit notes, Orders, payments, refunds, complaints, audit events, access events and the erasure ledger are not changed
 
-**Given** she has an Order that is not yet Delivered, Cancelled or Refunded, or a Return or refund in progress
-**When** she confirms deletion
-**Then** the deletion is accepted, she is told that the contact and delivery details on that Order are kept until it is finished, and those Orders continue to completion and still send their messages to the number stored on the Order
+**Given** she has an open Order, meaning one that is neither Delivered past its return period, nor Cancelled, nor Refunded (AD-31)
+**When** she asks to delete her account, in her account or on the public page
+**Then** the deletion is refused with `account.has_open_order`; she is told which Order is open, that she can delete her account once it is finished, and how to reach the grievance contact
+**And** `erase-shopper-media` still runs at once for her, so her Shopper photos and Try-on results are erased in any case, with an erasure ledger entry
+**And** her account, cart and Orders are otherwise unchanged, and her open Order continues to completion
 
 **Given** the workflow fails part-way
 **When** it is retried
@@ -1072,11 +1088,12 @@ So that the shop stops holding my details when I no longer want it to.
 **When** the final step runs
 **Then** a confirmation message was sent to her number before it was removed, saying the account is deleted and which records are kept
 
-**Requirements:** FR-27, FR-28, NFR-6, AD-4, AD-22, AD-23, AD-26
+**Requirements:** FR-27, FR-28, NFR-6, AD-4, AD-22, AD-23, AD-26, AD-31
 **Notes for the developer:**
+- The open-Order rule is AD-31's; "Delivered past its return period" uses the return period stored in the Order's Checkout snapshot (Story 3.13). The explanation shown before she confirms says that deletion waits for an open Order.
 - Touches `apps/commerce` (`erasure` module and ledger created here, `workflows/erase-shopper-media`, `workflows/delete-shopper-account`, `src/jobs` erasure-deadline job, `store/shop/account/delete`), `packages/contracts` (`media.erase-at-provider` payload), `packages/api-client`, `apps/web` (account page, `/delete-account`).
 - This story covers everything that exists so far. Epic 4 extends the same `erase-shopper-media` workflow with Shopper photos, Try-on results, Try-on requests and the worker's `media.erase-at-provider` job and provider answers; it adds no second erasure path, and withdrawal and the retention job will call the same workflow.
-- Which records must be kept, and for how long, is `[ASSUMPTION]` pending the lawyer; the kept list shown to the Shopper comes from content, not code.
+- `[ASSUMPTION: the list of records kept after deletion, as named in the first criterion, and that they are kept without a time limit; pending the lawyer]`. The kept list shown to the Shopper comes from content, not code.
 - Adds the template `account.deleted`. Styled from DESIGN.md when it exists.
 
 ---
@@ -1118,6 +1135,7 @@ So that every Shopper is answered inside 48 hours and one month.
 **Given** an erasure request
 **When** the Owner confirms it for that Shopper
 **Then** the same `delete-shopper-account` workflow as Story 3.21 runs, with the Owner as actor and the ticket number recorded in the erasure ledger
+**And** the same open-Order rule applies: while she has an open Order the account deletion is refused, her Shopper photos and Try-on results are erased at once, and the ticket shows that the rest waits for the Order (AD-31)
 
 **Given** a resolved complaint
 **When** anyone tries to edit its reply or reopen it by changing times

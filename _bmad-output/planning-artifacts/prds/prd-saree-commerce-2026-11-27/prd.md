@@ -351,6 +351,7 @@ The Owner can set and adjust how many Pieces of each Variant are in stock.
 The Owner can set each Design's tax code, fibre and whether it is stitched, and can change the tax rate for a tax code from a given date.
 - Tax is worked out from the tax-inclusive price so that the Shopper's price stays a whole rupee.
 - For stitched items the rate follows the Variant's per-piece value after any discount.
+- A tax-inclusive price that fits no tax band (for stitched items today, Rs 2,626 to Rs 2,950) is refused, with the nearest valid prices offered.
 - Every price change is kept so that the 30-day lowest price can be shown (FR-5).
 
 #### FR-38: Claims need evidence

@@ -10,29 +10,31 @@ An adult Shopper accepts the Try-on consent notice, uploads her Shopper photo an
 - Try-on is built for the website (`apps/web`) here; the Android app follows in Epic 6 through the same `packages/api-client` functions.
 - Automated tests never call a real AI provider. They use the fake provider and the fake result check from Stories 4.5 and 4.6. Only the test bench used by hand (Story 4.9) and the launch gate (Story 4.23) reach real providers.
 - Every shape that crosses a unit boundary is a zod schema in `packages/contracts` (AD-19); every state change is a named workflow (AD-4); every state-changing Admin request writes a `shop-audit` event (AD-14); no photo, link or image bytes appear in logs, job results or error reports (AD-22).
-- Shopper-facing screens are described by behaviour only and are styled from DESIGN.md when it exists. All Shopper-facing text comes from content or a translation file.
-- Try-on cost is recorded in integer paise (AD-5), taken from the price per image recorded on the Approved-model list. The amount an AI provider reports is stored beside it unchanged, with its currency, for comparison.
+- Shopper-facing screens are described by behaviour only and are styled from DESIGN.md when it exists. Shopper-facing text comes from content (the notice and other documents, message templates) or the clients' translation files (interface text), as AD-28 divides them.
+- Try-on cost is recorded in integer paise (AD-5). A provider's price, recorded on the Approved-model list in the provider's currency, is converted to paise with the exchange-rate setting at the moment the cost is recorded (AD-32). The amount an AI provider reports is stored beside it unchanged, with its currency, for comparison.
+- `ResultCheck` uses a check model: a vision-capable model on the Approved-model list, marked as a check model and reached through the same `TryOnProvider` port. If the check fails to run, the result is not shown (AD-32).
+- This epic builds on Epic 3: the notice's publish path and `record-notice-version` (Story 3.2), the `consent` module's acceptance records (Story 3.7), the `erasure` module, its ledger and `erase-shopper-media` (Story 3.21), `message.send` (Story 3.4) and Shopper support (Story 3.23).
 - "AI service" means each outside party that receives a Shopper photo for a model: the aggregator and the company that runs the model behind it. Each has a stable AI-service id (a lower-case slug).
 
 ---
 
-### Story 4.1: A Try-on consent notice names its AI services and reaches commerce
+### Story 4.1: The Try-on consent notice states its retention period and can be read by Shoppers
 
 As an Owner,
-I want each published version of the Try-on consent notice to list the AI services it names and to be known to commerce,
-So that consent always refers to one numbered notice whose list of recipients is true.
+I want each published version of the Try-on consent notice to state how long photos are kept and to be readable by the shop's clients,
+So that consent always refers to one numbered notice whose list of recipients and retention period are true.
 
 **Acceptance Criteria:**
 
-**Given** the Try-on consent notice in the content admin
+**Given** the Try-on consent notice in the content admin, which since Story 3.2 has one integer version shared by all its translations and a list of AI-service ids
 **When** the Owner edits it
-**Then** she can enter a list of AI-service ids and the retention period shown to the Shopper, shared by all translations of that version
-**And** the notice has one integer version shared by all its translations.
+**Then** she can also enter the retention period shown to the Shopper, shared by all translations of that version
+**And** a draft without AI-service ids or without a retention period cannot be published.
 
-**Given** a draft that changes the notice's meaning or its list of AI-service ids
+**Given** a draft that changes the notice's meaning, its list of AI-service ids or its retention period
 **When** the Owner publishes it
-**Then** the version number rises by one and content calls `/internal/consent/notice-versions` on commerce with a service token
-**And** commerce runs the `record-notice-version` workflow, which stores the version, the AI-service ids and the publish time.
+**Then** the version number rises by one and content calls `/internal/content/notice-published` on commerce with a service token, as built in Story 3.2
+**And** commerce's `record-notice-version` workflow stores the version, the AI-service ids, the retention period and the publish time.
 
 **Given** a published notice
 **When** the Owner publishes a translation fix marked as not changing the meaning
@@ -40,25 +42,26 @@ So that consent always refers to one numbered notice whose list of recipients is
 
 **Given** commerce is unreachable or refuses the call
 **When** the Owner publishes a new notice version
-**Then** the publish fails with a clear message and the previous version stays the published one in both content and commerce.
+**Then** the publish is not shown as complete, the previous version stays the published one in both content and commerce, and she can retry, as Story 3.2 defines.
 
 **Given** the same notice version is sent to commerce twice
 **When** the second call arrives
 **Then** commerce stores nothing new and answers success.
 
-**Given** a call to `/internal/consent/notice-versions` without a valid service token, or from outside the private network
-**When** it arrives
-**Then** it is refused and nothing is stored.
-
 **Given** a published notice version
 **When** a client calls `GET /store/shop/tryon/notice` with a language
-**Then** commerce returns the latest published version number, its AI-service ids and the notice text in that language, falling back to English when the translation is missing.
+**Then** commerce returns the latest published version number, its AI-service ids, its retention period and the notice text in that language, falling back to English when the translation is missing.
 
-**Requirements:** FR-8, FR-59; AD-1, AD-3, AD-9, AD-11, AD-14, AD-19
+**Given** no notice version has been published
+**When** a client calls the route
+**Then** it answers with `tryon.notice_not_published` and no text.
+
+**Requirements:** FR-8, FR-51, FR-59; AD-1, AD-3, AD-9, AD-11, AD-14, AD-19
 **Notes for the developer:**
-- `apps/content`: add `ai_service_ids` and the retention period to the notice collection built in Epic 3, and a publish hook; the content audit event is already written by Epic 3's rule.
-- `apps/commerce`: `consent` module gets the `notice_version` entity; workflow `record-notice-version`; routes `internal/consent/notice-versions` and `store/shop/tryon/notice`.
-- `packages/contracts`: `AiServiceId`, `NoticeVersion`, the notice view model. `packages/api-client`: `getTryOnNotice`.
+- Builds on Story 3.2, which built the notice collection, its numbered versions, the list of AI-service ids, the publish call to `/internal/content/notice-published` and the `record-notice-version` workflow. This story adds only the retention period to all three, and the Shopper-facing read. Do not add a second internal route or a second workflow.
+- `apps/content`: the retention period on the notice collection; the content audit event is already written by Story 3.1's rule.
+- `apps/commerce`: the `consent` module's notice-version record gains the retention period; route `store/shop/tryon/notice`.
+- `packages/contracts`: `AiServiceId` and `NoticeVersion` (extend what Story 3.2 defined), the notice view model. `packages/api-client`: `getTryOnNotice`.
 - The consent record itself is Story 4.3. The check of a Model route against the notice is Story 4.11.
 
 ---
@@ -97,10 +100,17 @@ So that Try-on stays off until it passes the launch gate and I can stop it at an
 **When** she taps the Try-on entry point
 **Then** she is taken to sign in by one-time code and returns to Try-on for the same Design afterwards.
 
+**Given** the Owner on the Try-on controls page
+**When** she limits Try-on to chosen Designs, picking them from published Designs, and saves
+**Then** the `set-tryon-designs` workflow stores the list, the change takes effect without a release and is audited with before and after values (FR-42)
+**And** while a list is set, `GET /store/shop/tryon/status` for a Design answers available only if that Design is on it, and the entry point is absent on every other Design
+**And** clearing the list makes Try-on available for every published Design again.
+
 **Requirements:** FR-42, FR-3 (entry point), FR-26; AD-2, AD-4, AD-13, AD-14
 **Notes for the developer:**
-- `settings` module: the Try-on switch as a dated setting; workflow `set-tryon-switch`; route `admin/shop/tryon/switch`; a new Admin page "Try-on controls" that later stories add to.
-- `store/shop/tryon/status` returns `{ available, reason }`; later stories add reasons (daily cap, Model route not usable). `api-client`: `getTryOnStatus`.
+- `settings` module: the Try-on switch and the list of chosen Designs as dated settings; workflows `set-tryon-switch` and `set-tryon-designs`; routes `admin/shop/tryon/switch` and `admin/shop/tryon/designs`; a new Admin page "Try-on controls" that later stories add to.
+- The chosen-Designs limit is how a "narrow" outcome of the launch gate is applied (FR-42, Story 4.23). Refusing a request for a Design outside the list is in Story 4.12.
+- `store/shop/tryon/status` takes a Design id and returns `{ available, reason }`; later stories add reasons (daily cap, Model route not usable). `api-client`: `getTryOnStatus`.
 - `apps/web`: the entry point on the Design page and an empty Try-on screen for a Design, which later stories fill.
 - Refusing requests while switched off is in Story 4.12 and stopping queued jobs in Story 4.13, where requests and jobs first exist.
 
@@ -150,7 +160,8 @@ So that my photo is sent to AI services only with my informed agreement.
 
 **Requirements:** FR-8, FR-9, FR-59; AD-11, AD-15, AD-4; NFR-13
 **Notes for the developer:**
-- `consent` module: the `tryon_consent` entity (one row per acceptance, never edited); workflow `give-tryon-consent`; routes `store/shop/tryon/consent` (read and accept, with `Idempotency-Key`).
+- `consent` module: a Try-on consent is an acceptance record of the same kind as the terms acceptances of Story 3.7 (document type, version, language, time; AD-31), with the AI-service ids and the adult confirmation added; one row per acceptance, never edited. Workflow `give-tryon-consent`; routes `store/shop/tryon/consent` (read and accept, with `Idempotency-Key`).
+- Shopper support's consents list (Story 3.23) reads every consent type through one function, so this record appears there without changing that page.
 - `apps/web`: the notice screen, styled from DESIGN.md when it exists. Text comes from Story 4.1's route.
 - The own-photo confirmation is taken with each upload in Story 4.4. Withdrawal is Story 4.20.
 
@@ -197,8 +208,8 @@ So that Try-on has a usable photo and the shop never sees the rest of my gallery
 **Then** the old one is erased by `erase-shopper-media` scoped to that photo, with a row in the erasure ledger, and she has exactly one stored Shopper photo.
 
 **Given** a Shopper with a stored Shopper photo
-**When** her account is deleted through Epic 3's deletion
-**Then** `erase-shopper-media` deletes the photo file and marks the photo record erased.
+**When** she asks to delete her account through Story 3.21, whether the deletion is carried out or refused because she has an open Order
+**Then** `erase-shopper-media` deletes the photo file at once and marks the photo record erased (AD-31).
 
 **Given** an upload link that was issued but never confirmed
 **When** one hour has passed
@@ -207,9 +218,9 @@ So that Try-on has a usable photo and the shop never sees the rest of my gallery
 **Requirements:** FR-9, FR-10; AD-22, AD-23, AD-11, AD-4; NFR-5
 **Notes for the developer:**
 - `tryon` module: the `shopper_photo` entity. Workflows `issue-photo-upload-link` and `store-shopper-photo`. Routes `store/shop/tryon/photo/upload-link` and `store/shop/tryon/photo`.
-- Extend Epic 3's `erase-shopper-media` to cover Shopper photos, for a whole Shopper and for one photo. If Epic 3 did not create the erasure ledger entity in the `erasure` module, create it here.
+- Extend the `erase-shopper-media` workflow of Story 3.21 to cover Shopper photos, for a whole Shopper and for one photo; the `erasure` module and its ledger already exist from that story.
 - `apps/web`: the photo step and the on-device checks. No image analysis library is added; the checks are type, size, pixel size and orientation only.
-- Bucket policy: `shopper-media` is private, never versioned, encrypted at rest (AD-22). Requests to AI providers are Story 4.13.
+- The `shopper-media` bucket is created here: private, never versioned, encrypted at rest (AD-22). Requests to AI providers are Story 4.13.
 
 ---
 
@@ -261,7 +272,7 @@ So that I can change models without changing the shop and no setting of mine can
 - `apps/worker/src/providers/`: `TryOnProvider` interface, `openrouter` adapter, `fake` adapter, the fixed safety wording and the prompt composer. Provider choice is by configuration plus the request's provider name.
 - `packages/contracts`: the port's input and result schemas and the reason codes.
 - The OpenRouter key and base address are environment variables checked at start. No vendor SDK beyond plain HTTP is added.
-- If OpenRouter offers no erasure call, `requestErasure` returns `unsupported`; Story 4.21 decides what happens then. `ResultCheck` is Story 4.6.
+- If OpenRouter offers no erasure call, `requestErasure` returns `unsupported`; Story 4.21 records that in the erasure ledger as AD-32 says. `ResultCheck` is Story 4.6; the port also carries the call that asks a check model about an image, so the check goes through the same port (AD-32).
 
 ---
 
@@ -275,16 +286,25 @@ So that I am never shown an image with nudity or sexual content.
 
 **Given** the worker
 **When** an image comes back from a `TryOnProvider`
-**Then** it is passed to the `ResultCheck` port, which returns exactly one of `pass`, `reject` (nudity or sexual content) or `unassessable`.
+**Then** it is passed to `ResultCheck`, which returns exactly one of `pass`, `reject` (nudity or sexual content) or `unassessable`.
 
-**Given** the check adapter cannot reach its model, times out, or gets an answer it cannot read
-**When** it returns
-**Then** the verdict is `unassessable`, never `pass`.
+**Given** `ResultCheck`
+**When** it asks about an image
+**Then** it asks a check model, a vision-capable model on the Approved-model list marked as a check model, through the same `TryOnProvider` port as generation, with the no-retention and no-logging flags set in code (AD-32)
+**And** which check model to ask is given to it with each job, from the Model route; it is not read from an environment variable and no code path calls a model that is not on the Approved-model list.
 
-**Given** the `ResultCheck` adapter
-**When** it is configured
-**Then** its model, its AI-service ids and its price per check in paise come from environment variables checked at start
-**And** nothing in the Admin or the database can switch the check off, skip it or change its verdict.
+**Given** the check model cannot be reached, times out, or gives an answer that cannot be read
+**When** `ResultCheck` returns
+**Then** the verdict is `unassessable`, never `pass`: if the check fails to run, the result is not shown.
+
+**Given** the question put to the check model and the rule that turns its answer into a verdict
+**When** the code is inspected
+**Then** both are in worker code and are not data
+**And** nothing in the Admin or the database can switch the check off, skip it or change its verdict; the Owner can choose which approved check model is used and nothing more.
+
+**Given** a job that arrives with no check model
+**When** the worker handles it
+**Then** it generates nothing and the job ends failed.
 
 **Given** the fake result check
 **When** a test asks for `pass`, `reject` or `unassessable`
@@ -294,10 +314,10 @@ So that I am never shown an image with nudity or sexual content.
 **When** it logs
 **Then** the log holds the verdict, the duration and the request id only.
 
-**Requirements:** FR-52; AD-10, AD-22
+**Requirements:** FR-52; AD-10, AD-22, AD-32
 **Notes for the developer:**
-- `apps/worker/src/providers/`: `ResultCheck` interface, one adapter and a fake. The spine names no checking technology; the adapter asks an image-understanding model through the same OpenRouter connection as Story 4.5, with the no-retention and no-logging flags set in code.
-- The check sends the generated image to an AI service. The worker therefore reports the check's AI-service ids and price per check to commerce when it starts, through `internal/tryon/check-config` (a workflow stores them in the `tryon` module), so Story 4.11 can require those AI services in the notice and count the price against the cost ceiling.
+- `apps/worker/src/providers/`: `ResultCheck`, which calls the port of Story 4.5, and a fake. The fixed question and the verdict rule sit beside the fixed safety wording.
+- Marking a model as a check model on the Approved-model list is Story 4.7; naming the check model on the Model route, with its AI services required in the notice and its price counted against the cost ceiling, is Story 4.11. Until those exist, tests pass the check model in the job input.
 - Using the verdict in a job is Story 4.13; showing it on the test bench is Story 4.9.
 
 ---
@@ -312,8 +332,18 @@ So that no Try-on request can go to a model I have not vetted.
 
 **Given** the Owner on the Approved-model list page
 **When** she adds a model
-**Then** she must record: the provider name known to the worker, the model id, the AI-service ids that receive the Shopper photo, its data-retention policy and period, a link to its terms and the date she read them, the image size and quality options it offers with the price per image of each in paise, and a confirmation that it accepts a Shopper photo and a saree image together
+**Then** she must record: the provider name known to the worker, the model id, the AI-service ids that receive the Shopper photo, its data-retention policy and period, a link to its terms and the date she read them, the image size and quality options it offers with the provider's price per image of each and its currency, and a confirmation that it accepts a Shopper photo and a saree image together
 **And** the `approve-model` workflow refuses the entry with a named error for each missing item.
+
+**Given** a provider's price in a currency other than rupees
+**When** the list, a cost or a ceiling check needs it
+**Then** it is converted to integer paise with the exchange-rate setting, a dated setting the Owner edits on this page and whose changes are audited (AD-32)
+**And** the page shows each price in the provider's currency and in rupees at today's rate.
+
+**Given** a vision-capable model that is to check results
+**When** the Owner adds it
+**Then** she marks it as a check model and records the same policy, terms, AI-service ids and price per check; a check model is not offered as a primary or fallback, and a generating model is not offered as a check model (AD-32)
+**And** a check model that keeps images for training cannot be approved.
 
 **Given** a model whose recorded policy says it keeps Shopper photos for training
 **When** the Owner tries to approve it
@@ -336,9 +366,9 @@ So that no Try-on request can go to a model I have not vetted.
 **When** the Owner looks for a way to turn on request logging at the AI provider or turn off the no-retention option
 **Then** there is none; the page states that both are fixed by the system.
 
-**Requirements:** FR-40, FR-39, FR-46; AD-10, AD-11, AD-14, AD-5
+**Requirements:** FR-40, FR-39, FR-46, FR-52; AD-10, AD-11, AD-14, AD-5, AD-32
 **Notes for the developer:**
-- `tryon` module: the `approved_model` entity. Workflows `approve-model`, `update-approved-model`, `remove-approved-model`. Routes under `admin/shop/tryon/models`. Admin page in `apps/commerce/src/admin`.
+- `tryon` module: the `approved_model` entity with a kind (generating or check). The exchange rate is a key of the `settings` module. Workflows `approve-model`, `update-approved-model`, `remove-approved-model`. Routes under `admin/shop/tryon/models`. Admin page in `apps/commerce/src/admin`.
 - A model reached through a different AI provider needs a new adapter in the worker (Story 4.5's port); the list accepts only provider names the worker reports.
 - Choosing models for a Model route is Story 4.11.
 
@@ -402,7 +432,7 @@ So that I can judge border, pallu and colour before any Shopper sees a change.
 **Then** she picks a product photo of an existing Design, and the set stores the Design and the photo.
 
 **Given** a sample set with at least one sample saree and one sample photo
-**When** she starts a run for a chosen approved model, size and quality option, and Prompt version
+**When** she starts a run for a chosen approved model, size and quality option, check model and Prompt version
 **Then** the `start-bench-run` workflow creates the run and enqueues one `tryon.bench` job per pair, each with a deterministic id
 **And** before it starts she is shown the number of images and the cost at the recorded price per image, and must confirm.
 
@@ -486,14 +516,15 @@ So that I can change models while the system stops me from breaking the consent 
 
 **Given** the Owner on the Model route page
 **When** she drafts a Model route
-**Then** she can choose a primary and a fallback only from the Approved-model list, and for each the image size and quality from the options recorded for that model.
+**Then** she can choose a primary and a fallback only from the generating models on the Approved-model list, and for each the image size and quality from the options recorded for that model
+**And** she must choose the check model that `ResultCheck` uses from the models marked as check models; a Model route without a check model cannot be saved for publishing (AD-32).
 
-**Given** a draft Model route whose models' AI-service ids, and the result check's AI-service ids, are all in the latest published notice version, and whose price per image for each model plus the price per check is at or under the cost ceiling
+**Given** a draft Model route whose models' AI-service ids, and the check model's AI-service ids, are all in the latest published notice version, and whose price per image for each model plus the price per check, converted to paise with the exchange-rate setting, is at or under the cost ceiling
 **When** she publishes it
 **Then** the `publish-model-route` workflow makes it the current Model route with a new route number and the time
 **And** the next Try-on job that starts uses it, with no release.
 
-**Given** a draft Model route naming a model that sends Shopper photos to an AI service not named in the published notice
+**Given** a draft Model route naming a model, generating or check, that sends Shopper photos or results to an AI service not named in the published notice
 **When** she publishes it
 **Then** it is refused with `tryon.route_service_not_in_notice`, the missing AI services are listed, and she is told to publish a new notice version first.
 
@@ -521,10 +552,10 @@ So that I can change models while the system stops me from breaking the consent 
 **When** it completes
 **Then** a `shop-audit` event records who, when, and the before and after values.
 
-**Requirements:** FR-39, FR-46; NFR-3; AD-10, AD-11, AD-13, AD-14, AD-26
+**Requirements:** FR-39, FR-46, FR-52; NFR-3; AD-10, AD-11, AD-13, AD-14, AD-26, AD-32
 **Notes for the developer:**
-- `tryon` module: the `model_route` entity (numbered, immutable once published). Workflow `publish-model-route` in `apps/commerce/src/workflows`. Cost ceiling in the `settings` module. Routes under `admin/shop/tryon/route`.
-- Extend `record-notice-version` and `store/shop/tryon/status` for the "Model route not usable" reason.
+- `tryon` module: the `model_route` entity (numbered, immutable once published; primary, fallback and check model). Workflow `publish-model-route` in `apps/commerce/src/workflows`. Cost ceiling in the `settings` module. Routes under `admin/shop/tryon/route`.
+- Extend `record-notice-version` (Story 3.2) and `store/shop/tryon/status` for the "Model route not usable" reason.
 - No Try-on request exists yet; using the route is Story 4.13.
 
 ---
@@ -547,7 +578,7 @@ So that I can keep browsing while my Try-on result is made.
 **Then** the same request id is returned and one job exists.
 
 **Given** a request
-**When** any of these is true: no Shopper session; no current consent, or consent that does not name every AI service of the current Model route and the result check; no stored Shopper photo; Try-on switched off; no usable Model route or published Prompt version; a Design that is not published
+**When** any of these is true: no Shopper session; no current consent, or consent that does not name every AI service of the current Model route, its check model included; no stored Shopper photo; Try-on switched off; no usable Model route or published Prompt version; a Design that is not published; a Design outside the Owner's chosen Designs when that list is set (Story 4.2)
 **Then** it is refused with a distinct stable error code for that case and nothing is enqueued.
 
 **Given** the per-Shopper limit in settings is 10 Try-on results per day
@@ -590,7 +621,7 @@ So that I get a Try-on result when one can be made and an honest answer when it 
 
 **Given** a queued Try-on request
 **When** the worker takes the job
-**Then** it calls `/internal/tryon/requests/:id/start`, and the `start-tryon-request` workflow re-checks the switch and current consent naming the AI services to be used, sets the request to running, records the Model route, Prompt version, time limit and the primary attempt with its AI services, and returns them with signed read links valid at most 10 minutes for the Shopper photo and the saree image.
+**Then** it calls `/internal/tryon/requests/:id/start`, and the `start-tryon-request` workflow re-checks the switch and current consent naming the AI services to be used, sets the request to running, records the Model route with its check model, Prompt version, time limit and the primary attempt with its AI services, and returns them with signed read links valid at most 10 minutes for the Shopper photo and the saree image.
 
 **Given** the start check fails because consent was withdrawn, the request is erased, or Try-on was switched off after acceptance
 **When** the worker receives the answer
@@ -599,7 +630,7 @@ So that I get a Try-on result when one can be made and an honest answer when it 
 **Given** the primary model returns an image within the 90-second time limit and `ResultCheck` passes it
 **When** the worker finishes
 **Then** it stores the provider's file unchanged in `shopper-media` through a signed write link, reports the result to `/internal/tryon/requests/:id/result`, and the `record-tryon-result` workflow sets the request to ready
-**And** the request records the AI provider, model, AI services, Prompt version, duration of each attempt and the cost in paise.
+**And** the request records the AI provider, model, check model, AI services, Prompt version, duration of each attempt and the cost in paise, converted from the provider's price with the exchange-rate setting in force when it is recorded (AD-32).
 
 **Given** the primary model fails or gives no result within 90 seconds
 **When** the limit passes
@@ -634,8 +665,9 @@ So that I get a Try-on result when one can be made and an honest answer when it 
 **When** they are inspected
 **Then** they contain ids, states, durations and costs, and no photo, link or image bytes.
 
-**Requirements:** FR-11, FR-52; NFR-2, NFR-3; AD-1, AD-8, AD-9, AD-10, AD-11, AD-22, AD-23
+**Requirements:** FR-11, FR-52; NFR-2, NFR-3; AD-1, AD-8, AD-9, AD-10, AD-11, AD-22, AD-23, AD-32
 **Notes for the developer:**
+- The check fails closed: `unassessable`, which includes the check model not answering, never lets a result be stored or shown (AD-32).
 - `apps/worker/src/jobs/tryon.generate` using Story 4.5's port and Story 4.6's check. Commerce: workflows `start-tryon-request`, `record-tryon-attempt`, `record-tryon-result`; routes `internal/tryon/requests/:id/{start,attempts,result}`.
 - The time limit is a dated setting (90 seconds at launch, AD-13), read at job start, never hardcoded.
 - Extend `erase-shopper-media` to cover Try-on results and requests. Requests to AI providers for erasure are Story 4.21.
@@ -676,7 +708,7 @@ So that I can judge the saree on me without mistaking the image for a photograph
 
 **Given** a request that ended failed, blocked, or rejected by the check, or a refusal with `tryon.limit_reached`, `tryon.photo_blocked` or Try-on unavailable
 **When** the Shopper sees the screen
-**Then** each case has its own plain message from content: could not be made and not counted; please choose a different photo, in neutral words; limit reached, with the time she can try again; Try-on is not available now.
+**Then** each case has its own plain message from the translation file: could not be made and not counted; please choose a different photo, in neutral words; limit reached, with the time she can try again; Try-on is not available now.
 
 **Given** a screen reader or the largest system font size
 **When** the result screen is used
@@ -687,7 +719,7 @@ So that I can judge the saree on me without mistaking the image for a photograph
 - `apps/web`: the Try-on screen (progress, result, messages, list of her results), styled from DESIGN.md when it exists. Data only through `packages/api-client`.
 - `apps/commerce`: route `store/shop/tryon/requests/:id/labelled`, drawing the label with sharp, which is already in the stack; label text from the translation file.
 - Reading a result or the labelled copy counts as use for retention (Story 4.22 reads the last-used time; record it here on the request and photo).
-- Reporting a result is Story 4.17. "Try-on result ready" is shown in the product, not sent by SMS (FR-54).
+- Reporting a result is Story 4.17. "Try-on result ready" is shown in the product, not sent by SMS (FR-54); there is no push service at launch, so a ready result is found by polling (spine, Consistency Conventions).
 
 ---
 
@@ -723,7 +755,7 @@ So that a problem with AI never stops me buying a saree.
 **Notes for the developer:**
 - `apps/commerce/src/jobs`: `expire-stale-tryon-requests`, which starts a workflow (AD-4). Worker concurrency is an environment variable.
 - `apps/web`: the entry point's failure path. No new entity.
-- Alerts on a rising failure rate (NFR-9) are Epic 7; the figures they read come from Story 4.18.
+- Alerts on a rising Try-on failure rate (NFR-9) are Story 7.2, which reads the Try-on request records. The 80% spend alert is built in Story 4.16.
 
 ---
 
@@ -856,7 +888,7 @@ So that I can tell whether a route is worth its price and meets its time target.
 
 **Given** provider-reported amounts
 **When** the Owner opens a row's detail
-**Then** the total reported by the AI provider is shown by currency beside the recorded cost in rupees.
+**Then** the total reported by the AI provider is shown by currency beside the recorded cost in rupees, which was converted with the exchange-rate setting when each cost was recorded and is not converted again when the rate changes (AD-32).
 
 **Given** days are counted
 **When** a request falls near midnight
@@ -873,7 +905,7 @@ So that I can tell whether a route is worth its price and meets its time target.
 ### Story 4.19: The change history of Try-on controls
 
 As an Owner,
-I want one history of every change to the Model route, the Approved-model list, Prompt versions, limits, the cap, the cost ceiling and the off switch,
+I want one history of every change to the Model route, the Approved-model list, Prompt versions, limits, the chosen Designs, the cap, the cost ceiling, the exchange rate and the off switch,
 So that I can see who changed what and when, and nobody can rewrite it.
 
 **Acceptance Criteria:**
@@ -978,7 +1010,12 @@ So that erasure does not stop at the shop's own storage.
 **When** it is recorded
 **Then** that AI service's line in the ledger is closed.
 
-**Given** the answer is `failed`, or `unsupported` because the AI provider offers no erasure call, or no answer arrives after the job's retries
+**Given** the answer is `unsupported` because the AI provider offers no erasure call
+**When** it is recorded
+**Then** the ledger line reads "not supported; relies on the provider's stated retention" and is closed (AD-32)
+**And** the Owner is alerted once for that provider by a `message.send` job whose id is the provider plus "erasure-unsupported", not once per request or per erasure.
+
+**Given** the answer is `failed`, or no answer arrives after the job's retries
 **When** it is recorded
 **Then** the Owner is alerted by a `message.send` job naming the AI service and the erasure, without the Shopper's photo
 **And** the Owner can record in the Admin what she did by hand (for example a written request to the provider) and its outcome, which closes the line and is audited.
@@ -1000,9 +1037,10 @@ So that erasure does not stop at the shop's own storage.
 **When** the Owner answers it for a Shopper
 **Then** the AI services that received her Shopper photos can be read from her requests and ledger entries.
 
-**Requirements:** FR-15, FR-28; NFR-6; AD-8, AD-9, AD-10, AD-23, AD-26
+**Requirements:** FR-15, FR-28; NFR-6; AD-8, AD-9, AD-10, AD-23, AD-26, AD-32
 **Notes for the developer:**
-- `apps/worker/src/jobs/media.erase-at-provider`; `packages/contracts` job payload (erasure id and AI-service id; never a photo). Commerce: workflow `record-provider-erasure`, route `internal/erasure/:id/provider-outcome`, job `erasure-deadline` in `apps/commerce/src/jobs`, Admin ledger page.
+- `apps/worker/src/jobs/media.erase-at-provider`; the `media.erase-at-provider` payload that Story 3.21 put in `packages/contracts` (erasure id and AI-service id; never a photo). Commerce: workflow `record-provider-erasure`, route `internal/erasure/:id/provider-outcome`, Admin ledger page. The erasure-deadline job in `apps/commerce/src/jobs` exists from Story 3.21; extend it to count open provider lines.
+- This story also extends the one function of Story 3.22 that lists the AI providers that received a Shopper's photos, for data requests.
 - Tests use the fake provider for `confirmed`, `accepted`, `unsupported`, `failed` and no answer.
 - With the no-retention option always set (Story 4.5) an AI provider may hold nothing to erase; the request is still sent and the answer recorded.
 
@@ -1089,21 +1127,22 @@ So that Try-on ships only if it shows border, pallu and colour faithfully, and s
 **Then** `set-tryon-switch` refuses, the switch stays off, and the shop launches without Try-on: no entry point on any Design page.
 
 **Given** the decision is narrow
-**When** Try-on is switched on
-**Then** the status route answers available only for the listed Designs, the entry point is absent on every other Design, and a request for another Design is refused.
+**When** it is recorded
+**Then** `record-gate-decision` sets the Owner's chosen-Designs limit of Story 4.2 to the listed Designs, through `set-tryon-designs`, so the narrow outcome is applied by the same control the Owner can use at any time (FR-42)
+**And** when Try-on is switched on, the status route answers available only for those Designs, the entry point is absent on every other Design, and a request for another Design is refused (Stories 4.2 and 4.12).
 
 **Given** the decision is go or narrow
 **When** the Owner publishes the Model route
 **Then** it still passes every check of Story 4.11, including the notice naming its AI services and the cost ceiling
 **And** she resets the Try-on time target and the cost ceiling in settings from the measured figures (NFR-2, NFR-3).
 
-**Given** the automated tests for the rating view, the decision record, the switch rule and the Design list
+**Given** the automated tests for the rating view, the decision record, the switch rule and the chosen-Designs limit
 **When** they run
 **Then** they use the fake provider; only the Owner's gate runs call real AI providers.
 
 **Requirements:** PRD §6.3; FR-43, FR-42, FR-39; NFR-2, NFR-3; AD-10, AD-14
 **Notes for the developer:**
-- `tryon` module: entities `bench_rating` and `gate_decision`; workflows `rate-bench-item`, `record-gate-decision`; extend `set-tryon-switch` and `store/shop/tryon/status` for the decision and the Design list. Admin pages: rating view and launch gate.
+- `tryon` module: entities `bench_rating` and `gate_decision`; workflows `rate-bench-item`, `record-gate-decision`; extend `set-tryon-switch` for the decision; the Design list is the chosen-Designs setting of Story 4.2, not a second list. Admin pages: rating view and launch gate.
 - The build part of this story is the rating view, the decision record and the two rules. Running the gate is the Owner's task, done in staging with the real key; the story is complete when a decision is recorded.
 - A fine-tuned or self-hosted model is deferred by the spine; if no candidate passes, that is the next thing to try, behind a new adapter.
 - The research found that untuned older try-on models turned sarees into western-style garments; the "still a draped saree" mark exists to catch exactly that.
