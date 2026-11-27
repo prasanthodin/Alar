@@ -17,7 +17,7 @@ Alar is a mobile-first shop that sells sarees woven by the founder's own family 
 
 Buying a saree online today is an act of faith. Research for this brief found the category large (about US$12 billion) and mostly unbranded, with online buyers complaining that colour and fabric do not match the photo and that "pure silk" is sometimes not. Alar answers with three things: sarees whose origin it can name, a full-length view of the whole saree so the buyer sees every part of the design, and an AI try-on that shows the buyer herself wearing it before she pays.
 
-The first version is built and run by one person using AI coding agents. That constraint shapes everything: a narrow catalogue, one region, prepaid orders only, and bought-in components wherever one exists.
+The first version is built and run by one person using AI coding agents. That constraint shapes everything: a narrow catalogue, one region, prepaid orders only, bought-in components wherever one exists, and a launch date that gives way to scope and quality.
 
 ## The problem
 
@@ -70,7 +70,8 @@ Before launch, one test decides whether try-on ships at all: real sarees and rea
 - Whole-rupee, tax-inclusive prices for the shopper; exact tax on the invoice.
 - Catalogue, full saree view, try-on for adults with consent, cart, checkout, orders, returns.
 - Admin for catalogue and stock, content and screen layouts, AI model routing and prompts (OpenRouter first), users, orders.
-- **[ASSUMPTION]** Android app and website first; iOS follows once the Android app is stable.
+- Website and Android app, with server-driven home, category, product and campaign screens.
+- **[ASSUMPTION]** iOS follows once the Android app is stable.
 
 **Out of the first version**
 - Cash on delivery, other clothing categories, other sellers, try-on for under-18s, regions beyond South India.
@@ -78,14 +79,11 @@ Before launch, one test decides whether try-on ships at all: real sarees and rea
 ## Constraints
 
 - **One builder.** No team; AI coding agents do the building. Every component must be one a single person can operate.
-- **One to two months to launch, testing included.** This is far less time than the scope above needs at production grade; see the open decision below.
+- **Full scope over a fast launch.** The founder first wanted to launch within one to two months, then chose to keep the whole scope and extend the time. The analyst's estimate for one builder is four to six months; it is an estimate, not a commitment.
+- **Thin slice first.** A single saree bought end to end (listed, paid for, shipped, returned) must work before any breadth is added.
 - **Lowest-cost hosting.** Oracle Cloud's free tier for testing and first deployment, with a free local AWS emulator (Floci) for development.
 - **Production grade.** Payments, stock, consent and deletion must be correct from day one, not added later.
 - **Renameable.** The product name appears only in configuration and content. The app-store identifier cannot be changed after publishing, so it must be neutral.
-
-## Open decision: what ships in the first two months
-
-The scope above (two server applications, a custom Razorpay integration, shipping, an Android app with server-driven screens, try-on, the saree viewer and admin AI controls) will not fit one person and two months at production grade. The analyst's recommendation is to launch a mobile-friendly website first and follow with the Android app; the founder has not yet decided.
 
 ## What is not yet known
 
