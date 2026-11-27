@@ -45,6 +45,16 @@ clothing later.
   technical research recommendation, subject to the one-week spike it
   recommends (Razorpay provider, stock hold for one-of-a-kind pieces, Payload
   block rendered in the app with preview).
+- Price band: about Rs 1,500 to 5,000 (founder, 2026-11-27, confirming the
+  market research suggestion).
+- Prices shown to shoppers are always whole rupees, never decimals.
+- Launch region: South India first.
+- MVP is prepaid only. Cash on delivery is out of the MVP and comes later.
+- Try-on is for adults only at first.
+- Before try-on the shopper must be shown a clear declaration that their
+  photo is processed by AI models, and must accept the terms and conditions.
+  (The founder's dictated words were "process emails"; read here as the
+  shopper's images. To confirm.)
 
 ## AI controls the admin must have (founder, 2026-11-27)
 - Image-model routing is admin-managed: which model serves try-on, with the
@@ -69,7 +79,6 @@ read in full; verify before the architecture relies on them):
   one.
 
 ## Not yet decided
-- Where sarees are sourced; price band; launch region and languages.
-- Cash on delivery or prepaid only.
+- Where sarees are sourced; which languages at launch.
 - Which shipping provider.
 - Budget and team size.
