@@ -91,6 +91,13 @@ clothing later.
   fine borders, with no shadows.
 - Epics marked final on 2026-11-27 with one check open: 20 oversized stories
   in later epics are split when each epic is about to be built.
+- Founder approved the lavender theme on the design canvas on 2026-11-27
+  (primary #6F52F0, Plus Jakarta Sans and Inter).
+- Do not show which family wove a saree; no "woven by" lines on screens.
+- Screens should follow the layout of the founder's reference screenshots
+  (a large fashion marketplace app) very closely, especially the home
+  screen: address bar, search, category tabs and thumbnails, banner
+  carousel, collections, product grid. The bottom navigation is Alar's own.
 
 ## AI controls the admin must have (founder, 2026-11-27)
 - Image-model routing is admin-managed: which model serves try-on, with the

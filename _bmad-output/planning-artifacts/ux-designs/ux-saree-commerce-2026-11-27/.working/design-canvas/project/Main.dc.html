@@ -14,150 +14,163 @@ body{margin:0}
 a{color:#6F52F0}a:hover{color:#5B3FD6}
 </style>
 </helmet>
-<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; background: #FBFAFF; color: #1B1530; font-family: Inter, system-ui, sans-serif">
+<div style="width: 390px; height: 1500px; box-sizing: border-box; position: relative; overflow: hidden; background: #FFFFFF; color: #1B1530; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column">
 
-  <div style="position: absolute; inset: 0; overflow: hidden; padding: 72px 16px 96px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+  <div style="background: linear-gradient(180deg, #EDE8FF 0%, #F6F3FF 60%, #FFFFFF 100%); padding: 16px 16px 0; display: flex; flex-direction: column; gap: 12px">
 
-    <div style="background: #EDE8FF; border: 1px solid #DCD3FF; border-radius: 24px; padding: 20px; display: flex; gap: 12px; align-items: stretch">
-      <div style="display: flex; flex-direction: column; gap: 12px; flex: 1; min-width: 0">
-        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B3FD6">Straight from the loom</span>
-        <h1 style="margin: 0; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.01em">Sarees woven by families, sent to you</h1>
-        <a href="#weavers" style="align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 999px; background: #6F52F0; color: #FFFFFF; font-weight: 600; font-size: 14px; text-decoration: none">Meet the weavers</a>
-      </div>
-      <div style="width: 104px; border-radius: 16px; overflow: hidden; background: #F3F3F6; border: 1px solid #E7E3F5; flex-shrink: 0">
-        <svg viewBox="0 0 104 168" preserveAspectRatio="xMidYMid slice" style="display: block; width: 100%; height: 100%" role="img" aria-label="Illustration of a plum silk saree with a gold border">
-          <defs><linearGradient id="h1" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#5E2A6B"/><stop offset="0.5" stop-color="#7C3A8C"/><stop offset="1" stop-color="#4E2259"/></linearGradient></defs>
-          <rect width="104" height="168" fill="url(#h1)"/>
-          <path d="M22 0C28 50 16 110 24 168" stroke="#000000" stroke-opacity="0.14" stroke-width="9" fill="none"/>
-          <path d="M56 0C50 60 64 110 54 168" stroke="#FFFFFF" stroke-opacity="0.10" stroke-width="12" fill="none"/>
-          <path d="M84 0C90 50 78 120 86 168" stroke="#000000" stroke-opacity="0.12" stroke-width="8" fill="none"/>
-          <rect y="136" width="104" height="32" fill="#C9A227"/>
-          <path d="M0 142h104M0 162h104" stroke="#8A6A12" stroke-width="1.5"/>
-          <path d="M8 152l5-5 5 5-5 5zM30 152l5-5 5 5-5 5zM52 152l5-5 5 5-5 5zM74 152l5-5 5 5-5 5zM96 152l5-5 5 5-5 5z" fill="#7A1F3D"/>
-        </svg>
-      </div>
+    <a href="#address" style="display: flex; align-items: center; gap: 6px; min-height: 28px; color: #1B1530; text-decoration: none; font-size: 13px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#1B1530" aria-hidden="true"><path d="M12 2a7 7 0 00-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 00-7-7zm0 9.500A2.500 2.500 0 1112 6.500a2.500 2.500 0 010 5z"/></svg>
+      <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0">Deliver to <strong style="font-weight: 600">Lakshmi</strong> · 14, Race Course Road, Coimbatore 641018</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M6 9l6 6 6-6"/></svg>
+    </a>
+
+    <div style="display: flex; align-items: center; gap: 8px">
+      <label for="q" style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 48px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; background: #FFFFFF; border: 1px solid #DCD3FF">
+        <span style="font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 18px; font-weight: 800; letter-spacing: -0.03em; color: #6F52F0">alar</span>
+        <input id="q" type="search" placeholder="Search for silk sarees" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-family: Inter, system-ui, sans-serif; font-size: 15px; color: #1B1530">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6680" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.500-3.500"/></svg>
+      </label>
+      <button type="button" aria-label="Notifications, 2 new" style="position: relative; width: 44px; height: 44px; border: 0; background: transparent; color: #1B1530; padding: 0; display: inline-flex; align-items: center; justify-content: center">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0112 0c0 6 2 7 2 7H4s2-1 2-7"/><path d="M10 20a2 2 0 004 0"/></svg>
+        <span style="position: absolute; top: 4px; right: 4px; min-width: 16px; height: 16px; border-radius: 999px; background: #6F52F0; color: #FFFFFF; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">2</span>
+      </button>
+      <button type="button" aria-label="Your account" style="width: 44px; height: 44px; border: 0; background: transparent; color: #1B1530; padding: 0; display: inline-flex; align-items: center; justify-content: center">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.500 18c1.200-2.200 3.200-3 5.500-3s4.300.800 5.500 3"/></svg>
+      </button>
     </div>
 
-    <div style="display: flex; gap: 8px; overflow: hidden">
-      <a href="#silk" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; background: #6F52F0; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; white-space: nowrap">Silk</a>
-      <a href="#cotton" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E7E3F5; color: #1B1530; font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap">Cotton</a>
-      <a href="#wedding" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E7E3F5; color: #1B1530; font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap">Wedding</a>
-      <a href="#festive" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E7E3F5; color: #1B1530; font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap">Festive</a>
-      <a href="#office" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E7E3F5; color: #1B1530; font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap">Office</a>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) 44px; align-items: end; border-bottom: 1.5px solid #6F52F0">
+      <a href="#all" style="display: flex; align-items: center; justify-content: center; height: 40px; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: #1B1530; text-decoration: none">ALL</a>
+      <a href="#silk" style="display: flex; align-items: center; justify-content: center; height: 40px; margin-bottom: -1.500px; border: 1.5px solid #6F52F0; border-bottom: 1.5px solid #FFFFFF; border-radius: 16px 16px 0 0; background: #FFFFFF; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; color: #5B3FD6; text-decoration: none">SILK</a>
+      <a href="#cotton" style="display: flex; align-items: center; justify-content: center; height: 40px; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: #1B1530; text-decoration: none">COTTON</a>
+      <a href="#festive" style="display: flex; align-items: center; justify-content: center; height: 40px; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: #1B1530; text-decoration: none">FESTIVE</a>
+      <a href="#categories" aria-label="All categories" style="display: flex; align-items: center; justify-content: center; height: 40px; color: #1B1530">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="9" cy="9" r="2" fill="#FFFFFF"/><circle cx="15" cy="9" r="2" fill="#FFFFFF"/><circle cx="9" cy="15" r="2" fill="#FFFFFF"/><circle cx="15" cy="15" r="2" fill="#FFFFFF"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div style="padding: 16px 0 0 16px; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; gap: 14px; overflow: hidden">
+      <a href="Listing.dc.html" style="width: 68px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #1B1530; text-decoration: none; font-size: 12px; text-align: center"><span style="width: 68px; height: 84px; border-radius: 16px; overflow: hidden; background: linear-gradient(100deg, #6A1733, #9B2C50 45%, #5C132C); display: flex; align-items: flex-end"><span style="width: 100%; height: 18px; background: #C9A227"></span></span>Kanchipuram</a>
+      <a href="Listing.dc.html" style="width: 68px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #1B1530; text-decoration: none; font-size: 12px; text-align: center"><span style="width: 68px; height: 84px; border-radius: 16px; overflow: hidden; background: linear-gradient(100deg, #0B4F61, #17809A 45%, #0E5E73); display: flex; align-items: flex-end"><span style="width: 100%; height: 18px; background: #D9A21B"></span></span>Soft silk</a>
+      <a href="Listing.dc.html" style="width: 68px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #1B1530; text-decoration: none; font-size: 12px; text-align: center"><span style="width: 68px; height: 84px; border-radius: 16px; overflow: hidden; background: linear-gradient(100deg, #E3D7BF, #F7F0E0 45%, #EDE3CF); display: flex; align-items: flex-end"><span style="width: 100%; height: 18px; background: #B3261E"></span></span>Cotton</a>
+      <a href="Listing.dc.html" style="width: 68px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #1B1530; text-decoration: none; font-size: 12px; text-align: center"><span style="width: 68px; height: 84px; border-radius: 16px; overflow: hidden; background: linear-gradient(100deg, #0B573C, #17895F 45%, #0F6B4A); display: flex; align-items: flex-end"><span style="width: 100%; height: 18px; background: #C2386B"></span></span>Wedding</a>
+      <a href="Listing.dc.html" style="width: 68px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #1B1530; text-decoration: none; font-size: 12px; text-align: center"><span style="width: 68px; height: 84px; border-radius: 16px; overflow: hidden; background: linear-gradient(100deg, #B8860B, #E0B43A 45%, #A87908); display: flex; align-items: flex-end"><span style="width: 100%; height: 18px; background: #7A1F3D"></span></span>Festive</a>
+    </div>
+    <div style="display: flex; gap: 14px; overflow: hidden">
+      <a href="Listing.dc.html" style="width: 68px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #1B1530; text-decoration: none; font-size: 12px; text-align: center"><span style="width: 68px; height: 84px; border-radius: 16px; background: #EDE8FF; border: 1px solid #DCD3FF; box-sizing: border-box; display: flex; align-items: center; justify-content: center; color: #6F52F0"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.800 4.700L18.500 9.500l-4.700 1.800L12 16l-1.800-4.700L5.500 9.500l4.700-1.800z"/><path d="M19 15l.800 2.200L22 18l-2.200.800L19 21l-.800-2.200L16 18l2.200-.800z"/></svg></span>Try-on</a>
+      <a href="Listing.dc.html" style="width: 68px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #1B1530; text-decoration: none; font-size: 12px; text-align: center"><span style="width: 68px; height: 84px; border-radius: 16px; overflow: hidden; background: linear-gradient(100deg, #4B2A7A, #6D3FA8 45%, #3E2266); display: flex; align-items: flex-end"><span style="width: 100%; height: 18px; background: #C9A227"></span></span>New in</a>
+      <a href="Listing.dc.html" style="width: 68px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #1B1530; text-decoration: none; font-size: 12px; text-align: center"><span style="width: 68px; height: 84px; border-radius: 16px; overflow: hidden; background: linear-gradient(100deg, #9B3A12, #C8561F 45%, #8A300C); display: flex; align-items: flex-end"><span style="width: 100%; height: 18px; background: #1F5E4A"></span></span>Office wear</a>
+      <a href="Listing.dc.html" style="width: 68px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #1B1530; text-decoration: none; font-size: 12px; text-align: center"><span style="width: 68px; height: 84px; border-radius: 16px; overflow: hidden; background: linear-gradient(100deg, #C2386B, #E05A8C 45%, #A82C5A); display: flex; align-items: flex-end"><span style="width: 100%; height: 18px; background: #E7C65A"></span></span>Under ₹2,500</a>
+      <a href="Listing.dc.html" style="width: 68px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #1B1530; text-decoration: none; font-size: 12px; text-align: center"><span style="width: 68px; height: 84px; border-radius: 16px; overflow: hidden; background: linear-gradient(100deg, #1D2B5E, #2F4590 45%, #17224C); display: flex; align-items: flex-end"><span style="width: 100%; height: 18px; background: #C9A227"></span></span>Zari border</a>
+    </div>
+  </div>
+
+  <div style="padding: 20px 16px 0; display: flex; flex-direction: column; gap: 12px">
+    <a href="Listing.dc.html" style="display: flex; flex-direction: column; border-radius: 20px; overflow: hidden; border: 1.5px solid #6F52F0; text-decoration: none; color: #FFFFFF">
+      <div style="height: 300px; position: relative; background: linear-gradient(110deg, #3E2266 0%, #6D3FA8 34%, #4B2A7A 58%, #2E1850 100%)">
+        <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 46%; background: linear-gradient(100deg, #6A1733, #9B2C50 45%, #5C132C)"></div>
+        <div style="position: absolute; right: 0; bottom: 0; width: 46%; height: 54px; background: repeating-linear-gradient(90deg, #C9A227 0 14px, #B8901C 14px 28px); border-top: 3px solid #8A6A12"></div>
+        <span style="position: absolute; left: 16px; top: 16px; display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; background: #FFFFFF; color: #5B3FD6; font-size: 12px; font-weight: 700; letter-spacing: 0.04em">PONGAL EDIT</span>
+        <div style="position: absolute; left: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 18px; line-height: 24px; font-weight: 500">Fresh from the loom</span>
+          <span style="font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 30px; line-height: 36px; font-weight: 800; letter-spacing: -0.01em">SILKS FROM ₹2,400</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #FFFFFF; color: #1B1530">
+        <span style="font-size: 13px; font-weight: 600; color: #6B6680">Kanchipuram · Arani · Soft silk</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 10px; background: #1B1530; color: #FFFFFF; font-size: 13px; font-weight: 600">Shop now
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span>
+      </div>
+    </a>
+    <div style="display: flex; justify-content: center; gap: 6px">
+      <span style="width: 6px; height: 6px; border-radius: 999px; background: #1B1530"></span>
+      <span style="width: 6px; height: 6px; border-radius: 999px; background: #DCD3FF"></span>
+      <span style="width: 6px; height: 6px; border-radius: 999px; background: #DCD3FF"></span>
+      <span style="width: 6px; height: 6px; border-radius: 999px; background: #DCD3FF"></span>
+      <span style="width: 6px; height: 6px; border-radius: 999px; background: #DCD3FF"></span>
     </div>
 
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 12px 0; border-top: 1px solid #E7E3F5; border-bottom: 1px solid #E7E3F5">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center"><span style="font-size: 10px; letter-spacing: 0.08em; color: #6B6680">DELIVERY</span><span style="font-size: 13px; font-weight: 700">Free in South India</span></div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; border-left: 1px solid #E7E3F5; border-right: 1px solid #E7E3F5"><span style="font-size: 10px; letter-spacing: 0.08em; color: #6B6680">RETURNS</span><span style="font-size: 13px; font-weight: 700">Easy for 7 days</span></div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center"><span style="font-size: 10px; letter-spacing: 0.08em; color: #6B6680">ONLY HERE</span><span style="font-size: 13px; font-weight: 700">Try it on you</span></div>
+    </div>
+  </div>
+
+  <div style="padding: 20px 16px 0; display: flex; flex-direction: column; gap: 12px">
     <div style="display: flex; align-items: baseline; justify-content: space-between">
-      <h2 style="margin: 0; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 20px; line-height: 26px; font-weight: 700; letter-spacing: -0.01em">New from the looms</h2>
-      <a href="#all" style="font-size: 14px; font-weight: 600; text-decoration: none">See all</a>
+      <h2 style="margin: 0; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 16px; line-height: 22px; font-weight: 800; letter-spacing: 0.06em">NEW THIS WEEK</h2>
+      <a href="Listing.dc.html" style="font-size: 13px; font-weight: 600; text-decoration: none">View all</a>
     </div>
-
     <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
 
-      <a href="Product.dc.html" style="display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #E7E3F5; border-radius: 20px; overflow: hidden; text-decoration: none; color: #1B1530">
-        <div style="background: #F3F3F6; aspect-ratio: 4 / 5">
-          <svg viewBox="0 0 160 200" preserveAspectRatio="xMidYMid slice" style="display: block; width: 100%; height: 100%" role="img" aria-label="Illustration of a maroon silk saree with a gold temple border">
-            <defs><linearGradient id="c1" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#7A1F3D"/><stop offset="0.5" stop-color="#9B2C50"/><stop offset="1" stop-color="#6A1733"/></linearGradient></defs>
-            <rect width="160" height="200" fill="url(#c1)"/>
-            <path d="M34 0C42 60 26 140 36 200" stroke="#000000" stroke-opacity="0.15" stroke-width="12" fill="none"/>
-            <path d="M82 0C74 70 92 130 80 200" stroke="#FFFFFF" stroke-opacity="0.10" stroke-width="16" fill="none"/>
-            <path d="M128 0C136 60 120 140 130 200" stroke="#000000" stroke-opacity="0.12" stroke-width="10" fill="none"/>
-            <rect y="162" width="160" height="38" fill="#C9A227"/>
-            <path d="M0 169h160M0 193h160" stroke="#8A6A12" stroke-width="1.5"/>
-            <path d="M0 188l10-12 10 12 10-12 10 12 10-12 10 12 10-12 10 12 10-12 10 12 10-12 10 12 10-12 10 12 10-12 10 12" stroke="#7A1F3D" stroke-width="2.5" fill="none"/>
-          </svg>
+      <a href="Product.dc.html" style="display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: #1B1530">
+        <div role="img" aria-label="Illustration of a maroon silk saree with a gold border" style="height: 230px; border-radius: 12px; overflow: hidden; position: relative; background: linear-gradient(100deg, #6A1733 0%, #9B2C50 38%, #7A1F3D 62%, #5C132C 100%)">
+          <span style="position: absolute; left: 0; top: 10px; height: 22px; padding: 0 10px 0 8px; display: inline-flex; align-items: center; background: #6F52F0; color: #FFFFFF; font-size: 11px; font-weight: 600; border-radius: 0 6px 6px 0">Just in</span>
+          <span style="position: absolute; left: 0; right: 0; bottom: 0; height: 42px; background: repeating-linear-gradient(90deg, #C9A227 0 14px, #B8901C 14px 28px); border-top: 3px solid #8A6A12"></span>
+          <span style="position: absolute; left: 8px; bottom: 8px; display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border-radius: 999px; background: #FFFFFF; font-size: 12px; font-weight: 600">4.6 <svg width="11" height="11" viewBox="0 0 24 24" fill="#14694A" aria-hidden="true"><path d="M12 2l3 7 7 .600-5.400 4.700L18.300 21 12 17.300 5.700 21l1.700-6.700L2 9.600 9 9z"/></svg> <span style="color: #6B6680; font-weight: 500">128</span></span>
         </div>
-        <div style="padding: 12px; display: flex; flex-direction: column; gap: 4px">
-          <span style="font-size: 14px; line-height: 20px; font-weight: 600">Arani silk, temple border</span>
-          <span style="font-size: 12px; line-height: 16px; color: #6B6680">Selvam family, Arani</span>
-          <span style="font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 16px; line-height: 24px; font-weight: 700">₹3,400</span>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; line-height: 20px; font-weight: 700">Arani silk saree</span>
+          <span style="font-size: 13px; line-height: 18px; color: #6B6680">Maroon, temple border</span>
+          <span style="font-size: 14px; line-height: 20px"><span style="color: #6B6680; text-decoration: line-through">₹3,900</span> <strong style="font-weight: 700">₹3,400</strong> <span style="color: #B25B00; font-weight: 600">13% OFF</span></span>
         </div>
       </a>
 
-      <a href="Product.dc.html" style="display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #E7E3F5; border-radius: 20px; overflow: hidden; text-decoration: none; color: #1B1530">
-        <div style="background: #F3F3F6; aspect-ratio: 4 / 5">
-          <svg viewBox="0 0 160 200" preserveAspectRatio="xMidYMid slice" style="display: block; width: 100%; height: 100%" role="img" aria-label="Illustration of a peacock-blue cotton saree with a mustard border">
-            <defs><linearGradient id="c2" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#0E5E73"/><stop offset="0.5" stop-color="#17809A"/><stop offset="1" stop-color="#0B4F61"/></linearGradient></defs>
-            <rect width="160" height="200" fill="url(#c2)"/>
-            <path d="M30 0C38 60 22 140 32 200" stroke="#000000" stroke-opacity="0.14" stroke-width="12" fill="none"/>
-            <path d="M78 0C70 70 88 130 76 200" stroke="#FFFFFF" stroke-opacity="0.10" stroke-width="16" fill="none"/>
-            <path d="M126 0C134 60 118 140 128 200" stroke="#000000" stroke-opacity="0.12" stroke-width="10" fill="none"/>
-            <rect y="166" width="160" height="34" fill="#D9A21B"/>
-            <path d="M0 173h160M0 193h160" stroke="#8A6A12" stroke-width="1.5"/>
-            <circle cx="20" cy="183" r="3.5" fill="#0E5E73"/><circle cx="50" cy="183" r="3.5" fill="#0E5E73"/><circle cx="80" cy="183" r="3.5" fill="#0E5E73"/><circle cx="110" cy="183" r="3.5" fill="#0E5E73"/><circle cx="140" cy="183" r="3.5" fill="#0E5E73"/>
-          </svg>
+      <a href="Product.dc.html" style="display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: #1B1530">
+        <div role="img" aria-label="Illustration of a peacock-blue soft silk saree with a mustard border" style="height: 230px; border-radius: 12px; overflow: hidden; position: relative; background: linear-gradient(100deg, #0B4F61 0%, #17809A 38%, #0E5E73 62%, #093F4E 100%)">
+          <span style="position: absolute; left: 0; right: 0; bottom: 0; height: 38px; background: #D9A21B; border-top: 3px solid #8A6A12"></span>
+          <span style="position: absolute; left: 8px; bottom: 8px; display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border-radius: 999px; background: #FFFFFF; font-size: 12px; font-weight: 600">4.4 <svg width="11" height="11" viewBox="0 0 24 24" fill="#14694A" aria-hidden="true"><path d="M12 2l3 7 7 .600-5.400 4.700L18.300 21 12 17.300 5.700 21l1.700-6.700L2 9.600 9 9z"/></svg> <span style="color: #6B6680; font-weight: 500">64</span></span>
         </div>
-        <div style="padding: 12px; display: flex; flex-direction: column; gap: 4px">
-          <span style="font-size: 14px; line-height: 20px; font-weight: 600">Chettinad cotton, checks</span>
-          <span style="font-size: 12px; line-height: 16px; color: #6B6680">Murugan family, Karaikudi</span>
-          <span style="font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 16px; line-height: 24px; font-weight: 700">₹1,850</span>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; line-height: 20px; font-weight: 700">Soft silk saree</span>
+          <span style="font-size: 13px; line-height: 18px; color: #6B6680">Peacock blue, plain border</span>
+          <span style="font-size: 14px; line-height: 20px"><strong style="font-weight: 700">₹2,850</strong></span>
         </div>
       </a>
 
-      <a href="Product.dc.html" style="display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #E7E3F5; border-radius: 20px; overflow: hidden; text-decoration: none; color: #1B1530">
-        <div style="background: #F3F3F6; aspect-ratio: 4 / 5">
-          <svg viewBox="0 0 160 200" preserveAspectRatio="xMidYMid slice" style="display: block; width: 100%; height: 100%" role="img" aria-label="Illustration of an emerald silk saree with a pink border">
-            <defs><linearGradient id="c3" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#0F6B4A"/><stop offset="0.5" stop-color="#17895F"/><stop offset="1" stop-color="#0B573C"/></linearGradient></defs>
-            <rect width="160" height="200" fill="url(#c3)"/>
-            <path d="M34 0C42 60 26 140 36 200" stroke="#000000" stroke-opacity="0.14" stroke-width="12" fill="none"/>
-            <path d="M82 0C74 70 92 130 80 200" stroke="#FFFFFF" stroke-opacity="0.10" stroke-width="16" fill="none"/>
-            <rect y="164" width="160" height="36" fill="#C2386B"/>
-            <path d="M0 171h160M0 193h160" stroke="#E7C65A" stroke-width="2"/>
-          </svg>
+      <a href="Product.dc.html" style="display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: #1B1530">
+        <div role="img" aria-label="Illustration of an emerald silk saree with a pink border" style="height: 230px; border-radius: 12px; overflow: hidden; position: relative; background: linear-gradient(100deg, #0B573C 0%, #17895F 38%, #0F6B4A 62%, #084630 100%)">
+          <span style="position: absolute; left: 0; top: 10px; height: 22px; padding: 0 10px 0 8px; display: inline-flex; align-items: center; background: #6F52F0; color: #FFFFFF; font-size: 11px; font-weight: 600; border-radius: 0 6px 6px 0">Wedding pick</span>
+          <span style="position: absolute; left: 0; right: 0; bottom: 0; height: 42px; background: #C2386B; border-top: 3px solid #E7C65A"></span>
         </div>
-        <div style="padding: 12px; display: flex; flex-direction: column; gap: 4px">
-          <span style="font-size: 14px; line-height: 20px; font-weight: 600">Kanchi silk, contrast border</span>
-          <span style="font-size: 12px; line-height: 16px; color: #6B6680">Devi family, Kanchipuram</span>
-          <span style="font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 16px; line-height: 24px; font-weight: 700">₹4,900</span>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; line-height: 20px; font-weight: 700">Kanchipuram silk saree</span>
+          <span style="font-size: 13px; line-height: 18px; color: #6B6680">Emerald, contrast border</span>
+          <span style="font-size: 14px; line-height: 20px"><strong style="font-weight: 700">₹4,900</strong></span>
         </div>
       </a>
 
-      <a href="Product.dc.html" style="display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #E7E3F5; border-radius: 20px; overflow: hidden; text-decoration: none; color: #1B1530">
-        <div style="background: #F3F3F6; aspect-ratio: 4 / 5">
-          <svg viewBox="0 0 160 200" preserveAspectRatio="xMidYMid slice" style="display: block; width: 100%; height: 100%" role="img" aria-label="Illustration of an ivory cotton saree with a red border">
-            <defs><linearGradient id="c4" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#EDE3CF"/><stop offset="0.5" stop-color="#F7F0E0"/><stop offset="1" stop-color="#E3D7BF"/></linearGradient></defs>
-            <rect width="160" height="200" fill="url(#c4)"/>
-            <path d="M34 0C42 60 26 140 36 200" stroke="#000000" stroke-opacity="0.08" stroke-width="12" fill="none"/>
-            <path d="M126 0C134 60 118 140 128 200" stroke="#000000" stroke-opacity="0.07" stroke-width="10" fill="none"/>
-            <rect y="166" width="160" height="34" fill="#B3261E"/>
-            <path d="M0 173h160M0 193h160" stroke="#E7C65A" stroke-width="2"/>
-          </svg>
+      <a href="Product.dc.html" style="display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: #1B1530">
+        <div role="img" aria-label="Illustration of an ivory cotton saree with a red border" style="height: 230px; border-radius: 12px; overflow: hidden; position: relative; background: linear-gradient(100deg, #E3D7BF 0%, #F7F0E0 38%, #EDE3CF 62%, #DCCFB4 100%)">
+          <span style="position: absolute; left: 0; right: 0; bottom: 0; height: 36px; background: #B3261E; border-top: 3px solid #E7C65A"></span>
         </div>
-        <div style="padding: 12px; display: flex; flex-direction: column; gap: 4px">
-          <span style="font-size: 14px; line-height: 20px; font-weight: 600">Kerala kasavu, red border</span>
-          <span style="font-size: 12px; line-height: 16px; color: #6B6680">Nair family, Balaramapuram</span>
-          <span style="font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 16px; line-height: 24px; font-weight: 700">₹2,200</span>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; line-height: 20px; font-weight: 700">Kasavu cotton saree</span>
+          <span style="font-size: 13px; line-height: 18px; color: #6B6680">Ivory, red border</span>
+          <span style="font-size: 14px; line-height: 20px"><span style="color: #6B6680; text-decoration: line-through">₹2,600</span> <strong style="font-weight: 700">₹2,200</strong> <span style="color: #B25B00; font-weight: 600">15% OFF</span></span>
         </div>
       </a>
 
     </div>
   </div>
 
-  <header style="position: absolute; top: 0; left: 0; right: 0; height: 60px; box-sizing: border-box; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; background: rgba(251, 250, 255, 0.72); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); border-bottom: 1px solid rgba(231, 227, 245, 0.9)">
-    <span style="font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 24px; font-weight: 800; letter-spacing: -0.03em; color: #6F52F0">alar</span>
-    <div style="display: flex; gap: 4px">
-      <button type="button" aria-label="Search" style="width: 44px; height: 44px; border-radius: 999px; border: 1px solid #E7E3F5; background: #FFFFFF; color: #1B1530; display: inline-flex; align-items: center; justify-content: center; padding: 0">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      </button>
-      <button type="button" aria-label="Notifications" style="width: 44px; height: 44px; border-radius: 999px; border: 1px solid #E7E3F5; background: #FFFFFF; color: #1B1530; display: inline-flex; align-items: center; justify-content: center; padding: 0">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0112 0c0 6 2 7 2 7H4s2-1 2-7"/><path d="M10 20a2 2 0 004 0"/></svg>
-      </button>
-    </div>
-  </header>
-
   <nav aria-label="Main" style="position: absolute; left: 16px; right: 16px; bottom: 16px; height: 64px; box-sizing: border-box; padding: 0 8px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: center; border-radius: 999px; background: rgba(255, 255, 255, 0.74); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); border: 1px solid rgba(220, 211, 255, 0.95)">
     <a href="Main.dc.html" style="display: flex; align-items: center; justify-content: center; gap: 6px; height: 48px; border-radius: 999px; background: #EDE8FF; color: #5B3FD6; font-size: 13px; font-weight: 600; text-decoration: none">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1z"/></svg>Home</a>
-    <a href="#browse" aria-label="Browse" style="display: flex; align-items: center; justify-content: center; height: 48px; color: #6B6680; text-decoration: none">
+    <a href="Listing.dc.html" aria-label="Categories" style="display: flex; align-items: center; justify-content: center; height: 48px; color: #6B6680; text-decoration: none">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></a>
-    <a href="#cart" aria-label="Cart, 1 item" style="display: flex; align-items: center; justify-content: center; height: 48px; color: #6B6680; text-decoration: none">
+    <a href="Consent.dc.html" aria-label="Try-on" style="display: flex; align-items: center; justify-content: center; height: 48px; color: #6B6680; text-decoration: none">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.800 4.700L18.500 9.500l-4.700 1.800L12 16l-1.800-4.700L5.500 9.500l4.700-1.800z"/><path d="M19 15l.800 2.200L22 18l-2.200.800L19 21l-.800-2.200L16 18l2.200-.800z"/></svg></a>
+    <a href="#bag" aria-label="Bag, 1 item" style="display: flex; align-items: center; justify-content: center; height: 48px; color: #6B6680; text-decoration: none">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12l-1 11a1 1 0 01-1 1H8a1 1 0 01-1-1z"/><path d="M9 8V7a3 3 0 016 0v1"/></svg></a>
-    <a href="#you" aria-label="Your account" style="display: flex; align-items: center; justify-content: center; height: 48px; color: #6B6680; text-decoration: none">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-5 8-5s6.500 1 8 5"/></svg></a>
   </nav>
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1500}}'>
 class Component extends DCLogic {
 renderVals() {
 return {};
