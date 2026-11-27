@@ -36,6 +36,7 @@ describe("findInvalidEnv", () => {
         ...valid,
         COMMERCE_INTERNAL_URL: "http://commerce:9000",
         NEXT_PUBLIC_BASE_URL: "http://localhost:8080",
+        NEXT_PUBLIC_STORE_NAME: "Neutral Store",
       })
     ).toEqual([])
   })
@@ -53,6 +54,8 @@ describe("findInvalidEnv", () => {
     ["NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY", "not a key"],
     ["COMMERCE_INTERNAL_URL", "commerce:9000"],
     ["NEXT_PUBLIC_BASE_URL", "localhost"],
+    ["NEXT_PUBLIC_STORE_NAME", "   "],
+    ["NEXT_PUBLIC_STORE_NAME", "x".repeat(81)],
   ])("reports malformed %s", (name, value) => {
     expect(findInvalidEnv({ ...valid, [name]: value })).toEqual([name])
   })

@@ -4,6 +4,9 @@ import { formatAccessLog, resolveRequestId } from "./access-log"
 
 type RequestStart = { request: IncomingMessage; response: ServerResponse }
 
+/** The status logged for a request the client abandoned before a response started (nginx's 499). */
+export const CLIENT_CLOSED_REQUEST = 499
+
 let subscribed = false
 
 /**
@@ -42,7 +45,8 @@ export function subscribeRequestLog(write: (line: string) => void = (line) => pr
         formatAccessLog({
           method,
           url,
-          status: response.statusCode,
+          // 499: the client went away before any response was sent.
+          status: response.headersSent ? response.statusCode : CLIENT_CLOSED_REQUEST,
           durationMs: Number(process.hrtime.bigint() - started) / 1e6,
           requestId,
         })

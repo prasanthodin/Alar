@@ -9,7 +9,9 @@
 #
 # Env:
 #   SMOKE_DOWN=1          stop the stack at the end (volumes are kept)
-#   SMOKE_SKIP_E2E=1      skip the Playwright test (needs pnpm, Node 24 and a browser)
+#   SMOKE_SKIP_E2E=1      skip the Playwright test (needs pnpm, Node 24 and a browser); reported as SKIP
+#
+# Needs Linux with GNU tools (bash, sed, sha256sum, timeout, /proc), curl, openssl, node and Docker Compose v2.
 #   SMOKE_TIMEOUT=900     seconds to wait for the stack to become healthy
 #   E2E_CHROME_PATH       a local Chrome for Playwright (passed through)
 set -uo pipefail
@@ -27,6 +29,7 @@ declare -a RESULTS=()
 FAILED=0
 
 pass() { RESULTS+=("OK    $1"); echo "OK    $1"; }
+skip() { RESULTS+=("SKIP  $1${2:+: $2}"); echo "SKIP  $1${2:+: $2}"; }
 fail() { RESULTS+=("FAIL  $1${2:+: $2}"); echo "FAIL  $1${2:+: $2}"; FAILED=1; }
 env_value() { grep -E "^$1=" infra/.env | tail -1 | cut -d= -f2-; }
 
@@ -34,7 +37,7 @@ summary() {
   echo
   echo "== Summary =="
   printf '%s\n' "${RESULTS[@]}"
-  if [ "$FAILED" -eq 0 ]; then echo "All checks passed."; else echo "Some checks failed."; fi
+  if [ "$FAILED" -eq 0 ]; then echo "All checks passed (SKIP rows were not run)."; else echo "Some checks failed."; fi
   if [ "${SMOKE_DOWN:-0}" = "1" ]; then "${COMPOSE[@]}" down; fi
 }
 
@@ -47,7 +50,8 @@ if [ ! -f infra/.env ]; then
   done
   sed -i "s|^S3_ACCESS_KEY_ID=\$|S3_ACCESS_KEY_ID=local-emulator|" infra/.env
 fi
-PUBLIC_URL="$(env_value PUBLIC_URL)"; PUBLIC_URL="${PUBLIC_URL:-http://localhost:8080}"
+CADDY_PORT="$(env_value CADDY_PORT)"; CADDY_PORT="${CADDY_PORT:-8080}"
+PUBLIC_URL="$(env_value PUBLIC_URL)"; PUBLIC_URL="${PUBLIC_URL:-http://localhost:$CADDY_PORT}"; PUBLIC_URL="${PUBLIC_URL%/}"
 
 # --- Stack up ----------------------------------------------------------------------
 echo "== Starting the stack =="
@@ -56,6 +60,9 @@ if ! "${COMPOSE[@]}" up -d --build; then
   "${COMPOSE[@]}" ps -a
   summary; exit 1
 fi
+
+# Compose does not notice edits to the bind-mounted Caddyfile; load the current one.
+"${COMPOSE[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile > /dev/null 2>&1 || true
 
 deadline=$(( $(date +%s) + TIMEOUT ))
 while :; do
@@ -111,21 +118,42 @@ else
 fi
 
 # --- File storage --------------------------------------------------------------------------
-"${COMPOSE[@]}" exec -T commerce medusa exec ./src/scripts/check-file-storage.js > "$WORK/file.log" 2>&1
+"${COMPOSE[@]}" exec -T commerce medusa exec ./src/scripts/check-file-storage.js keep > "$WORK/file.log" 2>&1
 file_url="$(sed -n 's/^FILE_URL=//p' "$WORK/file.log" | tr -d '\r')"
 file_sha="$(sed -n 's/^FILE_SHA256=//p' "$WORK/file.log" | tr -d '\r')"
-s3_file_url="$(env_value S3_FILE_URL)"; s3_file_url="${s3_file_url:-http://localhost:4566/catalog}"
-if [ -n "$file_url" ] && [[ "$file_url" == "$s3_file_url"/* ]]; then
-  status="$(curl -s -o "$WORK/fetched" -w '%{http_code}' "$file_url")"
+file_id="$(sed -n 's/^FILE_ID=//p' "$WORK/file.log" | tr -d '\r')"
+s3_file_url="$(env_value S3_FILE_URL)"; s3_file_url="${s3_file_url:-$PUBLIC_URL/catalog}"; s3_file_url="${s3_file_url%/}"
+fetch_matches() { # url -> prints the status; returns 0 when 200 with the same bytes
+  local status fetched_sha
+  status="$(curl -s -o "$WORK/fetched" -w '%{http_code}' "$1")"
   fetched_sha="$(sha256sum "$WORK/fetched" | cut -d' ' -f1)"
-  if [ "$status" = "200" ] && [ "$fetched_sha" = "$file_sha" ]; then
+  echo "$status"
+  [ "$status" = "200" ] && [ "$fetched_sha" = "$file_sha" ]
+}
+if [ -n "$file_url" ] && [[ "$file_url" == "$s3_file_url"/* ]]; then
+  if status="$(fetch_matches "$file_url")"; then
     pass "file storage: stored in catalog, public URL returns 200 with the same bytes"
   else
-    fail "file storage" "GET $file_url -> $status, sha256 match: $([ "$fetched_sha" = "$file_sha" ] && echo yes || echo no)"
+    fail "file storage" "GET $file_url -> $status or different bytes"
+  fi
+  caddy_url="$PUBLIC_URL/catalog/${file_url#"$s3_file_url"/}"
+  if status="$(fetch_matches "$caddy_url")"; then
+    pass "file through Caddy: $PUBLIC_URL/catalog/... returns 200 with the same bytes"
+  else
+    fail "file through Caddy" "GET $caddy_url -> $status or different bytes"
   fi
 else
   fail "file storage" "no file URL under $s3_file_url"
   tail -20 "$WORK/file.log"
+fi
+if [ -n "$file_id" ]; then
+  "${COMPOSE[@]}" exec -T commerce medusa exec ./src/scripts/check-file-storage.js delete "$file_id" > "$WORK/file-delete.log" 2>&1
+  after="$(curl -s -o /dev/null -w '%{http_code}' "$file_url")"
+  if grep -q '^FILE_DELETED=' "$WORK/file-delete.log" && [ "$after" != "200" ]; then
+    pass "file cleanup: check file deleted (now $after)"
+  else
+    fail "file cleanup" "check file $file_id still served ($after)"
+  fi
 fi
 
 # --- Health routes ---------------------------------------------------------------------------
@@ -136,6 +164,12 @@ if [ "$commerce_health" = "200" ] && [ "$web_health" = "200" ] && [ "$site" = "2
   pass "health through Caddy: commerce /health 200, web /api/health 200, site / 200"
 else
   fail "health" "commerce /health $commerce_health, web /api/health $web_health, site / $site"
+fi
+admin_ui="$(curl -s -L -o "$WORK/app.html" -w '%{http_code}' "$PUBLIC_URL/app")"
+if [ "$admin_ui" = "200" ] && grep -qi '<div id="medusa"\|<html' "$WORK/app.html"; then
+  pass "admin UI through Caddy: /app 200 from commerce"
+else
+  fail "admin UI" "GET $PUBLIC_URL/app -> $admin_ui"
 fi
 
 # --- Request logs ---------------------------------------------------------------------------
@@ -158,10 +192,15 @@ else
 fi
 
 # --- Environment checks ------------------------------------------------------------------------
+ENV_CHECK_N=0
 check_env() { # service var value label
-  local service="$1" var="$2" value="$3" label="$4" out code
-  out="$(timeout 180 "${COMPOSE[@]}" run --rm --no-deps -T -e "$var=$value" "$service" 2>&1)"
+  local service="$1" var="$2" value="$3" label="$4" out code name
+  ENV_CHECK_N=$((ENV_CHECK_N + 1))
+  name="shop-envcheck-$$-$ENV_CHECK_N"
+  out="$(timeout 180 "${COMPOSE[@]}" run --rm --no-deps -T --name "$name" -e "$var=$value" "$service" 2>&1)"
   code=$?
+  # A process that unexpectedly keeps running is stopped by the timeout; never leave it behind.
+  docker rm -f "$name" > /dev/null 2>&1 || true
   if [ "$code" -ne 0 ] && printf '%s' "$out" | grep -q "Missing or invalid environment variable: $var" \
     && { [ -z "$value" ] || ! printf '%s' "$out" | grep -qF "$value"; }; then
     pass "env: $service exits $code naming $var ($label), value not printed"
@@ -177,7 +216,7 @@ check_env web NEXT_PUBLIC_MEDUSA_BACKEND_URL "not-a-url" "malformed"
 
 # --- Story 1.2 end-to-end test through Caddy ----------------------------------------------------
 if [ "${SMOKE_SKIP_E2E:-0}" = "1" ]; then
-  fail "e2e" "skipped (SMOKE_SKIP_E2E=1)"
+  skip "e2e" "SMOKE_SKIP_E2E=1"
 elif ! command -v pnpm > /dev/null; then
   fail "e2e" "pnpm not found"
 elif E2E_BASE_URL="$PUBLIC_URL" pnpm --filter @shop/web e2e > "$WORK/e2e.log" 2>&1; then

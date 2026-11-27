@@ -13,7 +13,10 @@ ENV CI=1 \
 # Optional extra CA certificates (*.crt, *.pem) for networks that intercept TLS.
 # Used only while building; the runtime image does not contain them.
 COPY --from=certs . /tmp/build-certs/
-RUN cat /tmp/build-certs/*.crt /tmp/build-certs/*.pem > /tmp/extra-ca.pem 2>/dev/null || true; \
+# A newline after each file keeps PEM blocks apart when a file lacks a final newline.
+RUN for f in /tmp/build-certs/*.crt /tmp/build-certs/*.pem; do \
+      if [ -f "$f" ]; then cat "$f"; echo; fi; \
+    done > /tmp/extra-ca.pem; \
     corepack enable
 COPY . .
 RUN pnpm install --frozen-lockfile --filter "@shop/commerce..."
@@ -22,13 +25,16 @@ RUN pnpm install --frozen-lockfile --filter "@shop/commerce..."
 RUN DATABASE_URL=postgres://build:build@localhost:5432/build \
     REDIS_URL=redis://localhost:6379 \
     STORE_CORS=http://localhost ADMIN_CORS=http://localhost AUTH_CORS=http://localhost \
-    JWT_SECRET=build-placeholder COOKIE_SECRET=build-placeholder \
+    JWT_SECRET="$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')" \
+    COOKIE_SECRET="$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')" \
     S3_ENDPOINT=http://localhost:4566 S3_BUCKET=build S3_REGION=us-east-1 \
     S3_FILE_URL=http://localhost:4566/build S3_ACCESS_KEY_ID=build S3_SECRET_ACCESS_KEY=build \
     pnpm --filter @shop/commerce build
 
 FROM ${NODE_IMAGE} AS runtime
+# LOG_LEVEL=info keeps the kernel's own HTTP log (client addresses, query strings) off.
 ENV NODE_ENV=production \
+    LOG_LEVEL=info \
     MEDUSA_DISABLE_TELEMETRY=true \
     PATH=/repo/apps/commerce/node_modules/.bin:$PATH
 RUN mkdir -p /var/lib/shop && chown node:node /var/lib/shop

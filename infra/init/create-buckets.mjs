@@ -33,9 +33,11 @@ function required(name) {
   return value
 }
 
+const region = required("S3_REGION")
+
 const client = new S3Client({
   endpoint: required("S3_ENDPOINT"),
-  region: required("S3_REGION"),
+  region,
   forcePathStyle: true,
   credentials: {
     accessKeyId: required("S3_ACCESS_KEY_ID"),
@@ -91,7 +93,13 @@ async function setUp(bucket) {
   if (await withRetry("emulator", () => bucketExists(name))) {
     console.log(`${name}: exists`)
   } else {
-    await client.send(new CreateBucketCommand({ Bucket: name }))
+    // S3 needs the region as a location constraint everywhere except us-east-1.
+    await client.send(
+      new CreateBucketCommand({
+        Bucket: name,
+        ...(region === "us-east-1" ? {} : { CreateBucketConfiguration: { LocationConstraint: region } }),
+      })
+    )
     console.log(`${name}: created`)
   }
 

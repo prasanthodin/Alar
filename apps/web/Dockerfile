@@ -15,7 +15,10 @@ ENV CI=1 \
 # Optional extra CA certificates (*.crt, *.pem) for networks that intercept TLS.
 # Used only while building; the runtime image does not contain them.
 COPY --from=certs . /tmp/build-certs/
-RUN cat /tmp/build-certs/*.crt /tmp/build-certs/*.pem > /tmp/extra-ca.pem 2>/dev/null || true; \
+# A newline after each file keeps PEM blocks apart when a file lacks a final newline.
+RUN for f in /tmp/build-certs/*.crt /tmp/build-certs/*.pem; do \
+      if [ -f "$f" ]; then cat "$f"; echo; fi; \
+    done > /tmp/extra-ca.pem; \
     corepack enable
 COPY . .
 RUN pnpm install --frozen-lockfile --filter "@shop/web..."

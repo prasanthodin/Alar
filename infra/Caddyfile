@@ -1,14 +1,20 @@
 # One entry point for the local stack (and, with a domain and TLS, for staging in
-# Story 1.24). Kernel routes go to commerce; everything else is the website.
+# Story 1.24). Kernel routes and the admin UI go to commerce, stored public files
+# to the emulator, everything else to the website.
 {
 	# The admin API stays on localhost inside the container (used by the health check).
 	admin localhost:2019
 }
 
 :8080 {
-	@commerce path /store /store/* /auth /auth/* /admin /admin/* /health
+	@commerce path /store /store/* /auth /auth/* /admin /admin/* /app /app/* /hooks/* /health
 	handle @commerce {
 		reverse_proxy commerce:9000
+	}
+
+	# Public files in the catalog bucket, on the site's own origin (S3_FILE_URL).
+	handle /catalog/* {
+		reverse_proxy floci:4566
 	}
 
 	handle {

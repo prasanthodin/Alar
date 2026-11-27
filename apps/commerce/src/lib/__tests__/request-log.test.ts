@@ -1,7 +1,7 @@
 import { createServer, type Server } from "node:http"
 import type { AddressInfo } from "node:net"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
-import { subscribeRequestLog } from "../request-log"
+import { CLIENT_CLOSED_REQUEST, subscribeRequestLog } from "../request-log"
 
 const lines: string[] = []
 let server: Server
@@ -10,6 +10,10 @@ let base: string
 beforeAll(async () => {
   subscribeRequestLog((line) => lines.push(line))
   server = createServer((req, res) => {
+    if (req.url === "/slow") {
+      // Never answers; the client aborts first.
+      return
+    }
     // Answers before any app code could add a header, like the kernel's key check.
     res.statusCode = req.url?.startsWith("/store") ? 400 : 200
     res.end(JSON.stringify({ seenRequestId: req.headers["x-request-id"] }))
@@ -19,6 +23,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
+  server.closeAllConnections()
   await new Promise((resolve) => server.close(resolve))
 })
 
@@ -56,5 +61,16 @@ describe("subscribeRequestLog", () => {
     await lineFor(id)
     expect(lines.length - before).toBe(1)
     expect(lines.at(-1)).not.toContain("example.com")
+  })
+
+  it("logs a request aborted before any response as 499, not 200", async () => {
+    const id = "6f1f5a2e-0b7d-4c3a-9e1f-2a3b4c5d6e7f"
+    const controller = new AbortController()
+    const pending = fetch(`${base}/slow`, { headers: { "X-Request-Id": id }, signal: controller.signal })
+    setTimeout(() => controller.abort(), 50)
+    await expect(pending).rejects.toThrow()
+
+    const line = JSON.parse(await lineFor(id))
+    expect(line).toMatchObject({ requestId: id, path: "/slow", status: CLIENT_CLOSED_REQUEST })
   })
 })

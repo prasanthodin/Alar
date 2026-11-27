@@ -16,7 +16,11 @@ export function errorText(code: ErrorCode): string {
   return errorMessages[`error.${code}`]
 }
 
-/** The wordmark: the store name, lower case, until shop settings provide it. */
-export function storeName(): string {
-  return (process.env.NEXT_PUBLIC_STORE_NAME || t("brand.defaultName")).toLowerCase()
+/**
+ * The wordmark: the configured store name (or the default), lower case, until
+ * shop settings provide it. The caller passes the configured name, read on the
+ * server at request time (`configuredStoreName` in server-env).
+ */
+export function storeName(configured?: string): string {
+  return (configured || t("brand.defaultName")).toLowerCase()
 }

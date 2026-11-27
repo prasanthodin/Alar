@@ -34,6 +34,8 @@ const webEnvSchema = z.object({
   // Optional: the kernel's address inside the container network, used for server-side calls.
   COMMERCE_INTERNAL_URL: httpUrl.optional(),
   NEXT_PUBLIC_BASE_URL: httpUrl.optional(),
+  // Optional: the wordmark until shop settings provide the store name.
+  NEXT_PUBLIC_STORE_NAME: z.string().trim().min(1).max(80).optional(),
 })
 
 /**

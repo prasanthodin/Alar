@@ -62,7 +62,7 @@ services:
     volumes:
       - floci-data:/app/data
     ports:
-      # Published so browsers can fetch public files at S3_FILE_URL.
+      # Published for host tools; browsers fetch public files through Caddy (/catalog).
       - "127.0.0.1:${FLOCI_PORT:-4566}:4566"
     healthcheck:
       test: ["CMD", "/usr/local/bin/healthcheck.sh"]
@@ -73,8 +73,10 @@ services:
     restart: unless-stopped
 
   # One-shot: creates the public, versioned `catalog` bucket, then exits.
+  # Runs the commerce image (built by the commerce service) for its S3 client.
   bucket-init:
-    build: *commerce-build
+    image: ${COMMERCE_IMAGE:-shop/commerce:local}
+    pull_policy: never
     working_dir: /repo/apps/commerce
     entrypoint: ["node", "/repo/infra/init/create-buckets.mjs"]
     environment:
@@ -86,6 +88,7 @@ services:
     restart: "no"
 
   commerce:
+    image: ${COMMERCE_IMAGE:-shop/commerce:local}
     build: *commerce-build
     environment:
       <<: *s3-env
@@ -96,13 +99,13 @@ services:
       MEDUSA_WORKER_MODE: shared
       DATABASE_URL: postgres://${POSTGRES_USER:-commerce}:${POSTGRES_PASSWORD}@postgres:5432/commerce?sslmode=disable
       REDIS_URL: redis://redis:6379
-      STORE_CORS: ${PUBLIC_URL:-http://localhost:8080}
-      ADMIN_CORS: ${PUBLIC_URL:-http://localhost:8080}
-      AUTH_CORS: ${PUBLIC_URL:-http://localhost:8080}
+      STORE_CORS: ${PUBLIC_URL:-http://localhost:${CADDY_PORT:-8080}}
+      ADMIN_CORS: ${PUBLIC_URL:-http://localhost:${CADDY_PORT:-8080}}
+      AUTH_CORS: ${PUBLIC_URL:-http://localhost:${CADDY_PORT:-8080}}
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in infra/.env}
       COOKIE_SECRET: ${COOKIE_SECRET:?set COOKIE_SECRET in infra/.env}
       S3_BUCKET: catalog
-      S3_FILE_URL: ${S3_FILE_URL:-http://localhost:4566/catalog}
+      S3_FILE_URL: ${S3_FILE_URL:-${PUBLIC_URL:-http://localhost:${CADDY_PORT:-8080}}/catalog}
       PUBLISHABLE_KEY_FILE: /var/lib/shop/publishable-key
     volumes:
       - shared-config:/var/lib/shop
@@ -118,7 +121,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-      start_period: 300s
+      # Covers a slow first start: every migration plus the initial data seed.
+      start_period: 900s
     restart: unless-stopped
 
   web:
@@ -129,12 +133,13 @@ services:
         certs: ${BUILD_CA_DIR:-./certs}
       args:
         NODE_IMAGE: ${NODE_IMAGE:-node:24-bookworm-slim}
-        NEXT_PUBLIC_BASE_URL: ${PUBLIC_URL:-http://localhost:8080}
+        NEXT_PUBLIC_BASE_URL: ${PUBLIC_URL:-http://localhost:${CADDY_PORT:-8080}}
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_MEDUSA_BACKEND_URL: ${PUBLIC_URL:-http://localhost:8080}
-      NEXT_PUBLIC_BASE_URL: ${PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_MEDUSA_BACKEND_URL: ${PUBLIC_URL:-http://localhost:${CADDY_PORT:-8080}}
+      NEXT_PUBLIC_BASE_URL: ${PUBLIC_URL:-http://localhost:${CADDY_PORT:-8080}}
       COMMERCE_INTERNAL_URL: http://commerce:9000
+      NEXT_PUBLIC_STORE_NAME: ${STORE_NAME:-}
       # Empty: read from the file commerce writes at start.
       NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${PUBLISHABLE_KEY:-}
       PUBLISHABLE_KEY_FILE: /var/lib/shop/publishable-key
@@ -162,6 +167,8 @@ services:
       commerce:
         condition: service_healthy
       web:
+        condition: service_healthy
+      floci:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:2019/config/"]

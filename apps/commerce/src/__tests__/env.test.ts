@@ -38,6 +38,7 @@ describe("parseEnv", () => {
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.env.MEDUSA_WORKER_MODE).toBe("shared")
+      expect(result.env.LOG_LEVEL).toBe("info")
       expect(result.env.S3_FILE_URL).toBe("http://localhost:4566/catalog")
     }
   })
@@ -62,8 +63,31 @@ describe("parseEnv", () => {
     ["S3_BUCKET", "Catalog_Bucket"],
     ["S3_FILE_URL", "not a url"],
     ["MEDUSA_WORKER_MODE", "both"],
+    ["LOG_LEVEL", "loud"],
+    ["JWT_SECRET", "          "],
+    ["JWT_SECRET", "   short   "],
+    ["JWT_SECRET", "supersecret"],
+    ["COOKIE_SECRET", "SuperSecret"],
+    ["COOKIE_SECRET", "build-placeholder"],
+    ["STORE_CORS", "http://localhost:8080/"],
+    ["STORE_CORS", "http://localhost:8080/path"],
+    ["ADMIN_CORS", "http://localhost:8080,,http://localhost:9000"],
+    ["AUTH_CORS", "/unclosed(/"],
   ])("reports malformed %s", (name, value) => {
     expect(parseEnv({ ...valid, [name]: value })).toEqual({ ok: false, invalid: [name] })
+  })
+
+  it("trims secrets and every CORS entry", () => {
+    const result = parseEnv({
+      ...valid,
+      JWT_SECRET: "  a-long-enough-secret  ",
+      STORE_CORS: " http://localhost:8080 , http://localhost:9000 ,/example\\.com$/ ",
+    })
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.env.JWT_SECRET).toBe("a-long-enough-secret")
+      expect(result.env.STORE_CORS).toBe("http://localhost:8080,http://localhost:9000,/example\\.com$/")
+    }
   })
 
   it("lists every bad variable once", () => {

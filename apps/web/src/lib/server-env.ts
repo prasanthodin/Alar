@@ -21,3 +21,13 @@ export function commerceBaseUrl(): string {
 export function publishableKey(): string {
   return read("NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY") ?? ""
 }
+
+/** The site's public address, for metadata. Defaults to the local dev server. */
+export function publicBaseUrl(): string {
+  return read("NEXT_PUBLIC_BASE_URL") ?? "http://localhost:8000"
+}
+
+/** The store name from the environment, if set (shop settings replace it later). */
+export function configuredStoreName(): string | undefined {
+  return read("NEXT_PUBLIC_STORE_NAME")
+}

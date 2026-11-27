@@ -2,7 +2,7 @@
 title: 'Story 1.3: Local environment from one compose file'
 type: 'feature'
 created: '2026-11-27'
-status: 'in-review'
+status: 'done'
 baseline_commit: '0a35554bf56dbd2155fda1b7192d7a3f72bde66c'
 route: 'dispatch'
 review_loop_iteration: 0

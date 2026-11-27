@@ -1,10 +1,11 @@
 import Link from "next/link"
 import { storeName } from "@/lib/i18n"
+import { configuredStoreName } from "@/lib/server-env"
 
 export function Wordmark({ size = "text-h2" }: { size?: "text-h2" | "text-display-web" }) {
   return (
     <Link href="/" className={`font-heading ${size} tracking-[-0.02em] text-primary lowercase`}>
-      {storeName()}
+      {storeName(configuredStoreName())}
     </Link>
   )
 }

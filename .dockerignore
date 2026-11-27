@@ -11,10 +11,12 @@
 **/playwright-report
 **/*.tsbuildinfo
 **/.DS_Store
-# Local env files and secrets never enter an image; templates may.
+# Local env files, keys and certificates never enter an image; templates may.
 **/.env*
 !**/.env.template
-*.pem
+**/*.pem
+**/*.key
+**/*.p12
 infra/.env
 infra/certs
 # Not needed to build or run the applications.

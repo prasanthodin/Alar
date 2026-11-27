@@ -7,9 +7,17 @@
 set -eu
 
 if [ "${1:-start}" = "start" ]; then
-  if [ -z "${NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY:-}" ] && [ -n "${PUBLISHABLE_KEY_FILE:-}" ] && [ -s "$PUBLISHABLE_KEY_FILE" ]; then
+  # The key is read once here; restart web after it changes (for example after `down -v`).
+  if [ -n "${NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY:-}" ]; then
+    echo "Publishable key: from NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY"
+  elif [ -z "${PUBLISHABLE_KEY_FILE:-}" ]; then
+    echo "Publishable key: NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY and PUBLISHABLE_KEY_FILE are both unset" >&2
+  elif [ -s "$PUBLISHABLE_KEY_FILE" ]; then
     NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY="$(cat "$PUBLISHABLE_KEY_FILE")"
     export NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+    echo "Publishable key: from PUBLISHABLE_KEY_FILE ($PUBLISHABLE_KEY_FILE)"
+  else
+    echo "Publishable key: PUBLISHABLE_KEY_FILE ($PUBLISHABLE_KEY_FILE) is missing or empty; is commerce running?" >&2
   fi
   exec next start -p 8000 -H 0.0.0.0
 fi

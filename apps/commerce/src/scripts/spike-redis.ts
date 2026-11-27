@@ -99,7 +99,11 @@ export default async function spikeRedis({ container }: ExecArgs) {
     let blocked = false
     try {
       await locking.acquire(key, { ownerId: "spike-b", expire: 30 })
-    } catch {
+    } catch (err) {
+      // Only a lock conflict counts; anything else (such as Redis being down) is a failure.
+      if ((err as { type?: string }).type !== MedusaError.Types.CONFLICT) {
+        throw err
+      }
       blocked = true
     }
     if (!blocked) {

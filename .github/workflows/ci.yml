@@ -77,6 +77,13 @@ jobs:
       - name: Enable pnpm through corepack
         run: corepack enable
 
+      # The compose file must stay valid with the committed template; the secrets
+      # the template leaves empty come from throwaway values here.
+      - name: Compose file check
+        env:
+          POSTGRES_PASSWORD: ci-only-postgres-password
+        run: docker compose -f infra/compose.yaml --env-file infra/.env.template config -q
+
       - name: Install
         run: pnpm install --frozen-lockfile
 
@@ -113,6 +120,26 @@ jobs:
           done
           cat "$RUNNER_TEMP/commerce.log"
           exit 1
+
+      - name: Request log has one JSON line per request with the request id
+        run: |
+          id=3b241101-e2bb-4255-8caf-4136c566a962
+          curl -sfD - -o /dev/null -H "X-Request-Id: $id" http://localhost:9000/health | tee "$RUNNER_TEMP/health-headers"
+          grep -qi "^x-request-id: $id" "$RUNNER_TEMP/health-headers"
+          sleep 1
+          test "$(grep -cF "\"requestId\":\"$id\"" "$RUNNER_TEMP/commerce.log")" = "1"
+
+      - name: Redis modules work (event, workflow, lock)
+        working-directory: apps/commerce
+        run: pnpm exec medusa exec ./src/scripts/spike-redis.ts
+
+      - name: Kernel refuses to start with a missing variable
+        working-directory: apps/commerce
+        run: |
+          if env -u S3_BUCKET pnpm exec medusa db:migrate > "$RUNNER_TEMP/env-check.log" 2>&1; then
+            echo "db:migrate succeeded without S3_BUCKET"; exit 1
+          fi
+          grep -q "Missing or invalid environment variable: S3_BUCKET" "$RUNNER_TEMP/env-check.log"
 
       - name: Read the seeded publishable key
         run: |
