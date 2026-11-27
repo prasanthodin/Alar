@@ -100,7 +100,7 @@ Solid arrows are code imports; dotted arrows are runtime calls. No arrow means n
 
 - **Binds:** FR-5, FR-20, FR-37, FR-58
 - **Prevents:** floating-point totals; the kernel and shop code computing different totals.
-- **Rule:** amounts are integer paise everywhere. A shelf price is tax-inclusive and a multiple of 100 paise. The kernel's tax provider is the shop's own and calls the money functions in `packages/contracts`; nothing else computes tax. A tax code maps to dated value bands (per-piece value range → rate), which expresses both a flat rate and a threshold rule. A discount is applied per piece and rounded down to a whole rupee before tax is derived backwards; any rounding remainder goes into the tax line. Every price change writes a price-history row; the server computes the 30-day lowest price. Clients format amounts and never compute them.
+- **Rule:** amounts are integer paise everywhere. A shelf price is tax-inclusive and a multiple of 100 paise. The kernel's tax provider is the shop's own and calls the money functions in `packages/contracts`; nothing else computes tax. A tax code maps to dated value bands (range of per-piece taxable value, after discount and before tax → rate), which expresses both a flat rate and a threshold rule. A discount is applied per piece and rounded down to a whole rupee before tax is derived backwards; any rounding remainder goes into the tax line. Every price change writes a price-history row; the server computes the 30-day lowest price. Clients format amounts and never compute them.
 
 ### AD-6 — Stock changes only through named workflows, under one lock
 
@@ -124,7 +124,7 @@ Solid arrows are code imports; dotted arrows are runtime calls. No arrow means n
 
 - **Binds:** `apps/worker`, `apps/content`, `apps/commerce`
 - **Prevents:** a sidecar becoming a second writer.
-- **Rule:** the worker and content call `/internal/*` on commerce with a service token. Each such route starts a workflow. `/internal/*` is not reachable from outside the private network.
+- **Rule:** the worker and content call `/internal/*` on commerce with a service token. Each such route either starts a workflow or is a read-only lookup (for example the Design and Weaver picker in the content admin). `/internal/*` is not reachable from outside the private network.
 
 ### AD-10 — AI providers sit behind one port; guardrails are code
 
@@ -142,7 +142,7 @@ Solid arrows are code imports; dotted arrows are runtime calls. No arrow means n
 
 - **Binds:** FR-30..FR-33
 - **Prevents:** web and mobile rendering a screen differently; content and clients disagreeing on what a Design Block contains; a second job system for scheduled publishing.
-- **Rule:** a screen is a `ScreenV1` document defined in `packages/contracts`. Content stores Blocks with Design and Weaver ids or a rule. Commerce reads them, resolves ids and rules, and embeds a `DesignCard` view model with live price and availability; clients never see content's own shape. `packages/blocks` defines each Block type's properties; each client supplies one component per type. An unknown Block type is skipped. `ScreenV1` changes are additive only. A Block carries data and one action from a fixed list; never code or expressions. A scheduled screen carries `publish_at`, evaluated when read. Screen layout may be cached for at most 60 seconds; price and availability are never cached that way. Preview uses a signed token and the same route. A client that cannot fetch a screen shows its last copy. The Design page's fixed content is not a Block.
+- **Rule:** a screen is a `ScreenV1` document defined in `packages/contracts`. Content stores Blocks with Design and Weaver ids or a rule. Commerce reads them, resolves ids and rules, and embeds a `DesignCard` view model with live price and availability; clients never see content's own shape. `packages/blocks` defines each Block type's properties; each client supplies one component per type. An unknown Block type is skipped. `ScreenV1` changes are additive only. A Block carries data and one action from this fixed list: `open-design`, `open-weaver`, `open-category`, `open-screen`, `open-search`, `open-link` (same site only). It never carries code or expressions. A scheduled screen carries `publish_at`, evaluated when read. Screen layout may be cached for at most 60 seconds; price and availability are never cached that way. Preview uses a signed token and the same route. A client that cannot fetch a screen shows its last copy. The Design page's fixed content is not a Block.
 
 ### AD-13 — Regulated values are data with dates
 
@@ -220,7 +220,25 @@ Solid arrows are code imports; dotted arrows are runtime calls. No arrow means n
 
 - **Binds:** FR-20, FR-24
 - **Prevents:** an invoice that changes after issue; duplicate or gapped numbers.
-- **Rule:** the invoice module creates an invoice from the Checkout snapshot when an Order is created, and a credit note when a refund is made. Records are never edited. Numbers come from a database sequence per document type and financial year. The worker renders the file with `invoice.render` into the `documents` bucket.
+- **Rule:** the invoice module creates an invoice from the Checkout snapshot when an Order is created, and a credit note when a refund is made. Records are never edited. Numbers are gapless: each comes from a counter row per document type and financial year, locked and incremented in the same transaction that creates the record. The number is also written to the Checkout's recovery file (AD-30). The worker renders the file with `invoice.render` into the `documents` bucket.
+
+### AD-30 — Every Checkout leaves a recovery file off the server
+
+- **Binds:** NFR-4, NFR-8, AD-17, AD-25
+- **Prevents:** a restore losing an Order's contents or reusing an invoice number.
+- **Rule:** `begin-checkout` writes the Checkout snapshot (items, quantities, prices, tax, address, Shopper id) as a file in the `documents` bucket, keyed by Checkout id; `confirm-payment` adds the Order id and invoice number to it. After a restore, the reconciliation job rebuilds any Order the payment service shows as paid from its recovery file, with its original numbers, and sets each counter to the highest number issued before the shop accepts Orders again.
+
+### AD-31 — Named homes for records the stories exposed
+
+- **Binds:** FR-9, FR-25, FR-26, FR-27, FR-48
+- **Prevents:** three agents inventing three homes.
+- **Rule:** acceptances of terms, policies and the Try-on consent notice are all records of the `consent` module (document type, version, language, time). Payment disputes are records of the `checkout` module, linked to the Order. Inspection photos are files in the `documents` bucket, linked to the Return. An Order is `Refunded` only when every item in it has been refunded; a partial refund shows on the Return and the Order keeps its state. An account cannot be deleted while it has an Order that is neither Delivered past its return period, nor Cancelled, nor Refunded; Shopper photos and Try-on results are erased at once in any case.
+
+### AD-32 — Checks and costs for AI output
+
+- **Binds:** FR-45, FR-52, AD-10, AD-23
+- **Prevents:** an unchecked result being shown; costs in mixed currencies; erasure silently unsupported.
+- **Rule:** `ResultCheck` is a vision-capable model on the Approved-model list, marked as a check model, reached through the same provider port; if the check fails to run, the result is not shown. Provider prices are converted to paise with an exchange-rate setting when recorded. A provider that offers no erasure call is recorded in the erasure ledger as "not supported; relies on the provider's stated retention" and the Owner is alerted once per provider, not per request.
 
 ### AD-26 — All messages are jobs, sent by the worker
 
@@ -238,7 +256,7 @@ Solid arrows are code imports; dotted arrows are runtime calls. No arrow means n
 
 - **Binds:** FR-1..FR-5, FR-34, FR-38, FR-57
 - **Prevents:** attributes stored three ways; filters and availability computed by clients.
-- **Rule:** a Design's attributes (fibre, weave, zari, place woven, dimensions, blouse piece, care, origin, tax code, stitched, claims with evidence) are typed fields of the `design-attributes` module, linked to the kernel product, with their schema in `packages/contracts`. The kernel's free-form metadata is not used for them. `/store/shop/designs` is the only catalogue read: it returns view models, filter counts, search results and server-computed availability. A Design is published only by the `publish-design` workflow, which enforces FR-34 and FR-38.
+- **Rule:** a Design's attributes (fibre, weave, zari, colour from a fixed list, occasion tags, place woven, dimensions, blouse piece, care, origin, tax code, stitched, claims with evidence) are typed fields of the `design-attributes` module, linked to the kernel product, with their schema in `packages/contracts`. The kernel's free-form metadata is not used for them. `/store/shop/designs` is the only catalogue read: it returns view models, filter counts, search results and server-computed availability. A Design is published only by the `publish-design` workflow, which enforces FR-34 and FR-38. Translated Design and Weaver text is stored with the Design and Weaver in commerce; interface text lives in translation files in the clients; documents and message templates live in content.
 
 ### AD-29 — Counts are the shop's own
 
@@ -255,6 +273,10 @@ Solid arrows are code imports; dotted arrows are runtime calls. No arrow means n
 | Errors | Every API error is `{ code, message, details? }` with a stable `code` from `packages/contracts`. Clients branch on `code`. |
 | Idempotency | Every client request that changes state sends an `Idempotency-Key`. Webhooks and jobs are idempotent on the sender's id. |
 | Rate limits | One-time-code sends, upload links, Try-on requests and sign-in attempts are limited in commerce middleware, with limits from settings. |
+| Working days | Monday to Saturday in the business time zone, excluding the holidays listed in settings. |
+| Test profiles `[ASSUMPTION]` | Speed is measured on an Android phone with 4 GB of memory on a throttled 4G profile (10 Mbit/s down, 100 ms delay). Launch load is 50 Shoppers browsing at once, 5 Checkouts a minute and 2 Try-on jobs at once. Alert thresholds: errors above 2% of requests over 5 minutes; payment or Try-on failures above 20% over 15 minutes. All are settings. |
+| Payments in the app | The payment service's own hosted payment page, opened from the app; no push service at launch, so a ready Try-on result is found by polling. |
+| App-store review | One reviewer account with a fixed sign-in code can be switched on in settings for a single number, and is off otherwise. |
 | Logging and alerts | Structured JSON with a request id carried from client to commerce to worker to vendor. No personal data, photos, links, tokens, codes or card data. Health routes on every unit; alerts for the cases in NFR-9 go out as `message.send` jobs and through an outside uptime check. |
 | Config and secrets | Environment variables only, checked at start against a zod schema. Secrets never in the repository; the restore script documents every secret. |
 | Vendors | Used only through an adapter in a `providers/` directory, with contract tests against the vendor's test mode (NFR-11). |
@@ -288,6 +310,9 @@ Versions read from the package registry and the starter repository on 2026-11-27
 | sharp (libvips) | 0.35.5 |
 | OpenSeadragon | 6.1.1 |
 | Razorpay Node SDK | 2.9.8 |
+| Playwright (`@playwright/test`), end-to-end tests | 1.65.1 |
+| PDFKit (`pdfkit`), invoice files | 0.21.0 |
+| k6, load tests | current stable |
 | pgBackRest | current stable |
 | Caddy | 2 |
 | Docker Compose | v2 |
@@ -489,6 +514,7 @@ Images are built in continuous integration for ARM64 and x86-64 and rolled out b
 2. Blocking the kernel's cart-completion route for clients leaves the server-side path working (AD-21).
 3. The kernel, Payload, the worker, Postgres 17 and Redis 8 run together on Node 24 on an ARM64 server (Stack).
 4. The size gate (Deployment).
-5. A `ScreenV1` screen renders in the Expo app and in the web preview (AD-12).
-6. OpenSeadragon behaves under touch inside the Android web view (AD-18).
+5. A sample `ScreenV1` document renders in a minimal Expo app on a real mid-range Android phone (AD-12).
+6. OpenSeadragon, with a sample tile set, behaves under touch inside that app's web view (AD-18).
+8. A blurred, translucent navigation bar over scrolling images holds a smooth frame rate on that phone; the result informs the design system and confirms or reopens the choice of React Native.
 7. The content admin can be given a second factor, or stays behind the proxy gate (AD-15).

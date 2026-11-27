@@ -94,7 +94,7 @@ A Shopper can browse Designs and filter by fibre, weave, colour, occasion, price
 #### FR-2: Search Designs
 A Shopper can search by words in a Design's name, description, weave or Weaver.
 - A search matches words in the name, description, weave and Weaver, and returns results within 2 seconds. `[ASSUMPTION]`
-- A search with no results offers the nearest filters instead of an empty page.
+- A search with no results shows the filter panel with counts and the three weaves that have the most Designs, instead of an empty page.
 
 #### FR-3: Design page
 A Shopper can open a Design and see its photos, price, description, attributes, Weaver, stock status and delivery estimate. Realizes UJ-1.
@@ -400,6 +400,7 @@ The Owner can write a new Prompt version, test it, publish it and roll back.
 #### FR-42: Limits and spend
 The Owner can set Try-on limits per Shopper and a daily spending cap.
 - When the daily cap is reached, Try-on pauses for Shoppers with a clear message and the Owner is alerted.
+- The Owner can limit Try-on to chosen Designs; this is how a "narrow" result of the launch gate is applied.
 - The Owner can switch Try-on off for everyone at once, and back on.
 
 #### FR-43: Test before publishing
@@ -495,7 +496,7 @@ The Owner signs in to the Admin with a password and a second factor.
 - **NFR-7 Breach response.** Alar can tell affected Shoppers without delay and produce a detailed report within 72 hours.
 - **NFR-8 Recovery.** No more than 15 minutes of Orders can be lost in a failure, and any lost Order can be rebuilt from the payment service's records. Backups cover the database and stored files (product photos, full-length images, invoices) and go to a separate location. A restore is rehearsed before launch and every quarter, and the shop can be rebuilt on a new server within 4 hours. `[ASSUMPTION: the figures]` On the free hosting tier these figures are targets to test, not promises; the system must be portable to a paid server without redesign.
 - **NFR-9 Monitoring.** The Owner is alerted within 5 minutes when the shop is down, when application errors or payment failures rise above a set rate, when Try-on fails above a set rate, and when the daily Try-on spend reaches 80% of its cap.
-- **NFR-10 One operator.** Every routine task is done in the Admin; nothing routine needs a command line or a release.
+- **NFR-10 One operator.** Every routine task is done in the Admin; nothing routine needs a command line or a release. The quarterly restore drill and server maintenance are not routine tasks; they follow a written runbook.
 - **NFR-11 Tested integrations.** Payment, shipping and each AI provider have automated tests against their test environments that run before every release.
 - **NFR-12 Renameable.** The product name appears only in settings and content; the app-store identifier does not contain it.
 - **NFR-13 Honest design.** No pre-ticked extras, false urgency or late-added charges, and no sign-up demanded for anything unrelated to the purchase (signing in at checkout to confirm a mobile number is not such a demand). A yearly self-audit against the official list of dark patterns is recorded.
@@ -540,9 +541,9 @@ Targets are `[ASSUMPTION]`, proposed for the six months after launch.
 **Secondary**
 - **SM-3** Returns for "not as shown": under 5% of Orders. Validates FR-3, FR-6, FR-12.
 - **SM-4** Shoppers who order again within 90 days: 20%.
-- **SM-5** Design-page visitors who use Try-on: 30%, counted under NFR-16. Validates FR-8 to FR-11.
+- **SM-5** Design-page views that lead to a Try-on request: 30%, counted under NFR-16 as a ratio of views, since counts carry no identity. Validates FR-8 to FR-11.
 - **SM-6** Try-on spend: under 3% of sales value. Validates FR-42, NFR-3. The brief's earlier target of Rs 25 per Order cannot hold alongside SM-5 at ordinary conversion rates; both targets are reset after the Try-on test.
-- **SM-8** Design-page visitors who open the Full saree view: 40%. Tests whether buyers want it. Validates FR-6.
+- **SM-8** Design-page views in which the Full saree view is opened: 40%. Tests whether buyers want it. Validates FR-6.
 - **SM-7** Owner time to list a Design: under 15 minutes. Validates FR-34.
 
 **Counter-metrics (do not optimise)**
