@@ -1,10 +1,16 @@
 import { loadEnv, defineConfig } from '@medusajs/framework/utils'
+import { logger } from '@medusajs/framework/logger'
 import { loadEnvOrExit } from './src/env'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
 // Exits naming the variable (never its value) when one is missing or malformed.
 const env = loadEnvOrExit()
+
+// The logger is created before this file loads, so apply the level (default "info")
+// to it as well: at "http" the kernel would log client addresses and query strings.
+process.env.LOG_LEVEL = env.LOG_LEVEL
+logger.setLogLevel(env.LOG_LEVEL)
 
 module.exports = defineConfig({
   projectConfig: {
