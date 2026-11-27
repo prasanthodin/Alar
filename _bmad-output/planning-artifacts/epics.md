@@ -235,7 +235,7 @@ The Owner is alerted when something breaks, can restore the shop from backups, s
 
 The Owner lists one Design with stock; a Shopper pays for it on the website, sees her Order and its tax invoice, has it shipped, returns it and is refunded to the payment method she used. To make that slice work, this epic also creates the repository from the Medusa DTC starter, the shared contracts and the api-client seam, the local and staging environments, the route allow-list, admin sign-in with an enforced second factor, continuous database backup with one rehearsed restore, the size gate, one automated test that buys, ships and returns a saree, and a proof on a real Android phone of the three things the app depends on. It builds only the first working version of FR-3, FR-16, FR-18, FR-19, FR-20, FR-21, FR-23, FR-24, FR-25, FR-34, FR-36, FR-47, FR-48 and FR-60; later epics complete them. In this slice a Shopper signs in with the kernel's email-and-password customer sign-in, the simplest the kernel offers; sign-in by one-time code (FR-26) replaces it in Epic 3. Catalogue browsing and filters, Try-on, Server-driven screens and the Android app are not in this epic. Screens are described by behaviour only and are styled from DESIGN.md when it exists.
 
-**Spike items proven here:** item 1 in Story 1.10; item 2 in Stories 1.4 and 1.10; item 3 in Stories 1.3 and 1.20; item 4 in Story 1.22; item 7 in Story 1.19; items 5, 6 and 8 (a sample `ScreenV1` document, OpenSeadragon under touch in a web view, and a blurred translucent navigation bar, all in a minimal Expo app on a real mid-range Android phone) in Story 1.24. The Server-driven screens themselves, the Full saree view and the Android app are built by Epics 5, 2 and 6 on what Story 1.24 proves.
+**Spike items proven here:** item 1 in Story 1.10; item 2 in Stories 1.4 and 1.10; item 3 in Stories 1.3 and 1.24; item 4 in Story 1.26; item 7 in Story 1.23; items 5, 6 and 8 (a sample `ScreenV1` document, OpenSeadragon under touch in a web view, and a blurred translucent navigation bar, all in a minimal Expo app on a real mid-range Android phone) in Story 1.28. The Server-driven screens themselves, the Full saree view and the Android app are built by Epics 5, 2 and 6 on what Story 1.28 proves.
 
 ### Story 1.1: Create the repository from the starter and reshape it
 
@@ -329,7 +329,7 @@ So that I can be recognised at checkout, and every screen reads the backend the 
 **Notes for the developer:**
 - Touches `packages/contracts`, `packages/api-client`, `apps/web`.
 - Email-and-password sign-in is a deliberate stand-in for this slice; the one-time-code provider (FR-26, AD-15) replaces it in Epic 3 behind the same `api-client` functions.
-- Shopper-facing interface text goes in one English translation file in `apps/web` and stays in the clients' translation files (AD-28); Story 2.11 adds the other languages. Documents and message templates live in content from Epic 3.
+- Shopper-facing interface text goes in one English translation file in `apps/web`. That file is the website's built-in copy (AD-28): Story 2.13 adds the other languages, and Story 3.4 serves a translation bundle per language from content through commerce, with this file kept as the fallback. Documents and message templates live in content from Epic 3.
 - Screens are behaviour only; styled from DESIGN.md when it exists.
 - Add schemas to `packages/contracts` only as stories need them.
 
@@ -375,9 +375,9 @@ So that I develop against the same services and the same file that staging will 
 **Requirements:** AD-3, AD-8, AD-16; Stack; Consistency Conventions (Config and secrets, Logging and alerts); spike item 3 (local part)
 **Notes for the developer:**
 - Touches `infra/`, and start-up configuration in `apps/commerce` and `apps/web`.
-- Only the `catalog` bucket and the `commerce` database are created here; the `documents` bucket is created in Story 1.9, the `content` database in Story 1.19, and the `tiles` and `shopper-media` buckets by Epics 2 and 4.
+- Only the `catalog` bucket and the `commerce` database are created here; the `documents` bucket is created in Story 1.9, the `content` database in Story 1.23, the `tiles` bucket in Story 2.9 and the `shopper-media` bucket in Story 3.23.
 - Bucket, database and service names must not contain the product name (AD-20).
-- Container images must build for ARM64 and x86-64; the multi-architecture build itself is in Story 1.20.
+- Container images must build for ARM64 and x86-64; the multi-architecture build itself is in Story 1.24.
 
 ### Story 1.4: Route allow-list for the kernel
 
@@ -579,7 +579,7 @@ So that I can decide to buy it.
 
 **Given** a published Design with stock
 **When** a Shopper who is not signed in opens the website
-**Then** the home page shows a plain list of published Designs from `/store/shop/designs`, with no filters and no search
+**Then** the home page shows a plain list of published Designs from `/store/shop/designs`, each a `DesignCard` view model created in this story, with no filters and no search
 **And** an unpublished Design is not in that list and its page returns not found
 
 **Given** a published Design
@@ -612,7 +612,7 @@ So that I can decide to buy it.
 
 **Requirements:** FR-3 (first version), FR-16 (first version); AD-2, AD-5, AD-21, AD-28
 **Notes for the developer:**
-- Touches `apps/commerce/src/api/store/shop/designs`, `packages/contracts` and `packages/api-client` (`DesignView`, `CartView`), `apps/web`.
+- Touches `apps/commerce/src/api/store/shop/designs`, `packages/contracts` and `packages/api-client` (`DesignCard` for the list, `DesignView`, `CartView`), `apps/web`. Stories 1.28 and 2.15 extend `DesignCard`; they do not create it again.
 - Kernel cart routes used here are added to the allow-list; cart completion stays off it.
 - Left for Epic 2: Weaver, delivery estimate, maker's address and terms, the Full saree view and Try-on entry points, filters and search. Left for Epic 3: the same cart on a Shopper's other devices, and the shipping charge rule.
 - Screens are behaviour only; styled from DESIGN.md when it exists.
@@ -678,7 +678,7 @@ So that nobody else can buy them while I am paying.
 **Requirements:** FR-19 (Hold, last Piece, flagged changes), FR-16 (cart locked during a Hold), NFR-4, NFR-8; AD-4, AD-6, AD-13, AD-22, AD-30
 **Notes for the developer:**
 - Touches `apps/commerce/src/modules/hold` and `checkout`, `apps/commerce/src/workflows/begin-checkout` and `release-hold`, `apps/commerce/src/jobs`, `apps/commerce/src/api/store/shop/checkouts`, `infra/` (the `documents` bucket), and the checkout screen in `apps/web`.
-- The recovery file is what lets a restore rebuild an Order with its original numbers; Story 1.10 adds the Order id to it, Story 1.13 the invoice number, and Stories 1.12 and 1.21 read it.
+- The recovery file is what lets a restore rebuild an Order with its original numbers; Story 1.10 adds the Order id to it, Story 1.13 the invoice number, and Stories 1.12 and 1.25 read it.
 - No payment is started in this story; Story 1.10 adds the payment step to `begin-checkout`.
 - The delivery check by pincode (FR-17) is Epic 3; here the address is only recorded.
 - The time shown is the true end of the Hold; it must not be styled as pressure (NFR-13).
@@ -690,6 +690,11 @@ I want to pay by UPI, card or netbanking and have my Order confirmed by the shop
 So that I am charged exactly once and only for a saree that is mine.
 
 **Acceptance Criteria:**
+
+**Given** `packages/contracts`
+**When** this story is finished
+**Then** it holds the Order states Paid, Packed, Dispatched, Out for delivery, Delivered, Delivery failed, Returned to shop, Cancelled and Refunded as an enum, with a table of allowed transitions (AD-24)
+**And** the `order-state` module, created in this story, stores an Order's state, and no state is written that the enum does not hold
 
 **Given** the Razorpay payment provider is added to commerce and the starter's card-payment provider is removed
 **When** a Shopper begins checkout
@@ -737,9 +742,9 @@ So that I am charged exactly once and only for a saree that is mine.
 
 **Requirements:** FR-18, FR-19 (confirmed twice), NFR-4, NFR-11; AD-4, AD-6, AD-7, AD-24, AD-30; spike items 1 and 2
 **Notes for the developer:**
-- Touches `apps/commerce/src/providers/razorpay` (Razorpay Node SDK 2.9.8), `apps/commerce/src/workflows/confirm-payment`, `apps/commerce/src/subscribers`, `apps/commerce/src/modules/order-state`, and the checkout screens in `apps/web`.
+- Touches `apps/commerce/src/providers/razorpay` (Razorpay Node SDK 2.9.8), `apps/commerce/src/workflows/confirm-payment`, `apps/commerce/src/subscribers`, `apps/commerce/src/modules/order-state`, `packages/contracts` (the Order state enum and transition table), and the checkout screens in `apps/web`.
 - If spike item 1 or 2 fails (the Hold cannot be released and the cart completed in one lock without double-reserving, or the server-side completion stops working once the route is blocked), stop and report with the failing test; the spine names no fallback, and no workaround may leave two sets of reservations or open the route to clients.
-- Locally a webhook is a test-mode payload signed with the test secret; the round trip from the payment service itself is exercised on staging in Story 1.20.
+- Locally a webhook is a test-mode payload signed with the test secret; the round trip from the payment service itself is exercised on staging in Story 1.24.
 - Failed, pending and late payments are Story 1.11; the invoice is Story 1.13.
 - The payment screen is the payment service's own, the one direct vendor call AD-2 allows a client.
 
@@ -775,7 +780,7 @@ So that I never pay for a saree I do not get.
 
 **Given** an automatic refund that the payment service refuses or does not answer
 **When** the workflow finishes
-**Then** the Checkout is marked refund pending, the scheduled job retries it, and no second refund is ever created for the same payment
+**Then** the Checkout is marked refund pending, the kernel's scheduled job `retry-pending-refunds`, created in this story, retries it, and no second refund is ever created for the same payment
 
 **Given** a failed-payment event delivered twice
 **When** both are processed
@@ -783,9 +788,9 @@ So that I never pay for a saree I do not get.
 
 **Requirements:** FR-18 (failed and pending payments), FR-19 (payment after the Hold ended), NFR-4; AD-6, AD-7
 **Notes for the developer:**
-- Touches `apps/commerce/src/workflows/confirm-payment` and `release-hold`, `apps/commerce/src/jobs`, the Checkout status view model, and the status screen in `apps/web`.
+- Touches `apps/commerce/src/workflows/confirm-payment` and `release-hold`, `apps/commerce/src/jobs` (the new `retry-pending-refunds` job, which only starts a workflow), the Checkout status view model, and the status screen in `apps/web`.
 - The spine's Checkout and Hold state diagram is the specification; test every arrow.
-- The message to the Shopper for an automatic refund (FR-19 "messaged within 5 minutes", FR-54) is delivered from Epic 3 onward: Story 3.18 subscribes to `payment.auto-refunded`. In this epic the event is recorded and logged and the Shopper sees the refund on the Checkout status screen.
+- The message to the Shopper for an automatic refund (FR-19 "messaged within 5 minutes", FR-54) is delivered from Epic 3 onward: Story 3.20 subscribes to `payment.auto-refunded`. In this epic the event is recorded and logged and the Shopper sees the refund on the Checkout status screen.
 - Test with a controllable clock; do not wait 15 minutes in tests.
 
 ### Story 1.12: Daily reconciliation of payments and Orders
@@ -799,7 +804,7 @@ So that no payment is left without an Order or a refund, and no Order without a 
 **Given** the kernel's scheduled job for reconciliation
 **When** it runs after the end of a business day in the business time zone
 **Then** it fetches that day's captured payments and refunds from the payment service and compares them with Orders and automatic refunds
-**And** it writes one reconciliation record with the date, the counts and every difference
+**And** it writes one reconciliation record, an entity of the `checkout` module, with the date, the counts and every difference
 
 **Given** a day on which every captured payment has exactly one Order or one full automatic refund, and every Order has a captured payment equal to its snapshot total
 **When** the job runs
@@ -812,7 +817,7 @@ So that no payment is left without an Order or a refund, and no Order without a 
 
 **Given** a captured payment whose Checkout is not in the database, as after a restore
 **When** the job runs
-**Then** it rebuilds the Checkout from its recovery file in the `documents` bucket and starts `confirm-payment`, so the Order has the items, prices, tax and address of the snapshot, and the Order id and invoice number already written in the file are used again (AD-30)
+**Then** it rebuilds the Checkout from its recovery file in the `documents` bucket and starts `confirm-payment`, so the Order has the items, prices, tax and address of the snapshot, and the Order id already written in the file is used again (AD-30)
 **And** a captured payment with no recovery file is listed as an unexplained difference and nothing is created for it
 
 **Given** an Order with no captured payment, or with a payment of a different amount
@@ -833,8 +838,8 @@ So that no payment is left without an Order or a refund, and no Order without a 
 
 **Requirements:** NFR-4; AD-4, AD-7, AD-17 (rebuilding a missing Order), AD-30
 **Notes for the developer:**
-- Touches `apps/commerce/src/jobs` (reconciliation), the Razorpay adapter (listing payments and refunds), `apps/commerce/src/admin`.
-- Reusing an invoice number from a recovery file is tested in Story 1.13 and rehearsed in Story 1.21.
+- Touches `apps/commerce/src/jobs` (reconciliation), the `checkout` module (the reconciliation record), the Razorpay adapter (listing payments and refunds), `apps/commerce/src/admin`.
+- Invoices do not exist yet. Story 1.13 adds the invoice number to the recovery file and tests that a rebuilt Order takes that number again; Story 1.25 rehearses it.
 - The job only starts workflows; it does not write Orders itself (AD-4).
 - The alert to the Owner by message (NFR-9) is Epic 7; here a difference is on the Admin page and in the error log.
 - Add a contract test for listing payments against Razorpay test mode (NFR-11).
@@ -847,9 +852,9 @@ So that I know what I bought and what tax I paid.
 
 **Acceptance Criteria:**
 
-**Given** `packages/contracts`
-**When** this story is finished
-**Then** it holds the Order states Paid, Packed, Dispatched, Out for delivery, Delivered, Delivery failed, Returned to shop, Cancelled and Refunded as an enum, with a table of allowed transitions
+**Given** the Order state enum and transition table that Story 1.10 put in `packages/contracts`
+**When** an Order is returned to a client
+**Then** the `OrderView` view model carries the state from that enum, named as in the Glossary
 **And** the server stores and returns the state; no client derives it
 
 **Given** a signed-in Shopper with an Order
@@ -950,11 +955,11 @@ So that I have a record of my purchase.
 - Sending the invoice by message (FR-54) is Epic 3.
 - Other worker jobs (`message.send`, `tiles.build`, `tryon.generate`) are created by the epics that need them.
 
-### Story 1.15: Owner packs, labels and dispatches an Order, and tracking moves it
+### Story 1.15: Owner finds an Order, packs it and creates its shipping label
 
 As an Owner,
-I want to pack an Order, create its shipping label and hand it over, and have tracking update it,
-So that the saree reaches the Shopper and she can follow it.
+I want to find an Order, mark it Packed and create its shipping label,
+So that the parcel is ready to hand over and I never retype an address.
 
 **Acceptance Criteria:**
 
@@ -964,17 +969,67 @@ So that the saree reaches the Shopper and she can follow it.
 
 **Given** an Order in state Paid
 **When** the Owner marks it Packed and then creates a shipping label
-**Then** the shipping adapter creates a shipment in the shipping service's test mode from the Order's address, with nothing retyped
+**Then** the Order moves to Packed through that transition's workflow, and the shipping adapter creates a shipment in the shipping service's test mode from the Order's address, with nothing retyped
 **And** the label file and tracking number are stored against the Order and the Owner can print the label
 
 **Given** label creation fails at the shipping service
 **When** the Owner sees the error and tries again
 **Then** the Order is still Packed and at most one shipment exists for the Order
 
+**Given** an Order that is not in state Paid
+**When** the Owner tries to mark it Packed
+**Then** the request is refused by the transition table of Story 1.10 and the state does not change
+
+**Given** the shipping adapter
+**When** its contract test for creating a shipment runs against the shipping service's test mode
+**Then** it passes, and the test is part of the checks run before a release
+
+**Requirements:** FR-47 (first version), NFR-11; AD-4, AD-14, AD-24; Consistency Conventions (Vendors)
+**Notes for the developer:**
+- Touches `apps/commerce/src/providers/shipping` (the port and one adapter), the Paid→Packed transition workflow, `apps/commerce/src/admin` (Orders page).
+- The shipping service is undecided in the PRD (Open Question 2: the founder's existing provider first). Write the port first, with workflow tests against recorded test-mode responses. If the founder has not named the service or given test-mode credentials when this story starts, stop and report.
+- The label file goes in the `documents` bucket.
+- Dispatch and the stock change are Story 1.16; tracking events are Story 1.17.
+- Admin page is behaviour only; styled from DESIGN.md when it exists.
+
+### Story 1.16: Owner dispatches an Order and its Pieces leave stock
+
+As an Owner,
+I want to mark a packed and labelled Order as Dispatched,
+So that the saree is on its way and my stock count shows it has left the shop.
+
+**Acceptance Criteria:**
+
 **Given** an Order that is Packed and has a tracking number
 **When** the Owner marks it Dispatched
 **Then** the `fulfil-order` workflow, under the lock, reduces the stocked quantity, removes the Order's reservation, writes stock-movement rows with the cause "sale", and sets the state to Dispatched
 **And** an Order without a tracking number cannot be marked Dispatched
+
+**Given** the Owner presses Dispatched twice, or the request is sent twice
+**When** both are processed
+**Then** the stocked quantity is reduced once and the stock-movement rows are not duplicated
+
+**Given** the stock-movement row cannot be written
+**When** `fulfil-order` runs
+**Then** its compensation restores the stocked and reserved quantities and the Order stays Packed
+
+**Given** an Order that has been Dispatched
+**When** the Shopper opens her Order page
+**Then** she sees the state Dispatched and the tracking number
+
+**Requirements:** FR-21 (first version), FR-47 (first version), FR-36; AD-4, AD-6, AD-14, AD-24
+**Notes for the developer:**
+- Touches `apps/commerce/src/workflows/fulfil-order`, the Orders page in `apps/commerce/src/admin`, and the Order page in `apps/web`.
+- `fulfil-order` is one of the stock workflows AD-6 names; reuse the lock helper and row shape of Story 1.7 and test success, each failure and compensation.
+- Tracking events after dispatch are Story 1.17. Cancelling before dispatch (FR-22) is Epic 3.
+
+### Story 1.17: Tracking events from the shipping service move the Order
+
+As a Shopper,
+I want my Order's state to follow the parcel as the shipping service reports it,
+So that I can see where my saree is without asking anyone.
+
+**Acceptance Criteria:**
 
 **Given** a tracking event from the shipping service
 **When** it arrives at `/webhooks/shipping` and passes the adapter's verification
@@ -998,17 +1053,16 @@ So that the saree reaches the Shopper and she can follow it.
 **Then** she is told what happens next, and when the shipping service reports it back at the shop the Order moves to Returned to shop
 
 **Given** the shipping adapter
-**When** its contract tests run against the shipping service's test mode
-**Then** creating a shipment and reading an event pass, and the tests are part of the checks run before a release
+**When** its contract test for reading an event runs against the shipping service's test mode
+**Then** it passes, and the test is part of the checks run before a release
 
-**Requirements:** FR-21 (first version), FR-47 (first version), NFR-11; AD-4, AD-6, AD-14, AD-24; Consistency Conventions (Vendors)
+**Requirements:** FR-21 (first version), NFR-11; AD-4, AD-24; Consistency Conventions (Vendors)
 **Notes for the developer:**
-- Touches `apps/commerce/src/providers/shipping` (the port and one adapter), `apps/commerce/src/workflows/fulfil-order` and the transition workflows, `apps/commerce/src/api/webhooks`, `apps/commerce/src/admin`.
-- The shipping service is undecided in the PRD (Open Question 2: the founder's existing provider first). Write the port first, with workflow tests against recorded test-mode responses. If the founder has not named the service or given test-mode credentials when this story starts, stop and report.
-- The full refund and the inspection for an Order in Returned to shop are Story 1.17. Cancelling before dispatch (FR-22) is Epic 3.
-- The label file goes in the `documents` bucket.
+- Touches `apps/commerce/src/providers/shipping` (event verification and the mapping table), the four transition workflows, `apps/commerce/src/api/webhooks`, and the Order page in `apps/web`.
+- The mapping table lives in the shipping adapter and nowhere else (AD-24).
+- The inspection of an Order in Returned to shop is Story 1.19 and its full refund is Story 1.21.
 
-### Story 1.16: Shopper requests a Return and books a pickup
+### Story 1.18: Shopper requests a Return and books a pickup
 
 As a Shopper,
 I want to ask to return a delivered saree, say why and book a pickup,
@@ -1018,7 +1072,7 @@ So that I can send back a saree that disappointed me.
 
 **Given** `packages/contracts`
 **When** this story is finished
-**Then** it holds the Return states Requested, Pickup booked, Picked up, Received, Accepted, Rejected and Refunded as an enum with a table of allowed transitions, and one workflow performs each transition
+**Then** it holds the Return states Requested, Pickup booked, Picked up, Received, Accepted, Rejected and Refunded as an enum with a table of allowed transitions, and one workflow performs each transition; the two the Shopper starts are named `request-return` and `book-return-pickup`, and Story 3.15 extends them
 
 **Given** an Order in state Delivered, within the return period of 7 days from delivery, the period coming from a setting seeded in this story
 **When** the Shopper requests a Return for an item and picks the reason "Not as shown" or "Defective or wrong item"
@@ -1055,14 +1109,14 @@ So that I can send back a saree that disappointed me.
 **Notes for the developer:**
 - Touches `apps/commerce/src/modules/order-state` (the Return record and state), the Return transition workflows, the shipping adapter (return pickup), `apps/commerce/src/api/store/shop/orders`, the Order page in `apps/web` and the Orders page in `apps/commerce/src/admin`.
 - Only the two always-accepted reasons are offered in this epic; other reasons, the conditions for worn items and showing the return period on the Design page and at checkout are Epic 3.
-- Inspection, refund and restock are Story 1.17.
+- Inspection and restock are Story 1.19; the refund is Stories 1.20 and 1.21.
 - Screens are behaviour only; styled from DESIGN.md when it exists.
 
-### Story 1.17: Owner inspects, refunds to source and restocks
+### Story 1.19: Owner inspects a returned saree and restocks a sound Piece
 
 As an Owner,
-I want to inspect a returned saree, refund the Shopper to the payment method she used, and put a sound Piece back in stock,
-So that she gets her money back and stock stays true.
+I want to record what I found when a returned saree arrives and put a sound Piece back in stock,
+So that stock stays true and nothing is sold again before I have looked at it.
 
 **Acceptance Criteria:**
 
@@ -1071,12 +1125,45 @@ So that she gets her money back and stock stays true.
 **Then** the Return moves to Accepted or Rejected and the inspection result, the Owner's email and the time are stored
 **And** a rejected Return shows the Shopper the reason
 
+**Given** an inspection result of sellable or damaged for a Piece
+**When** the `restock-return` workflow runs with that result
+**Then** for a sellable Piece it raises the stocked quantity by one under the lock and writes a stock-movement row with the cause "Return"
+**And** for a damaged Piece it leaves the stocked quantity unchanged and writes a stock-movement row with the cause "Return, damaged", so the Piece is not returned to stock and the count can still be explained (AD-6)
+**And** no Piece is sellable again before the Owner has recorded an inspection
+
+**Given** the same inspection is recorded twice, or `restock-return` is retried
+**When** both runs finish
+**Then** the stocked quantity has changed once and there is one stock-movement row
+
+**Given** the stock-movement row cannot be written
+**When** `restock-return` runs
+**Then** its compensation restores the earlier stocked quantity
+
+**Given** an Order in state Returned to shop
+**When** the Owner records the inspection of its Pieces
+**Then** `restock-return` runs with each result in the same way, so sound Pieces are restocked only after inspection and damaged ones are not
+
+**Requirements:** FR-25, FR-47 (inspection result), FR-36; AD-4, AD-6, AD-14
+**Notes for the developer:**
+- Touches `restock-return` in `apps/commerce/src/workflows`, the Return transition workflows for Accepted and Rejected, and the Orders page in `apps/commerce/src/admin`.
+- `restock-return` is the only workflow that writes a stock-movement row for a returned or undelivered Piece, sellable or damaged (AD-6); it takes the inspection result as input.
+- The refund for an Accepted Return is Story 1.20; the refund for an Order in Returned to shop is Story 1.21. Until those stories, an Accepted Return simply waits.
+- Inspection photos (files in the `documents` bucket linked to the Return) and sending a rejected item back are Epic 3 (FR-47, FR-23; AD-31).
+
+### Story 1.20: An accepted Return is refunded to the payment method used, with a credit note
+
+As a Shopper,
+I want my money returned to the payment method I used once my Return is accepted,
+So that I am not out of pocket for a saree I sent back.
+
+**Acceptance Criteria:**
+
 **Given** a Return becomes Accepted
-**When** the refund workflow runs
+**When** the refund workflow `refund-order` runs
 **Then** it starts a refund through the payment service to the payment method the Shopper used, for the amount she paid for that item including tax, with an idempotency key derived from the Return id
 **And** the `invoice` module issues a credit note linked to the original invoice, reversing the item's taxable value and tax to the paisa, with a gapless number from the credit-note counter row for that financial year, locked and incremented in the same transaction (AD-25)
 **And** once the payment service accepts the refund the Return moves to Refunded, and the Shopper sees the refund amount and when it was started
-**And** the Order moves to Refunded only if every item in it has now been refunded; otherwise the refund shows on the Return and the Order keeps its state (AD-31)
+**And** the Order moves to Refunded only when the total refunded for the Order equals the total paid; any smaller total is recorded against the Return and the Order keeps its state (AD-31)
 
 **Given** the Owner presses refund twice, or the workflow is retried
 **When** both runs finish
@@ -1087,21 +1174,6 @@ So that she gets her money back and stock stays true.
 **Then** the Return stays Accepted, and the Admin shows the date by which the refund must start, 2 working days after acceptance, and marks it overdue after that date; working days are Monday to Saturday in the business time zone, excluding the holidays listed in settings
 **And** a later retry does not create a second refund
 
-**Given** a Piece inspected as sellable
-**When** the `restock-return` workflow runs
-**Then** under the lock it raises the stocked quantity by one and writes a stock-movement row with the cause "Return"
-**And** a Piece inspected as damaged is not returned to stock
-**And** no Piece is sellable again before the Owner has recorded an inspection
-
-**Given** an Order in state Returned to shop
-**When** the Owner records its inspection
-**Then** the same refund workflow refunds the Order in full, the Order moves to Refunded, and sound Pieces are restocked by `restock-return` only after inspection
-
-**Given** any Order
-**When** the Owner refunds part of it from the Orders page
-**Then** the amount can be anything up to what was paid less what was already refunded, a reason is required, a credit note is issued, and a larger amount is refused with the code `refund.exceeds_paid`
-**And** a part refund never changes the Order's state; an Order is Refunded only when every item in it has been refunded (AD-31)
-
 **Given** the kernel's own refund and payment routes
 **When** they are called directly
 **Then** they are refused under Story 1.4
@@ -1110,15 +1182,51 @@ So that she gets her money back and stock stays true.
 **When** it is issued
 **Then** the worker renders its file through `invoice.render` into the `documents` bucket, and the Shopper can download it from her Order
 
-**Requirements:** FR-24, FR-25, FR-48 (first version), FR-47 (inspection result), NFR-4; AD-4, AD-6, AD-7, AD-21, AD-25, AD-31; Consistency Conventions (Working days)
+**Requirements:** FR-24, FR-48 (first version), NFR-4; AD-4, AD-7, AD-21, AD-25, AD-31; Consistency Conventions (Working days)
 **Notes for the developer:**
-- Touches the refund workflow `refund-order` and `restock-return` in `apps/commerce/src/workflows`, the `invoice` module (credit note), `apps/commerce/src/admin`; the worker change is limited to accepting the credit-note document type.
-- Seed two settings here: working days (Monday to Saturday) and the list of holidays (empty). The Admin page to edit them is Story 3.5.
-- Inspection photos (files in the `documents` bucket linked to the Return), sending a rejected item back, and payment disputes (records of the `checkout` module) are Epic 3 (FR-47, FR-23, FR-48; AD-31).
-- Story 3.10 later starts the refund for an Order in Returned to shop from the shipping event itself; the inspection recorded here then governs only restocking.
+- Touches the refund workflow `refund-order` in `apps/commerce/src/workflows`, the `invoice` module (credit note and its counter row), `apps/commerce/src/admin`, the Order page in `apps/web`; the worker change is limited to accepting the credit-note document type.
+- Seed two settings here: working days (Monday to Saturday) and the list of holidays (empty). The Admin page to edit them is Story 3.7.
+- "Refunded" for an Order is decided by amounts, not by items: the sum of the Order's refunds equals the amount paid (AD-31). Put that test in one function that every refund path calls.
 - Add the refund to the Razorpay contract tests if Story 1.10's test does not already cover a refund of part of a payment.
 
-### Story 1.18: Admin sign-in with an enforced second factor, and an audit trail
+### Story 1.21: Owner refunds part of an Order, and an undelivered Order in full
+
+As an Owner,
+I want to refund any amount up to what a Shopper paid, and the whole amount when her parcel came back undelivered,
+So that I can put things right whatever went wrong.
+
+**Acceptance Criteria:**
+
+**Given** an Order in state Returned to shop
+**When** the Owner records its inspection (Story 1.19)
+**Then** the same `refund-order` workflow refunds the whole amount paid, including any shipping charge, with a credit note, and the Order moves to Refunded because the total refunded equals the total paid
+
+**Given** any Order
+**When** the Owner refunds part of it from the Orders page
+**Then** the amount can be anything up to what was paid less what was already refunded, a reason is required, a credit note is issued, and a larger amount is refused with the code `refund.exceeds_paid`
+**And** the refund is recorded against the Order and the Order keeps its state while the total refunded is below the total paid (AD-31)
+
+**Given** an Order paid Rs 2,100 with one earlier part refund of Rs 1,000
+**When** the Owner refunds a further Rs 1,100
+**Then** the total refunded equals the total paid and the Order moves to Refunded (AD-31)
+**And** no further refund can be made for it
+
+**Given** the Owner submits the same part refund twice, or the workflow is retried
+**When** both runs finish
+**Then** there is one refund and one credit note
+
+**Given** the payment service refuses a part refund
+**When** the workflow ends
+**Then** no credit note is issued, the amount that can still be refunded is unchanged, and the Owner sees that the refund did not start
+
+**Requirements:** FR-48 (first version), FR-24, FR-21 (an undeliverable Order is refunded in full), NFR-4; AD-4, AD-7, AD-14, AD-25, AD-31
+**Notes for the developer:**
+- Touches `refund-order` in `apps/commerce/src/workflows` and the Orders page in `apps/commerce/src/admin`.
+- Reuses the refund-to-source step, the credit note and the "total refunded equals total paid" function of Story 1.20; do not write a second refund path.
+- Payment disputes (records of the `checkout` module) are Epic 3 (FR-48; AD-31).
+- Story 3.12 later starts the refund for an Order in Returned to shop from the shipping event itself; the inspection recorded in Story 1.19 then governs only restocking.
+
+### Story 1.22: Admin sign-in with an enforced second factor, and an audit trail
 
 As an Owner,
 I want the Admin to require my password and a second factor and to record every change I make,
@@ -1164,11 +1272,11 @@ So that nobody else can run my shop and every change can be traced.
 **Requirements:** FR-60, FR-36 (who made each change); AD-14, AD-15
 **Notes for the developer:**
 - Touches `apps/commerce/src/api/middlewares`, `apps/commerce/src/modules/shop-audit`, `docs/` (recovery process).
-- The secrets that encrypt second factors are environment variables; list them in the secrets document that the restore script will use (Story 1.21).
+- The secrets that encrypt second factors are environment variables; list them in the secrets document that the restore script will use (Story 1.25).
 - Deleting access events after one year (NFR-5) and the Owner's view of the audit trail are Epic 3 and Epic 4.
-- The content admin is Story 1.19.
+- The content admin is Story 1.23.
 
-### Story 1.19: Content application behind the access gate
+### Story 1.23: Content application behind the access gate
 
 As an Owner,
 I want the content admin running beside the shop and locked behind an extra gate,
@@ -1188,7 +1296,7 @@ So that the place where notices and screens will be edited is safe from its firs
 
 **Given** spike item 7
 **When** the developer tries to enforce a second factor on the content admin using only what Payload provides at the pinned version
-**Then** if it can be enforced, an account without an enrolled second factor is refused, as in Story 1.18
+**Then** if it can be enforced, an account without an enrolled second factor is refused, as in Story 1.22
 **And** if it cannot, the content admin stays reachable only through an extra access gate at Caddy that asks for a separate credential before any content admin page is served, which is the fallback AD-15 names
 **And** the outcome is recorded in `docs/`
 
@@ -1215,7 +1323,7 @@ So that the place where notices and screens will be edited is safe from its firs
 - Do not add a dependency the spine does not name to obtain a second factor; if Payload alone cannot do it, take the gate.
 - If Payload does not run beside the kernel on Node.js 24, stop and report.
 
-### Story 1.20: Deploy the slice to the staging server
+### Story 1.24: Deploy the slice to the staging server
 
 As a builder,
 I want the slice deployed to the staging server from continuous integration,
@@ -1260,10 +1368,10 @@ So that it is proven on the real ARM server with the vendors' test modes.
 **Notes for the developer:**
 - Touches `infra/` (compose, Caddy, deploy script), continuous-integration configuration, and container files for the four applications.
 - Staging runs vendor test modes only; no live keys.
-- Backup and restore are Story 1.21; the size gate is Story 1.22.
+- Backup and restore are Story 1.25; the size gate is Story 1.26.
 - Record the server's CPU and memory allowance as found; the spine reports 2 CPUs and 12 GB for the whole account.
 
-### Story 1.21: Continuous database backup and one rehearsed restore
+### Story 1.25: Continuous database backup and one rehearsed restore
 
 As an Owner,
 I want the database backed up continuously to another location and a restore rehearsed once,
@@ -1308,7 +1416,7 @@ So that losing the server does not lose paid Orders, invoices or the catalogue.
 - The backup location and its credentials are environment variables; no cloud vendor's SDK is added.
 - If the free server cannot hold a second copy of the system for the rehearsal, restore onto the same server after destroying its volumes.
 
-### Story 1.22: The size gate
+### Story 1.26: The size gate
 
 As an Owner,
 I want to know whether the free server can carry the shop at launch,
@@ -1319,6 +1427,7 @@ So that I choose production hosting on evidence before real payments run.
 **Given** staging with every container running
 **When** the k6 load script in `infra/` is run
 **Then** it simulates the launch load of the spine's test profile against the shop routes that `packages/api-client` calls: 100 published Designs with 10 Pieces each, 50 Shoppers browsing at once, and 5 Checkouts a minute each confirmed by a signed test-mode webhook, for 30 minutes, with a nightly backup running during the test `[ASSUMPTION: the 30-minute length and the backup running; the load figures are the spine's]`
+**And** the 100 Designs are created by a seed script written in this story, which publishes each through `publish-design` and sets its stock through `adjust-stock`, and can be run again without creating duplicates
 **And** the profile's third part, 2 Try-on jobs at once, cannot run before Try-on exists; Story 7.11 runs the whole profile and confirms or revises this decision
 **And** the profile is a small number of named constants so the founder can change it and run the script again
 
@@ -1345,12 +1454,12 @@ So that I choose production hosting on evidence before real payments run.
 
 **Requirements:** NFR-8 (portable to a paid server); AD-16, AD-17; Deployment "Size gate"; spike item 4
 **Notes for the developer:**
-- Touches `infra/` (load script) and `docs/` (the decision); no application code should change.
+- Touches `infra/` (load script), a seed script in `apps/commerce` for the 100 Designs, and `docs/` (the decision); no other application code should change. Story 2.15 extends the same seed script with Weavers and the filterable attributes.
 - The launch load is the spine's (Consistency Conventions, "Test profiles") and is held as settings; the pass conditions above are an assumption for the founder to confirm. Record both with the result.
 - The load tool is k6 (spine Stack). The script calls the shop's HTTP routes directly; keep its paths in step with `packages/api-client`.
 - Keep the script: Story 7.11 runs it again with the Try-on part and the full catalogue.
 
-### Story 1.23: One end-to-end test buys, ships and returns a saree
+### Story 1.27: One end-to-end test buys, ships and returns a saree
 
 As a builder,
 I want one automated test that lists, buys, ships and returns a saree,
@@ -1390,7 +1499,7 @@ So that every later change is checked against the whole slice before it is deplo
 
 **Given** continuous integration
 **When** the end-to-end test or any workflow test fails
-**Then** the deploy of Story 1.20 does not run
+**Then** the deploy of Story 1.24 does not run
 
 **Given** staging after a deploy
 **When** the same test is run against it with the payment service and the shipping service in their real test modes
@@ -1403,8 +1512,9 @@ So that every later change is checked against the whole slice before it is deplo
 - In continuous integration the payment service and the shipping service are replaced at the HTTP edge by recorded test-mode responses; the adapters themselves are unchanged and still run.
 - The test runner is Playwright (`@playwright/test` 1.65.1, spine Stack); drive the Shopper's and the Owner's steps through the website and the Admin in a browser.
 - Use a controllable clock for the Hold; do not wait 15 minutes.
+- This test blocks every deploy, so any later story that changes sign-in, checkout, or the Order and Return states updates the test in that same story and leaves it passing; those stories say so in their acceptance criteria.
 
-### Story 1.24: Android proof on a real phone: screen, viewer and blurred bar
+### Story 1.28: Android proof on a real phone: screen, viewer and blurred bar
 
 As a builder,
 I want a minimal Android app run on a real mid-range phone that renders a sample screen, the saree viewer and a blurred navigation bar,
@@ -1412,7 +1522,7 @@ So that the choice of React Native, the web-view viewer and the design system's 
 
 **Acceptance Criteria:**
 
-**Given** the repository after Story 1.23
+**Given** the repository after Story 1.27
 **When** `apps/mobile` is created as a minimal Expo 58.1.0 application with expo-router
 **Then** a build installs and starts on a real Android phone with 4 GB of memory, the phone of the spine's test profile, whose model and Android version are written in `docs/`
 **And** its application id is the neutral one required by AD-20, with no product name in the id, the URL scheme or any package name, and the name check from Story 1.1 passes for `apps/mobile`
@@ -1420,10 +1530,10 @@ So that the choice of React Native, the web-view viewer and the design system's 
 
 **Given** `packages/blocks` is created with the properties of the sample Block types (banner, text and row of Designs), with no UI code
 **When** a sample `ScreenV1` document, defined by a first `ScreenV1` schema in `packages/contracts` and bundled with the app, is opened
-**Then** the app renders each Block in order with one native component per type, the row of Designs from sample `DesignCard` data embedded in the document (a first `DesignCard` schema is added to `packages/contracts` here if Story 1.8 did not create one)
+**Then** the app renders each Block in order with one native component per type, the row of Designs from sample `DesignCard` data embedded in the document, using the `DesignCard` schema that Story 1.8 created
 **And** a Block of a type the app does not know, placed in the sample, is skipped and the rest is shown, settling spike item 5
 
-**Given** a sample Deep Zoom tile set cut once with sharp from a full-length saree image at least 8,000 pixels long and served from staging object storage
+**Given** a sample Deep Zoom tile set cut once with sharp from a full-length saree image at least 8,000 pixels long and served from the public `catalog` bucket on staging, under a `spike/` prefix
 **When** the app opens a native screen holding a `react-native-webview` 14.0.1 web view with a page that shows the tile set in OpenSeadragon 6.1.1
 **Then** one finger pans and two fingers pinch to zoom the saree, to both ends and to full detail, and the native screen does not scroll, go back or zoom the whole page instead
 **And** the frame rate while panning and pinching is measured on the phone and recorded, settling spike item 6
@@ -1444,7 +1554,7 @@ So that the choice of React Native, the web-view viewer and the design system's 
 **Requirements:** NFR-12; AD-12, AD-18, AD-19, AD-20; Consistency Conventions (Test profiles); spike items 5, 6 and 8
 **Notes for the developer:**
 - Touches `apps/mobile` (new), `packages/blocks` (new), `packages/contracts` (a first `ScreenV1` schema and the sample), and `docs/` (the record).
-- This is a proof, not the app: no sign-in, no network data beyond the tiles, no styling from DESIGN.md. Story 6.1 builds the app shell on this application; Story 5.1 completes `ScreenV1` and `packages/blocks`; Story 2.9 builds the real viewer page.
+- This is a proof, not the app: no sign-in, no network data beyond the tiles, no styling from DESIGN.md. Story 6.1 builds the app shell on this application; Story 5.1 completes `ScreenV1` and `packages/blocks`; Story 2.10 builds the real viewer page and deletes the objects under `spike/`.
 - Use only the Expo SDK's own modules and the versions in the spine's Stack; the blur comes from the Expo SDK's blur module.
 - Measure on the phone itself, in a release build, not on an emulator.
 
@@ -1452,13 +1562,13 @@ So that the choice of React Native, the web-view viewer and the design system's 
 
 A Shopper browses, filters and searches about 100 Designs on the website without logging in, reads who wove each one, sees honest whole-rupee prices, and inspects the whole saree in the Full saree view. The Owner lists Designs with full attributes, Weavers, Variants, tax data, evidence-backed claims and discounts, and can list a Design in under 15 minutes. Everything here is built for the website; the Android app shows the same things in Epic 6.
 
-**FRs covered:** FR-1, FR-2, FR-3 (complete), FR-4, FR-5, FR-6, FR-7, FR-34 (complete), FR-35, FR-37, FR-38, FR-57, FR-58
+**FRs covered:** FR-1, FR-2, FR-3 (complete), FR-4, FR-5, FR-6, FR-7, FR-20 (two invoice lines for a stitched blouse), FR-34 (complete), FR-35, FR-37, FR-38, FR-57, FR-58
 **NFRs:** NFR-1, NFR-14
 
 **Conventions for every story in this epic**
 
 - Shopper-facing screens are described by behaviour only; they are styled from DESIGN.md when it exists.
-- No Shopper-facing text is written in code (spine, Consistency Conventions). Interface text goes in the website's translation files; translated Design and Weaver text is stored with the Design and Weaver in commerce and arrives in view models through `packages/api-client` (AD-28). Nothing in this epic reads translations from the content application, whose documents and message templates arrive in Epic 3.
+- No Shopper-facing text is written in code (spine, Consistency Conventions). Interface text goes in the website's translation files, which are the built-in copy AD-28 requires of each client; the translation bundles that content holds and commerce serves, so that wording changes need no release, are built in Story 3.4. Translated Design and Weaver text is stored with the Design and Weaver in commerce and arrives in view models through `packages/api-client` (AD-28). Nothing in this epic reads translations from the content application, whose documents and message templates arrive in Epic 3.
 - Every state-changing Admin request writes a `shop-audit` event with actor, time, action, before and after (AD-14), and every state change runs as a named workflow (AD-4). Stories do not repeat this in each criterion.
 - Items tagged `[ASSUMPTION]` are choices made while writing the stories where the PRD and spine are still silent; each says what is assumed.
 
@@ -1502,7 +1612,7 @@ So that every Design can say who wove it.
 **Notes for the developer:**
 - Creates the `weaver` module in `apps/commerce/src/modules/weaver` with its table and migration, the `Weaver` schema in `packages/contracts`, `admin/shop/weavers` routes and a shop admin page in `apps/commerce/src/admin`.
 - Photos use the same upload path Epic 1 uses for Design photos, into the `catalog` bucket.
-- Linking a Weaver to a Design is Story 2.2. The Shopper-facing Weaver page is Story 2.16. Translations of the story are Story 2.11.
+- Linking a Weaver to a Design is Story 2.2. The Shopper-facing Weaver page is Story 2.18. Translations of the story are Story 2.13.
 
 ---
 
@@ -1548,12 +1658,12 @@ So that the Design page can state exactly what the saree is and Shoppers can fil
 
 **Given** a draft Design
 **When** the Owner saves it with some attributes still empty
-**Then** the draft is saved; completeness is checked at publishing (Story 2.10), not at saving
+**Then** the draft is saved; completeness is checked at publishing (Story 2.11), not at saving
 
 **Requirements:** FR-34, FR-3, FR-4, FR-1 (the filterable attributes); AD-3, AD-14, AD-19, AD-28
 **Notes for the developer:**
 - Extends the `design-attributes` module and its schema in `packages/contracts`: adds by migration whichever of these fields Epic 1 did not already create, the link to `weaver`, an attribute-option table for fibre, weave and occasion tags, and the fixed colour list as an enum in `packages/contracts`.
-- Colour (from the fixed list) and occasion tags are Design attributes under AD-28, and the filters of Story 2.13 use them. The colours on the fixed list are chosen with the founder when this story starts `[ASSUMPTION: about 15 everyday colour names; the spine fixes that there is a list, not its contents]`. Labels of the fixed colours are interface text in the translation files.
+- Colour (from the fixed list) and occasion tags are Design attributes under AD-28, and the filters of Story 2.15 use them. The colours on the fixed list are chosen with the founder when this story starts `[ASSUMPTION: about 15 everyday colour names; the spine fixes that there is a list, not its contents]`. Labels of the fixed colours are interface text in the translation files.
 - Tax codes are those Epic 1 seeded; managing their rates is Story 2.5. Claims and evidence are Story 2.3.
 
 ---
@@ -1596,7 +1706,7 @@ So that Alar never publishes a claim it cannot back.
 **Notes for the developer:**
 - Extends `design-attributes` (claims with evidence) and adds the claim check as a step of the `publish-design` workflow from Epic 1.
 - An evidence document is stored in the private `documents` bucket and opened in the Admin through a short-lived signed link.
-- `[ASSUMPTION: the list of protected regional names is an Owner-editable option list like those in Story 2.2; neither the PRD nor the spine says where the names come from]`. The rest of the publish gate is Story 2.10.
+- `[ASSUMPTION: the list of protected regional names is an Owner-editable option list like those in Story 2.2; neither the PRD nor the spine says where the names come from]`. The rest of the publish gate is Story 2.11.
 
 ---
 
@@ -1643,7 +1753,7 @@ So that the shop is ready for colours and sizes without being rebuilt.
 **Notes for the developer:**
 - Variants are kernel records; this story adds the Variants section to the shop's Design admin page and the Variant list to the Design view model in `packages/contracts`.
 - Stock is set only through `adjust-stock` from Epic 1; do not add another stock path.
-- Prices entered here are validated as whole rupees in Story 2.6. Choosing a Variant on the Design page is Story 2.17.
+- Prices entered here are validated as whole rupees in Story 2.6. Choosing a Variant on the Design page is Story 2.19.
 
 ---
 
@@ -1678,6 +1788,15 @@ So that a change in the law or in my accountant's advice changes a setting, not 
 **Then** the rate is taken from the band that holds the per-piece taxable value after the discount and before tax (AD-5): Rs 2,400 at 5% has a taxable value under Rs 2,500, so the 5% band applies
 **And** the same Variant with no discount has a taxable value above Rs 2,500 at either rate, so the 18% band applies
 
+**Given** the stitched garment bands (5% up to a taxable value of Rs 2,500 per piece, 18% above)
+**When** the money functions are asked whether a tax-inclusive per-piece price fits a band
+**Then** Rs 2,625 fits the 5% band and Rs 2,951 fits the 18% band, and every whole-rupee price from Rs 2,626 to Rs 2,950 fits no band: at 5% its taxable value is above Rs 2,500 and at 18% it is not
+**And** for such a price one money function returns the nearest valid prices below and above it, here Rs 2,625 and Rs 2,951, and deriving tax from it fails with the error code `price.fits_no_tax_band`; no rate is chosen for it (FR-37, AD-5)
+
+**Given** new bands dated in the future that leave such a range
+**When** the Owner saves them
+**Then** the Tax page lists every published Variant whose price would fit no band from that date, each with its nearest valid prices, so that she can reprice before the date
+
 **Given** new bands that take effect on a future date
 **When** a Checkout snapshot is made before that date and another on or after it
 **Then** the first uses the old bands and the second the new ones
@@ -1691,8 +1810,8 @@ So that a change in the law or in my accountant's advice changes a setting, not 
 **Notes for the developer:**
 - Extends the `settings` module's dated tax bands, the `tax` provider in `apps/commerce/src/providers` and the money functions in `packages/contracts` that Epic 1 created for the invoice; adds the Tax admin page.
 - Add table-driven tests for the money functions: flat rate, threshold rule, boundary at Rs 2,500, a dated change. Bands are on the per-piece taxable value after discount and before tax (AD-5).
-- Because tax is derived backwards from a tax-inclusive price, a stitched price between about Rs 2,626 and Rs 2,950 fits neither band: at 5% its taxable value is above Rs 2,500 and at 18% it is below. `[ASSUMPTION: for such a price the higher rate is used; the spine does not say, and this is a question for the accountant]`. Keep the choice in one place inside the money functions. No saree at launch is stitched.
-- Discounts themselves are Story 2.18; this story only makes the functions accept a per-piece discount.
+- Because tax is derived backwards from a tax-inclusive price, a stitched price from Rs 2,626 to Rs 2,950 fits neither band: at 5% its taxable value is above Rs 2,500 and at 18% it is not. FR-37 and AD-5 settle what happens: such a price is refused and the nearest valid prices are named. This story adds the money function that finds the nearest valid prices and the error code `price.fits_no_tax_band`; `set-variant-price` (Story 2.6), `publish-design` (Story 2.11) and the discount workflow (Story 2.20) call it. The range is worked out from the bands in force and is never a constant in code. No saree at launch is stitched.
+- Discounts themselves are Story 2.20; this story only makes the functions accept a per-piece discount.
 
 ---
 
@@ -1712,6 +1831,12 @@ So that Shoppers never see paise and the lowest price of the previous 30 days ca
 **Given** any request that sets a Variant's price
 **When** the amount is not a positive multiple of 100 paise
 **Then** it is refused with the error code `price.not_whole_rupee` and no price changes
+
+**Given** a Variant of a Design whose tax code has bands that leave a range of prices fitting no band (for stitched items today, Rs 2,626 to Rs 2,950)
+**When** the Owner sets a price in that range, for example Rs 2,800
+**Then** `set-variant-price` refuses it with the error code `price.fits_no_tax_band`, the two nearest valid prices (here Rs 2,625 and Rs 2,951) are in `details`, and the Admin offers them to her (FR-37)
+**And** no price changes and no price-history row is written
+**And** a Variant of a draft Design that has no tax code yet is not checked here; `publish-design` checks it (Story 2.11)
 
 **Given** a Variant
 **When** its price is set for the first time or changed
@@ -1743,11 +1868,61 @@ So that Shoppers never see paise and the lowest price of the previous 30 days ca
 **Notes for the developer:**
 - Builds on Story 1.6, which created the `price-history` module and wrote its first rows: this story adds the `set-variant-price` workflow as the only way a price changes, the shop admin route for prices, the price-history view and the lowest-price function used by the catalogue read.
 - Remove the kernel's direct price-edit routes from the allow-list in `packages/contracts` and hide the matching built-in admin control.
-- Showing the 30-day lowest price beside a discount is Stories 2.18 and 2.19.
+- Showing the 30-day lowest price beside a discount is Stories 2.20 and 2.21.
+
+### Story 2.7: A saree sold with a stitched blouse is taxed and invoiced as two lines
+
+As a Shopper,
+I want the invoice for a saree that comes with a stitched blouse to show each part with its own tax,
+So that the tax I paid is stated correctly for what I bought.
+
+**Acceptance Criteria:**
+
+**Given** the Owner is editing a Design
+**When** she marks it as sold with a stitched blouse
+**Then** she must give the blouse component its own tax code and, for each Variant, its share of the price in whole rupees, above zero and below the Variant's price
+**And** the component is stored as typed fields of `design-attributes`; a Design without the component is unchanged
+
+**Given** a Variant priced at Rs 3,990 whose blouse share is Rs 630, with the saree on the unstitched code at 5% and the blouse on the stitched garment code
+**When** the money functions in `packages/contracts` derive the tax
+**Then** they return two lines: the saree at Rs 3,360 with a taxable value of 320,000 paise and tax of 16,000 paise, and the blouse at Rs 630, whose taxable value is under Rs 2,500 and so takes the 5% band, with a taxable value of 60,000 paise and tax of 3,000 paise
+**And** the four amounts add up to 399,000 paise exactly and the Shopper's price stays Rs 3,990
+
+**Given** a blouse share, or a saree share, that fits no band of its own tax code (for the stitched code today, Rs 2,626 to Rs 2,950)
+**When** the Owner saves the share, changes the Variant's price through `set-variant-price`, or publishes the Design
+**Then** it is refused with `price.fits_no_tax_band`, and `details` names the component and its two nearest valid values (FR-37, AD-5)
+
+**Given** a cart line for such a Variant
+**When** `begin-checkout` makes the Checkout snapshot
+**Then** the snapshot and the recovery file carry two lines for each Piece, each with its tax code, taxable value and tax, and the line total the kernel computed equals their sum
+**And** the invoice issued by `confirm-payment` shows the saree and the stitched blouse as two lines, each with its tax code, taxable value and tax exact to the paisa, and the lines add up to the amount paid (FR-20)
+
+**Given** such an item is refunded
+**When** the credit note is issued
+**Then** it reverses both lines to the paisa
+
+**Given** a per-piece discount handed to the money functions, which accept one since Story 2.5
+**When** the discounted whole-rupee price is split
+**Then** the blouse share is reduced in the same proportion and rounded down to a whole rupee, the saree line takes the rest, and each line takes the rate of its own band at its discounted value `[ASSUMPTION: the proportional split; neither the PRD nor the spine says, and it is a question for the accountant]`
+
+**Given** a Design with no stitched blouse component, or a component whose tax code is the Design's own
+**When** it is sold
+**Then** the snapshot and the invoice carry one line for the Piece, as before
+
+**Given** invoices issued before this story
+**When** it is deployed
+**Then** none is changed (AD-25)
+
+**Requirements:** FR-20, FR-37; AD-5, AD-25, AD-28, AD-30
+**Notes for the developer:**
+- Touches `design-attributes` (the component's tax code and per-Variant share), the money functions in `packages/contracts` (a split of one tax-inclusive price into component lines), the `tax` provider, the snapshot step of `begin-checkout`, the `invoice` module and the `invoice.render` job (two lines), and the Design admin page.
+- The shop's tax provider remains the only tax calculation (AD-5). If the kernel cannot carry two taxable values for one cart line, the Checkout snapshot built by the money functions is what the invoice reads, and the kernel's line total must still equal the snapshot's; if the two cannot be made equal, stop and report.
+- "Blouse piece included" (unstitched fabric woven with the saree, Story 2.2) is not this component and stays one line. No saree at launch is sold with a stitched blouse; test with a seeded Design.
+- The discount workflow of Story 2.20 applies its band check to each component through the same functions.
 
 ---
 
-### Story 2.7: The Owner uploads the full-length image of a saree
+### Story 2.8: The Owner uploads the full-length image of a saree
 
 As an Owner,
 I want to upload one full-length image of a saree to a Design,
@@ -1775,7 +1950,7 @@ So that it can be made ready for the Full saree view.
 
 **Given** a Design that already has a full-length image
 **When** the Owner uploads another
-**Then** the new image is recorded as a new version and the earlier Full saree view stays in use until the new one is ready (Story 2.8)
+**Then** the new image is recorded as a new version and the earlier Full saree view stays in use until the new one is ready (Story 2.9)
 
 **Given** a Design with a full-length image
 **When** the Owner removes it
@@ -1789,11 +1964,11 @@ So that it can be made ready for the Full saree view.
 **Notes for the developer:**
 - Adds full-length image fields to `design-attributes` (object key, version, width, height, status: none, uploaded, processing, ready, failed), an `admin/shop/*` route that issues the upload link, and the `attach-full-image` workflow.
 - The original is stored in the `catalog` bucket, which is versioned and backed up (NFR-8). `[ASSUMPTION: accepted types are JPEG and PNG; the PRD names none]`.
-- Cutting tiles and the "ready" status are Story 2.8; the viewer and preview are Story 2.9.
+- Cutting tiles and the "ready" status are Story 2.9; the viewer and preview are Story 2.10.
 
 ---
 
-### Story 2.8: The full-length image is made ready and the Owner sees when it is finished
+### Story 2.9: The full-length image is made ready and the Owner sees when it is finished
 
 As an Owner,
 I want the full-length image cut into tiles in the background and to see when that is finished,
@@ -1804,6 +1979,10 @@ So that I can carry on listing the Design while it is processed.
 **Given** a full-length image has been recorded with the status "uploaded"
 **When** `attach-full-image` completes
 **Then** it enqueues one `tiles.build` job on the shop queue with a deterministic id made from the Design id and the image version, and sets the status to "processing" (AD-8)
+
+**Given** a local or staging environment
+**When** this story is deployed
+**Then** the public `tiles` bucket exists: it is created in this story, in `infra/` for local and staging, is not versioned, and its name does not contain the product name (AD-20, AD-22)
 
 **Given** a `tiles.build` job
 **When** the worker runs it
@@ -1833,13 +2012,13 @@ So that I can carry on listing the Design while it is processed.
 
 **Requirements:** FR-7; AD-1, AD-4, AD-8, AD-9, AD-18, AD-22
 **Notes for the developer:**
-- Adds the `tiles.build` job name and payload to `packages/contracts`, the job in `apps/worker/src/jobs`, and the internal route and workflow in `apps/commerce`.
+- Adds the `tiles.build` job name and payload to `packages/contracts`, the job in `apps/worker/src/jobs`, the internal route and workflow in `apps/commerce`, and the `tiles` bucket in `infra/` (the compose file's bucket set-up and the staging bucket). Production's bucket is created the same way when production is built in Epic 7.
 - The worker reads the original from `catalog` and writes to `tiles`; both are public buckets, so no signed links are needed for this job.
 - Test with a 20,000-pixel-long image on the ARM64 staging server and record how long the job takes; the PRD sets no time limit.
 
 ---
 
-### Story 2.9: A Shopper views the whole saree
+### Story 2.10: A Shopper views the whole saree
 
 As a Shopper,
 I want to open the Full saree view of a Design and pan and zoom along its entire length,
@@ -1886,13 +2065,13 @@ So that I can inspect the body, border and pallu as if the saree were laid out i
 
 **Requirements:** FR-6, FR-7; AD-2, AD-18, AD-28
 **Notes for the developer:**
-- One viewer page in `apps/web` using OpenSeadragon 6.1.1, reading the tile descriptor location from the Design view model through `packages/api-client`. Build it as a self-contained page so that Epic 6 can load the same page in the Android web view (AD-18). It replaces the sample page of Story 1.24, which proved the touch behaviour.
-- Reuses the signed Design preview link that Story 1.8 built for an unpublished Design and extends it to the viewer page; Story 2.10 uses the same link. `[ASSUMPTION: the link is valid for 15 minutes; Story 1.8 set no period]`.
-- Placing the entry point so that it is visible without scrolling is Story 2.17. Styled from DESIGN.md when it exists.
+- One viewer page in `apps/web` using OpenSeadragon 6.1.1, reading the tile descriptor location from the Design view model through `packages/api-client`. Build it as a self-contained page so that Epic 6 can load the same page in the Android web view (AD-18). It replaces the sample page of Story 1.28, which proved the touch behaviour, and deletes that story's sample tiles under the `spike/` prefix of the `catalog` bucket.
+- Reuses the signed Design preview link that Story 1.8 built for an unpublished Design and extends it to the viewer page; Story 2.11 uses the same link. `[ASSUMPTION: the link is valid for 15 minutes; Story 1.8 set no period]`.
+- Placing the entry point so that it is visible without scrolling is Story 2.19. Styled from DESIGN.md when it exists.
 
 ---
 
-### Story 2.10: The Owner previews a Design and publishes it only when it is complete
+### Story 2.11: The Owner previews a Design and publishes it only when it is complete
 
 As an Owner,
 I want to preview a Design as a Shopper will see it and publish it only when nothing required is missing,
@@ -1902,7 +2081,7 @@ So that every listing is complete and honest, and listing one takes me under 15 
 
 **Given** a draft Design
 **When** the Owner chooses "Preview"
-**Then** the website's Design page opens for that Design through the signed preview link from Story 1.8, as extended in Story 2.9
+**Then** the website's Design page opens for that Design through the signed preview link from Story 1.8, as extended in Story 2.10
 **And** the Design is not visible to Shoppers or in the catalogue read
 
 **Given** a Design that lacks any of: a Weaver, a fibre, a length and a width, a tax code, a whole-rupee price on every Variant, a photo marked as the fabric close-up, and at least one other photo
@@ -1913,6 +2092,11 @@ So that every listing is complete and honest, and listing one takes me under 15 
 **Given** a Design with a claim that has no evidence
 **When** the Owner chooses "Publish"
 **Then** it is refused as in Story 2.3
+
+**Given** a Design that has a Variant whose price fits no band of the Design's tax code (for stitched items today, Rs 2,626 to Rs 2,950)
+**When** the Owner chooses "Publish"
+**Then** `publish-design` refuses with `price.fits_no_tax_band`, `details` names each such Variant with its two nearest valid prices, and the Design stays a draft (FR-37, AD-5)
+**And** changing the tax code or the stitched mark of a published Design so that a Variant's price fits no band is refused in the same way, and the published Design is unchanged
 
 **Given** a Design that passes every check
 **When** the Owner chooses "Publish"
@@ -1936,20 +2120,47 @@ So that every listing is complete and honest, and listing one takes me under 15 
 **Then** each is returned to draft by a workflow and listed for the Owner as "needs completing"
 **And** after deployment no published Design lacks a Weaver
 
-**Given** photos and a full-length image already taken, and a Weaver already created
-**When** the Owner lists a new Design on staging from "New Design" to "Published", with attributes, one Variant, 10 Pieces of stock, photos, the full-length image and a preview
-**Then** a timed rehearsal recorded in `docs/` takes under 15 minutes, not counting time waiting for tiles
-**And** an automated end-to-end test performs the same steps and passes
+**Given** the end-to-end test of Story 1.27, which publishes a Design with the fields Epic 1 required
+**When** this story is finished
+**Then** the test is updated for this change (it creates a Weaver and gives the Design every item the gate now requires before publishing) and passes
 
-**Requirements:** FR-34, FR-38, FR-4; AD-4, AD-14, AD-28
+**Requirements:** FR-34, FR-37, FR-38, FR-4; AD-4, AD-5, AD-14, AD-28
 **Notes for the developer:**
 - Completes the `publish-design` workflow in `apps/commerce/src/workflows` and the Design admin page; adds a "fabric close-up" mark on a photo and the true-colour confirmation fields to `design-attributes`.
 - `publish-design` is the only way a Design becomes published (AD-28); the kernel's own product-status edit stays off the allow-list.
-- If the rehearsal exceeds 15 minutes, shorten the form (for example, sensible defaults for one Variant) within this story; do not relax a check.
+- The timed 15-minute rehearsal is Story 2.12.
 
 ---
 
-### Story 2.11: The Owner translates Design and Weaver text, and the website's wording has a file per language
+### Story 2.12: The Owner lists a Design in under 15 minutes
+
+As an Owner,
+I want the whole path from "New Design" to "Published" timed,
+So that I know listing a saree takes me under 15 minutes once the photos are taken.
+
+**Acceptance Criteria:**
+
+**Given** photos and a full-length image already taken, and a Weaver already created
+**When** an automated end-to-end test lists a new Design from "New Design" to "Published", with attributes, one Variant, 10 Pieces of stock, photos, the full-length image and a preview
+**Then** the test passes and is part of the checks run before a deploy
+
+**Given** the same materials on staging
+**When** the Owner lists a new Design by hand through the same steps
+**Then** a timed rehearsal recorded in `docs/` takes under 15 minutes, not counting time waiting for tiles
+**And** the record states the date, who did it and the time each step took
+
+**Given** a rehearsal that takes longer than 15 minutes
+**When** the form is shortened, for example with sensible defaults for one Variant
+**Then** no check of `publish-design` is relaxed, and the rehearsal is run and recorded again
+
+**Requirements:** FR-34 (the 15-minute target); AD-28
+**Notes for the developer:**
+- Touches a test beside the end-to-end test of Story 1.27, the Design admin page only if the form must be shortened, and `docs/`.
+- The developer agent can close the first criterion alone. The second waits for the Owner: hand the story back with the test passing and the rehearsal sheet prepared, and say that the timing is outstanding.
+
+---
+
+### Story 2.13: The Owner translates Design and Weaver text, and the website's wording has a file per language
 
 As an Owner,
 I want to enter translations of each Design's and Weaver's text in the Admin, and to have the website's own wording held in one file per language,
@@ -1982,7 +2193,7 @@ So that Shoppers can read Alar in their language.
 
 **Given** this story's code
 **When** it is inspected
-**Then** nothing in it reads from or writes to the content application; documents and message templates get their translations in content in Epic 3 (AD-28)
+**Then** nothing in it reads from or writes to the content application; documents and message templates get their translations in content in Epic 3, and the interface translation bundles are put in content by Story 3.4 (AD-28)
 
 **Given** a published Design
 **When** the Owner changes only its translated text
@@ -1991,12 +2202,12 @@ So that Shoppers can read Alar in their language.
 **Requirements:** NFR-14; AD-2, AD-3, AD-4, AD-14, AD-19, AD-28
 **Notes for the developer:**
 - Adds translated-text fields to the `design-attributes` and `weaver` modules and to the attribute-option table, the language list to `settings`, translation inputs on the Design, Weaver and option admin pages, and the Tamil translation file beside the English one that Epic 1 began in `apps/web`. Schemas go in `packages/contracts`.
-- AD-28 puts interface text in the clients' translation files, so changing a piece of the website's own wording needs a deploy of the website, while NFR-14 asks that all Shopper-facing text can be translated without a release. `[ASSUMPTION: AD-28 is followed; only Design, Weaver and option text here, and documents and message templates in Epic 3, change without a release. The difference is reported to the founder]`.
-- The website's use of these texts and the language choice are Story 2.12.
+- AD-28 makes interface text a translation bundle per language, held in content and served through commerce, with a built-in copy in each client as the fallback; "until content holds the bundles, clients use the built-in copy". This story builds only that built-in copy, so until Story 3.4 a change to the website's own wording needs a deploy of the website. Story 3.4 builds the bundles and so meets NFR-14 for interface text; Design, Weaver and option text change without a release from this story on.
+- The website's use of these texts and the language choice are Story 2.14.
 
 ---
 
-### Story 2.12: A Shopper reads the shop in her language
+### Story 2.14: A Shopper reads the shop in her language
 
 As a Shopper,
 I want to choose my language and see the shop's text in it,
@@ -2017,7 +2228,7 @@ So that I can read about a saree in the language I am most comfortable with.
 **When** `packages/api-client` makes any request
 **Then** the request carries that language, and the response's text is in it
 
-**Given** the Owner changes a Design's or a Weaver's translated text in the Admin (Story 2.11)
+**Given** the Owner changes a Design's or a Weaver's translated text in the Admin (Story 2.13)
 **When** a Shopper next loads a page that shows it in that language
 **Then** she sees the new text, with no release
 
@@ -2035,13 +2246,13 @@ So that I can read about a saree in the language I am most comfortable with.
 
 **Requirements:** NFR-14; AD-2, AD-19, AD-28
 **Notes for the developer:**
-- Touches `packages/api-client` (send the language on every request) and `apps/web` (language control, text lookup from the translation files of Story 2.11, the build check). This story does not depend on the content application.
+- Touches `packages/api-client` (send the language on every request) and `apps/web` (language control, text lookup from the translation files of Story 2.13, the build check). This story does not depend on the content application. Write the text lookup as one function: the translation files are the built-in fallback copy of AD-28, and Story 3.4 puts the bundle served through commerce in front of them inside that function.
 - Replace the literal texts on the pages Epic 1 built (Design page, cart, checkout, order pages) with text keys.
 - Styled from DESIGN.md when it exists.
 
 ---
 
-### Story 2.13: The catalogue is read from one place, with filters, counts and availability
+### Story 2.15: The catalogue is read from one place, with filters, counts and availability
 
 As a Shopper,
 I want the list of Designs, the filter counts and each Design's availability to come from the server,
@@ -2091,12 +2302,12 @@ So that what I see on any device is the same and true.
 **Requirements:** FR-1, FR-5; AD-2, AD-5, AD-6, AD-19, AD-28
 **Notes for the developer:**
 - Extends `/store/shop/designs` in `apps/commerce/src/api/store/shop`, the `DesignCard` and listing schemas and the availability enum in `packages/contracts`, and the function in `packages/api-client`.
-- `[ASSUMPTION: the default order is newest first and the page size is 24]`. Design and Weaver text comes in the request's language from commerce (Story 2.11). The colour filter's options are the fixed list of Story 2.2; the occasion filter's are the occasion tags.
-- Search is Story 2.15. Discount fields on the card are Story 2.18. Add a seed script that creates about 100 Designs for tests.
+- `[ASSUMPTION: the default order is newest first and the page size is 24]`. Design and Weaver text comes in the request's language from commerce (Story 2.13). The colour filter's options are the fixed list of Story 2.2; the occasion filter's are the occasion tags.
+- Search is Story 2.17. Discount fields on the card are Story 2.20. Extend the seed script of Story 1.26 so that its 100 Designs carry Weavers, colours, occasion tags and the other filterable attributes; do not write a second seed script.
 
 ---
 
-### Story 2.14: A Shopper browses and filters Designs on the website
+### Story 2.16: A Shopper browses and filters Designs on the website
 
 As a Shopper,
 I want to browse Designs and narrow them by fibre, weave, colour, occasion, price and Weaver,
@@ -2145,13 +2356,13 @@ So that I can find sarees that suit the occasion and my budget.
 
 **Requirements:** FR-1, FR-5; AD-2, AD-28; NFR-13
 **Notes for the developer:**
-- `apps/web` only, using the `packages/api-client` function from Story 2.13, including its count-only mode. The page computes no counts and no availability.
+- `apps/web` only, using the `packages/api-client` function from Story 2.15, including its count-only mode. The page computes no counts and no availability.
 - No countdowns or "only N left" pressure (NFR-13).
-- Styled from DESIGN.md when it exists. Search is Story 2.15.
+- Styled from DESIGN.md when it exists. Search is Story 2.17.
 
 ---
 
-### Story 2.15: A Shopper searches Designs
+### Story 2.17: A Shopper searches Designs
 
 As a Shopper,
 I want to search by words in a Design's name, description, weave or Weaver,
@@ -2201,7 +2412,7 @@ So that I can go straight to the kind of saree I have in mind.
 
 ---
 
-### Story 2.16: A Shopper reads about a Weaver
+### Story 2.18: A Shopper reads about a Weaver
 
 As a Shopper,
 I want to read about the Weaver and see the Designs that Weaver made,
@@ -2238,11 +2449,11 @@ So that I know where a saree came from and who made it.
 **Notes for the developer:**
 - Adds a Shopper-facing Weaver read under `/store/shop/*`, its view model in `packages/contracts`, its function in `packages/api-client`, and the page in `apps/web`.
 - The view model carries only what a Shopper may see: name, place, story, photos. No contact details.
-- Styled from DESIGN.md when it exists. The link from the Design page is Story 2.17.
+- Styled from DESIGN.md when it exists. The link from the Design page is Story 2.19.
 
 ---
 
-### Story 2.17: The Design page tells a Shopper everything she needs
+### Story 2.19: The Design page tells a Shopper everything she needs
 
 As a Shopper,
 I want the Design page to show the photos, price, description, attributes, Weaver, stock status, delivery estimate and the shop's terms,
@@ -2262,7 +2473,7 @@ So that I can judge the saree without having to ask.
 
 **Given** the Design's Weaver
 **When** the page shows it
-**Then** the Weaver's name and place are shown with a link to the Weaver page from Story 2.16
+**Then** the Weaver's name and place are shown with a link to the Weaver page from Story 2.18
 
 **Given** the page
 **When** it loads
@@ -2295,12 +2506,12 @@ So that I can judge the saree without having to ask.
 **Requirements:** FR-3, FR-4, FR-5, FR-35; AD-2, AD-5, AD-13, AD-28
 **Notes for the developer:**
 - Completes the Design detail view model in `packages/contracts`, the single-Design read under `/store/shop/designs`, and the Design page in `apps/web` that Epic 1 began.
-- `[ASSUMPTION: until Epic 3, the delivery estimate is the earliest and latest number of days for the delivery region, and the maker's name and address and consumer-care contact are the shop's own, all seeded in the `settings` module]`; the terms are interface text in the translation files of Story 2.11. Epic 3 adds the pincode check (FR-17, Story 3.9) and replaces the terms with links to the numbered policies in content (FR-59, Story 3.3).
+- `[ASSUMPTION: until Epic 3, the delivery estimate is the earliest and latest number of days for the delivery region, and the maker's name and address and consumer-care contact are the shop's own, all seeded in the `settings` module]`; the terms are interface text in the translation files of Story 2.13. Epic 3 adds the pincode check (FR-17, Story 3.11) and replaces the terms with links to the numbered policies in content (FR-59, Story 3.3).
 - The region below the fixed content that the Owner arranges from Blocks is Epic 5. Styled from DESIGN.md when it exists.
 
 ---
 
-### Story 2.18: The Owner creates a discount
+### Story 2.20: The Owner creates a discount
 
 As an Owner,
 I want to create a discount as a percentage or an amount, for chosen Designs, between two dates, applied automatically or by a code,
@@ -2310,7 +2521,8 @@ So that I can run an offer without breaking whole-rupee prices or the tax calcul
 
 **Given** the Owner opens Discounts in the Admin
 **When** she creates a discount with a percentage or a whole-rupee amount, one or more chosen Designs, a start and an end date and time, and either "automatic" or a code
-**Then** the discount is saved and applies only to those Designs and only between those times
+**Then** the `save-discount` workflow, started by `/admin/shop/discounts`, saves the discount, and it applies only to those Designs and only between those times
+**And** no discount is created, edited or ended by any other path: the kernel's own promotion write routes are not on the allow-list (AD-21)
 
 **Given** the discount form
 **When** the percentage is not above 0 and below 100, the amount is not a whole number of rupees or is not below the lowest price of the chosen Variants, the end is not after the start, no Design is chosen, or the code is already in use (ignoring case)
@@ -2324,6 +2536,11 @@ So that I can run an offer without breaking whole-rupee prices or the tax calcul
 **Given** a stitched Variant whose discounted per-piece value crosses a tax band
 **When** the tax is derived
 **Then** the rate of the band for the discounted value is used, as in Story 2.5
+
+**Given** a discount that would give any chosen Variant a discounted per-piece price that fits no band of its tax code (for a stitched item today, Rs 2,626 to Rs 2,950)
+**When** the Owner saves it
+**Then** `save-discount` refuses it with `price.fits_no_tax_band`, `details` names each such Variant with its two nearest valid discounted prices, and nothing is saved (FR-37, AD-5)
+**And** from this story on `set-variant-price` makes the same check on the Variant's price under every discount in force or scheduled for it
 
 **Given** an automatic discount that is in force
 **When** a Design card or Design view model is read
@@ -2345,17 +2562,18 @@ So that I can run an offer without breaking whole-rupee prices or the tax calcul
 
 **Given** the Owner edits or ends a discount
 **When** she saves
-**Then** the change applies to carts priced afterwards and a `shop-audit` event records it
+**Then** `save-discount` makes the same checks as on creation, the change applies to carts priced afterwards, and a `shop-audit` event records the before and after values
 
 **Requirements:** FR-58, FR-5, FR-37; AD-5, AD-14, AD-21, AD-28
 **Notes for the developer:**
-- A discount is a kernel record (AD-3). Add the shop's Discounts admin page, the kernel routes it needs to the allow-list, the per-piece discount step in the money functions, and discount fields on `DesignCard` and the Design detail schema in `packages/contracts`.
+- A discount is a kernel record (AD-3). Add the shop's Discounts admin page, the `save-discount` workflow behind `/admin/shop/discounts` (the discount workflow AD-5 names: it enforces the whole-rupee rule, the tax-band check and the before-and-after audit), the per-piece discount step in the money functions, and discount fields on `DesignCard` and the Design detail schema in `packages/contracts`.
+- Only the kernel cart routes for applying and removing a code are added to the allow-list; the kernel's promotion create, update and delete routes stay off it and the built-in promotions screen is hidden.
 - If the kernel's own percentage calculation cannot round each piece down to a whole rupee, compute the per-piece amount with the money functions and hand the kernel a fixed amount; the shop's tax provider remains the only tax calculation.
-- `[ASSUMPTION: "the lowest price of the previous 30 days" means the lowest price at which the Variant was offered in the 30 days before this discount began]`. Showing it to Shoppers is Story 2.19.
+- `[ASSUMPTION: "the lowest price of the previous 30 days" means the lowest price at which the Variant was offered in the 30 days before this discount began]`. Showing it to Shoppers is Story 2.21.
 
 ---
 
-### Story 2.19: A Shopper sees discounts and charges honestly
+### Story 2.21: A Shopper sees discounts and charges honestly
 
 As a Shopper,
 I want a discount shown with the lowest price of the previous 30 days, and any shipping charge shown before checkout begins,
@@ -2389,6 +2607,7 @@ So that I can trust that the price is real and nothing is added later.
 **Given** a cart with items
 **When** the cart page is shown, before checkout begins
 **Then** the shipping charge computed by the server is shown as its own whole-rupee line, with the total including it
+**And** the charge comes from the `shipping charge rule` key of the `settings` module, which this story creates and seeds as a flat charge of Rs 0
 **And** the total at the first checkout step equals the cart's total; no charge appears during checkout that was not shown in the cart
 
 **Given** a price change or a discount ending while an item is in the cart
@@ -2402,12 +2621,13 @@ So that I can trust that the price is real and nothing is added later.
 **Requirements:** FR-5, FR-58; AD-2, AD-5, AD-13; NFR-13
 **Notes for the developer:**
 - `apps/web` (Design cards, Design page, cart) and the cart functions in `packages/api-client`.
-- The shipping charge is computed by commerce from the shipping charge rule in the `settings` module (AD-13) using its seeded value; the Admin page where the Owner changes that rule is Epic 3 (FR-56).
+- This story creates the `shipping charge rule` key in the `settings` module (a flat charge and an optional Order value from which shipping is free), seeds it as a flat Rs 0, and has commerce set the amount of the kernel shipping option that Story 1.8 seeded from it (AD-13). Story 3.7 only makes the rule editable in the Admin (FR-56); it does not create the key again.
+- The "flag a changed line and require acceptance" rule is Story 1.9's and is not built again here; this story only shows it.
 - Styled from DESIGN.md when it exists.
 
 ---
 
-### Story 2.20: The Design page is usable within 3 seconds on a phone
+### Story 2.22: The Design page is usable within 3 seconds on a phone
 
 As a Shopper,
 I want the Design page to be usable quickly on my phone on mobile data,
@@ -2416,7 +2636,7 @@ So that I can look at a saree without waiting.
 **Acceptance Criteria:**
 
 **Given** the Owner attaches a photo to a Design, a Variant or a Weaver
-**When** it is stored
+**When** the `attach-photo` workflow, created in this story, stores it
 **Then** copies at several widths are made with sharp and stored in the `catalog` bucket
 **And** every photo in a view model lists its available widths and addresses
 
@@ -2448,8 +2668,8 @@ So that I can look at a saree without waiting.
 
 **Requirements:** NFR-1; AD-2, AD-8, AD-22; Consistency Conventions (Speed)
 **Notes for the developer:**
-- The copies are made by a job on the shop queue in `apps/worker` (name and payload added to `packages/contracts`, deterministic id, safe to run twice), enqueued by the workflow that attaches a photo; `[ASSUMPTION: widths are 320, 640, 960, 1280 and 1920 pixels]`.
-- Use Playwright, the end-to-end test runner from Story 1.23, with processor and network throttling for the measurement. The profile is the spine's (Consistency Conventions, "Test profiles") and is read from settings, not written into the test.
+- The copies are made by a job on the shop queue in `apps/worker` (name and payload added to `packages/contracts`, deterministic id, safe to run twice), enqueued by the `attach-photo` workflow. That workflow is created here in `apps/commerce/src/workflows`, and the Design, Variant and Weaver photo uploads of Stories 1.6, 2.1 and 2.4, which went straight through the kernel's file storage, are routed through it; `[ASSUMPTION: widths are 320, 640, 960, 1280 and 1920 pixels]`.
+- Use Playwright, the end-to-end test runner from Story 1.27, with processor and network throttling for the measurement. The profile is the spine's (Consistency Conventions, "Test profiles") and is read from settings, not written into the test.
 - The Android app's own measurement is Epic 6. A CDN is deferred by the spine.
 
 ## Epic 3: A complete shop: accounts, orders, returns and support
@@ -2459,9 +2679,9 @@ A Shopper signs in with a one-time code, checks delivery to her pincode, follows
 **FRs covered:** FR-16 (complete), FR-17, FR-21 (complete), FR-22, FR-23 (complete), FR-26, FR-27, FR-28, FR-29, FR-47 (complete), FR-48 (complete), FR-49, FR-53, FR-54, FR-56, FR-59
 **NFRs:** NFR-5, NFR-6, NFR-13
 
-**Starting point.** Epic 1 left a working prepaid purchase (Hold, `confirm-payment`, invoice, basic Order states, shipping label and tracking, a basic Return with inspection, refund and credit note, admin sign-in with second factor, the route allow-list). Epic 1 also stood up `apps/content` behind its access gate, with admin accounts and an audit collection only (Story 1.19). Epic 2 left the full catalogue. This epic gives the content application its first documents and message templates and completes the shop around those parts. Try-on does not exist yet; where a story touches consent or erasure it says what Epic 4 adds to the same code.
+**Starting point.** Epic 1 left a working prepaid purchase (Hold, `confirm-payment`, invoice, basic Order states, shipping label and tracking, a basic Return with inspection, refund and credit note, admin sign-in with second factor, the route allow-list). Epic 1 also stood up `apps/content` behind its access gate, with admin accounts and an audit collection only (Story 1.23). Epic 2 left the full catalogue. This epic gives the content application its first documents and message templates and completes the shop around those parts. Try-on does not exist yet; where a story touches consent or erasure it says what Epic 4 adds to the same code.
 
-**Conventions for every story in this epic.** Every new route, job payload, state and error code is first a zod schema in `packages/contracts` (AD-19). Every state change is a named workflow with tests for success, each failure and compensation (AD-4). Every state-changing Shopper request carries an `Idempotency-Key`. Shop routes change additively only (AD-27). No Shopper-facing text is in code: documents and message templates come from content, interface text from the clients' translation files, and Design and Weaver text from commerce (AD-28). Shopper-facing screens are described by behaviour only and are styled from DESIGN.md when it exists.
+**Conventions for every story in this epic.** Every new route, job payload, state and error code is first a zod schema in `packages/contracts` (AD-19). Every state change is a named workflow with tests for success, each failure and compensation (AD-4). Every state-changing Shopper request carries an `Idempotency-Key`. Shop routes change additively only (AD-27). No Shopper-facing text is in code: documents and message templates come from content, interface text from the translation bundles that content holds and commerce serves (Story 3.4) with the clients' built-in files as the fallback, and Design and Weaver text from commerce (AD-28). Wherever a story says the Owner is alerted, it enqueues a `message.send` job with the generic `owner.alert` template seeded in Story 3.5. Shopper-facing screens are described by behaviour only and are styled from DESIGN.md when it exists.
 
 ---
 
@@ -2473,15 +2693,15 @@ So that notices, policies and message texts have one home and no edit to them go
 
 **Acceptance Criteria:**
 
-**Given** the content application of Story 1.19, already running on its own `content` database behind the access gate, with admin accounts, the lockout rule and an append-only audit collection
+**Given** the content application of Story 1.23, already running on its own `content` database behind the access gate, with admin accounts, the lockout rule and an append-only audit collection
 **When** this story is complete
-**Then** nothing of Story 1.19 has been built again: the same application, database, gate and audit collection are extended
+**Then** nothing of Story 1.23 has been built again: the same application, database, gate and audit collection are extended
 **And** content's configuration comes from environment variables checked at start against a zod schema; a missing variable stops the container with a message naming the variable
 **And** it still has no connection string for the `commerce` database, and a test fails the build if one is configured (AD-1, AD-3)
 
 **Given** a browser outside the private network
 **When** it requests anything of content through Caddy
-**Then** only the admin path is routed, and only past the access gate of Story 1.19; content's data API is reachable only on the private network
+**Then** only the admin path is routed, and only past the access gate of Story 1.23; content's data API is reachable only on the private network
 
 **Given** commerce or the worker calls content, or content calls commerce
 **When** the call carries no service token or a wrong one
@@ -2505,9 +2725,9 @@ So that notices, policies and message texts have one home and no edit to them go
 
 **Requirements:** FR-59 (foundation), NFR-5, AD-1, AD-2, AD-3, AD-9, AD-14, AD-15, AD-16, AD-19
 **Notes for the developer:**
-- Builds on Story 1.19. Touches `apps/content` (environment check, the shared audit rule, the versioning helper, the service-token check), `apps/commerce` (the content reader, the service-token check on `/internal/*` if Story 1.14 left it for the worker only), `infra/` (Caddy routes only the admin path), `packages/contracts` (audit event shape, service-token header).
-- The gate, the lockout and the second-factor outcome of spike item 7 are as Story 1.19 left them; keep the gate configurable. Gate credentials are environment variables.
-- No document, template or screen collection is created here. They come in the stories that first need them (documents in Story 3.2, templates in Story 3.4, screens in Epic 5).
+- Builds on Story 1.23. Touches `apps/content` (environment check, the shared audit rule, the versioning helper, the service-token check), `apps/commerce` (the content reader, the service-token check on `/internal/*` if Story 1.14 left it for the worker only), `infra/` (Caddy routes only the admin path), `packages/contracts` (audit event shape, service-token header).
+- The gate, the lockout and the second-factor outcome of spike item 7 are as Story 1.23 left them; keep the gate configurable. Gate credentials are environment variables.
+- No document, template or screen collection is created here. They come in the stories that first need them (documents in Story 3.2, templates in Story 3.5, screens in Epic 5).
 - Use the versions in the spine's Stack table; do not add a scheduler to content (AD-4, AD-12).
 
 ---
@@ -2541,12 +2761,16 @@ So that I can correct a policy or add a language without a release and always kn
 
 **Given** a Try-on consent notice draft
 **When** the Owner publishes a new version
-**Then** it must carry a list of AI-service ids, and content calls `/internal/content/notice-published` on commerce with document key, version, service ids and time
-**And** commerce stores that record through the `record-notice-version` workflow, idempotent on key and version; if the call fails, the publish is not shown as complete, the previous version stays the published one, and the Owner sees that commerce was not told and can retry
+**Then** it must carry a list of AI-service ids, and content calls `/internal/content/notice-published` on commerce with document key, version, service ids, time and the email of the content admin who published it
+**And** commerce stores that record through the `record-notice-version` workflow, idempotent on key and version, which also writes a `shop-audit` event with that email as the actor; if the call fails, the publish is not shown as complete, the previous version stays the published one, and the Owner sees that commerce was not told and can retry
 
 **Given** any other document type is published
 **When** publishing completes
 **Then** content tells commerce the key, version and time through `/internal/content/document-published`, and commerce records the latest published version of each document
+
+**Given** content needs the list of configured languages to show one text field per language
+**When** a document form is built
+**Then** content reads the list from `/internal/settings/languages` on commerce, a read-only lookup created in this story and called with the service token (AD-9); the list is the `settings` value of Story 2.13 and content keeps no list of its own
 
 **Given** commerce asks content for a document by key, language and optional version
 **When** that language has no text
@@ -2554,9 +2778,9 @@ So that I can correct a policy or add a language without a release and always kn
 
 **Requirements:** FR-59, NFR-14, AD-3, AD-9, AD-11, AD-13, AD-14
 **Notes for the developer:**
-- Touches `apps/content` (document collections, publish hooks), `apps/commerce` (`internal/content/*` routes, the `record-notice-version` workflow that records notice versions in the `consent` module, and a workflow that records other documents' published versions in the `settings` module), `packages/contracts`.
+- Touches `apps/content` (document collections, publish hooks), `apps/commerce` (`internal/content/*` routes, the `internal/settings/languages` lookup, the `record-notice-version` workflow that records notice versions in the `consent` module, which this story creates, and a workflow that records other documents' published versions in the `settings` module), `packages/contracts`.
 - The rule "a new notice version makes every Shopper accept again before her next Try-on" is enforced by Epic 4's consent check against the record stored here; this story only stores it. Story 4.1 adds the retention period to the notice and the Shopper's read of it; it does not build the publish path again.
-- No Shopper-facing page yet; that is Story 3.3. No message templates yet; that is Story 3.4.
+- No Shopper-facing page yet; that is Story 3.3. No message templates yet; that is Story 3.5.
 
 ---
 
@@ -2598,7 +2822,7 @@ So that I can trust the shop before I give it my number or my money.
 
 **Requirements:** FR-29, FR-59, NFR-12, NFR-14, AD-2, AD-12 (commerce reads content), AD-20
 **Notes for the developer:**
-- Touches `apps/content` (seed script reading `docs/legal/*.md`), `apps/commerce` (`store/shop/documents`, `store/shop/disclosures`, a read-only content reader), `packages/api-client`, `apps/web` (footer, document page).
+- Touches `apps/content` (seed script reading `docs/legal/*.md`), `apps/commerce` (`store/shop/documents`, `store/shop/disclosures`, both using the content reader of Story 3.1), `packages/api-client`, `apps/web` (footer, document page).
 - A published version never changes, so commerce may cache a document by key, version and language.
 - The Try-on consent notice is loaded and can be published, but nothing shows it to Shoppers until Epic 4.
 - `{{AI_SERVICE_LIST}}` stays unfilled until the Approved-model list exists (Epic 4), so the notice and privacy policy seed values for it are sample text in local and staging only.
@@ -2606,7 +2830,64 @@ So that I can trust the shop before I give it my number or my money.
 
 ---
 
-### Story 3.4: One way to send a message, with templates from content
+### Story 3.4: Interface wording as translation bundles the Owner changes without a release
+
+As an Owner,
+I want the website's own wording held as one bundle per language that I can edit and publish,
+So that I can correct or translate any text a Shopper reads without a release.
+
+**Acceptance Criteria:**
+
+**Given** the content admin
+**When** the Owner opens Interface translations
+**Then** there is one translation bundle per configured language, the list read from the `/internal/settings/languages` lookup of Story 3.2, each holding a text for every interface text key
+**And** each bundle uses the versioning helper of Story 3.1 (a draft, an integer version, a published time, published versions that cannot be edited), and every change is audited by the shared rule of Story 3.1 (AD-14)
+
+**Given** a fresh environment
+**When** the content seed runs
+**Then** the English and Tamil bundles are loaded as version 1 from the website's built-in translation files (Stories 1.2 and 2.13), and on local and staging they are published
+**And** running the seed twice creates nothing twice, and the seed never overwrites a bundle the Owner has edited
+**And** a test fails if a key in the built-in English file is missing from the seeded English bundle
+
+**Given** the Owner publishes a bundle
+**When** publishing completes
+**Then** its version rises by exactly one and content tells commerce the language, version and time through `/internal/content/document-published`, the route of Story 3.2; commerce records the latest published version for each language
+**And** a text that drops a named placeholder which the English text carries is refused at publish, naming the key
+
+**Given** a client asks for `GET /store/shop/translations/{language}`, signed in or not
+**When** commerce answers
+**Then** it returns the published bundle's version and texts as a view model defined in `packages/contracts`, read through the content reader of Story 3.1; no client calls content (AD-2)
+**And** a client that sends the version it already holds receives a "not changed" answer without the texts
+**And** a language that is not configured is refused with `translation.language_not_configured`, and a language with no published bundle answers `translation.not_published`
+
+**Given** the website
+**When** a page looks up a text key
+**Then** the one lookup function of Story 2.14 takes the text from the cached bundle fetched through `getTranslations` in `packages/api-client`; if the bundle lacks the key it takes it from the built-in file for that language, and then from the built-in English file; a key is never shown in place of text (AD-28)
+**And** the website asks commerce for a newer bundle version at most once every 5 minutes `[ASSUMPTION: the 5-minute interval; AD-28 says only that each client caches the bundle]`
+
+**Given** the Owner changes one text in the Tamil bundle and publishes it
+**When** a Shopper loads a page in Tamil after the next version check
+**Then** she sees the new wording, with no deploy of the website and no restart; an automated test proves it on the local stack (NFR-14)
+
+**Given** commerce or content cannot be reached, or no bundle has been published
+**When** a page is rendered
+**Then** the website uses its built-in copy and no page fails or waits on the bundle
+
+**Given** a bundle text that contains markup or script
+**When** a client shows it
+**Then** it is shown as plain text; a bundle carries text only, never code
+
+**Requirements:** NFR-14, FR-59 (translations); AD-2, AD-9, AD-14, AD-27, AD-28
+**Notes for the developer:**
+- Touches `apps/content` (the translation-bundle collection and its seed), `apps/commerce` (`store/shop/translations/{language}`, the recorded bundle versions in the `settings` module), `packages/contracts` (the bundle view model and the two error codes), `packages/api-client` (`getTranslations`), `apps/web` (the lookup function of Story 2.14).
+- AD-28: interface text is a translation bundle per language, held in content and served through commerce; each client caches it and carries a built-in copy as a fallback. The built-in files stay in the repository and stay complete; they are what a client uses before its first fetch.
+- The labels of the fixed colour list are keys in the bundle. Documents and message templates are not part of it; they keep their own collections (Stories 3.2 and 3.5). Design and Weaver text stays in commerce (Story 2.13).
+- The Android app uses the same route and `getTranslations` with its own built-in copy; that is Story 6.3.
+- Styled from DESIGN.md when it exists; the bundle changes words, never layout.
+
+---
+
+### Story 3.5: One way to send a message, with templates from content
 
 As an Owner,
 I want every SMS and email to be sent by one job from a text I can edit,
@@ -2617,7 +2898,7 @@ So that message wording never needs a release and nothing is sent twice.
 **Given** the content admin
 **When** the Owner opens message templates
 **Then** each template has a key, a channel (SMS or email), a purpose, a subject for email, a body with named variables, and one text per language with English required
-**And** a template change is audited as in Story 3.1, and the seed creates the template `auth.sign-in-code` for SMS
+**And** a template change is audited as in Story 3.1, and the seed creates the template `auth.sign-in-code` for SMS and one generic template `owner.alert` for each of SMS and email, with the purpose `owner-alert` and variables for what happened and where in the Admin to look
 
 **Given** a commerce workflow, or the kernel's notification provider, needs to send a message
 **When** it does so
@@ -2641,18 +2922,76 @@ So that message wording never needs a release and nothing is sent twice.
 **Given** local, staging or continuous integration
 **When** the SMS or email adapter runs in test mode
 **Then** nothing leaves the system and the message is held in a test sink that tests can read
-**And** each adapter has a contract test against its test mode that runs before a deploy (NFR-11)
+**And** each test-mode adapter has a test of its interface that runs before a deploy; the contract tests against the real vendors' test modes (NFR-11) are Story 3.6
 
 **Requirements:** FR-54 (foundation), FR-59, NFR-11, AD-8, AD-9, AD-26
 **Notes for the developer:**
 - Touches `apps/content` (templates collection), `apps/commerce` (`providers/notification`, `internal/messages/*`, template read route for the worker), `apps/worker` (`jobs/message.send`, `providers/sms`, `providers/email`), `packages/contracts` (job payload, template keys).
-- SMS and email vendors are undecided: write the `SmsSender` and `EmailSender` interfaces and a test-mode adapter for each; a real vendor is a later adapter.
-- Only the sign-in code template is created here. Order, Return, refund and complaint templates are created by the stories that raise those events.
-- Epic 1 sent no messages; it only recorded events such as `payment.auto-refunded`. Story 3.18 attaches messages to them.
+- SMS and email vendors are undecided: write the `SmsSender` and `EmailSender` interfaces and a test-mode adapter for each here; the real vendor adapters and their contract tests are Story 3.6.
+- Only the sign-in code template and the generic `owner.alert` template are created here. Every later story that alerts the Owner uses `owner.alert`, so no alert can fail for a missing template. Order, Return, refund and complaint templates are created by the stories that raise those events.
+- Epic 1 sent no messages; it only recorded events such as `payment.auto-refunded`. Story 3.20 attaches messages to them.
 
 ---
 
-### Story 3.5: Shop settings with effective dates
+### Story 3.6: Real SMS and email adapters, tested against each vendor's test mode
+
+As a Shopper,
+I want my sign-in code and my Order messages to really reach my phone and my inbox,
+So that I can sign in and follow my Order once the shop is live.
+
+**Acceptance Criteria:**
+
+**Given** the spine leaves the SMS and email vendors undecided
+**When** this story starts
+**Then** it proceeds only if the founder has named both vendors and given test-mode credentials for each
+**And** if either is missing, the developer stops and reports; no vendor is chosen by the developer
+
+**Given** the `SmsSender` and `EmailSender` interfaces of Story 3.5
+**When** this story is finished
+**Then** one adapter per vendor in `apps/worker/src/providers` implements each interface, selected by an environment variable, and the test-mode adapters of Story 3.5 stay the default locally and in continuous integration
+**And** no vendor-specific code exists outside those adapters, and no cloud vendor's SDK is added (AD-16)
+
+**Given** the SMS adapter
+**When** its contract tests run against the SMS vendor's test mode
+**Then** sending a message is accepted, an invalid number is reported as a permanent failure, and a rate-limit or server error is reported as a temporary failure that the retry of Story 3.5 handles
+**And** the tests are part of the checks run before a release (NFR-11)
+
+**Given** the email adapter
+**When** its contract tests run against the email vendor's test mode
+**Then** sending a message with a subject and body, and sending one with a file attached, are accepted, and permanent and temporary failures are told apart in the same way
+**And** the tests are part of the checks run before a release (NFR-11)
+
+**Given** staging with both real adapters selected and the vendors in test mode
+**When** a Shopper asks for a sign-in code
+**Then** the `message.send` job goes through the real SMS adapter and its outcome is reported to `/internal/messages/outcome`
+**And** where the vendor's test mode delivers to a registered number, the code arrives on the founder's own phone
+
+**Given** a `message.send` job retried after the vendor accepted the message
+**When** the adapter sends again
+**Then** it passes the job id as the vendor's own reference or idempotency key where the vendor offers one, so the recipient gets one message; where the vendor offers none, that limit is written in `docs/`
+
+**Given** the vendor refuses a message because the sender or the template is not registered
+**When** the job ends
+**Then** it fails with the reason `message.sender_not_registered`, reported with the template key and without the body, the variables or the recipient
+
+**Given** `docs/`
+**When** this story is finished
+**Then** it records, for each vendor: the sender id, the registration each SMS template needs with the operator registry, the sending domain and its DNS records for email, every secret by name, and which of these steps the Owner must do herself and which are done `[ASSUMPTION: transactional SMS in India needs sender and template registration; confirm with the vendor]`
+
+**Given** the worker's logs and job results
+**When** they are searched after the contract tests
+**Then** no mobile number, email address, code or message body appears in them
+
+**Requirements:** FR-26, FR-54, NFR-11; AD-16, AD-26; Consistency Conventions (Vendors, Config and secrets)
+**Notes for the developer:**
+- Touches `apps/worker/src/providers/sms` and `providers/email` (one real adapter each), the worker's environment schema, continuous-integration configuration (the contract tests), `infra/` and `docs/`.
+- Without this story no sign-in code can be sent in production, so checkout, order history and Try-on would be unreachable there. Story 7.15 only switches these adapters from the vendors' test credentials to the approved live sender; it builds no adapter.
+- The adapters receive text already filled from the template by the `message.send` job; they hold no wording.
+- The developer agent can close every criterion except the registrations the vendors require of the account holder; hand the story back with those listed in `docs/` as outstanding for the Owner.
+
+---
+
+### Story 3.7: Shop settings with effective dates
 
 As an Owner,
 I want to set the delivery region, the shipping charge rule, the return period and conditions and the Try-on limits in the Admin,
@@ -2699,14 +3038,15 @@ So that a business or legal decision changes a setting, not the software.
 
 **Requirements:** FR-56, NFR-10, AD-4, AD-13, AD-14, AD-20
 **Notes for the developer:**
-- Touches the `settings` module in `apps/commerce` (add these keys to the dated-settings mechanism Epics 1–2 used for Hold length, tax bands and working days; create only the keys that do not exist yet), `src/admin` (settings page), `packages/contracts` (setting schemas, the working-day function).
-- Working days follow the spine's Consistency Conventions; Story 1.17 seeded them and this story makes them editable. `[ASSUMPTION: a dispatch time of 2 working days, used for delivery dates; the PRD gives none]`.
+- Touches the `settings` module in `apps/commerce` (add these keys to the dated-settings mechanism Epics 1–2 used for Hold length, tax bands and working days; create only the keys that do not exist yet: the shipping charge rule was created and seeded by Story 2.21 and the language list by Story 2.13, and this story makes them editable), `src/admin` (settings page), `packages/contracts` (setting schemas, the working-day function).
+- Working days follow the spine's Consistency Conventions; Story 1.20 seeded them and this story makes them editable. `[ASSUMPTION: a dispatch time of 2 working days, used for delivery dates; the PRD gives none]`.
 - The Try-on limit is stored and audited here; Epic 4 enforces it and adds the daily spending cap.
-- The settings are consumed in later stories: region and charge in 3.9, return period and conditions in 3.13, code rules in 3.6.
+- The settings are consumed in later stories: region and charge in Story 3.11, return period and conditions in Story 3.15, code rules in Story 3.8.
+- `update-setting` is the workflow for every dated setting. A later setting reuses it unless its story names a workflow of its own because the change needs extra checks, as tax bands do (Story 2.5).
 
 ---
 
-### Story 3.6: Sign in with a mobile number and a one-time code
+### Story 3.8: Sign in with a mobile number and a one-time code
 
 As a Shopper,
 I want to sign in with my mobile number and a code sent to it,
@@ -2744,6 +3084,15 @@ So that I can check out and see my Orders without remembering a password.
 **Then** it is refused with `auth.code_invalid`; after the number of wrong attempts set in settings the code is cancelled and she must ask for a new one
 **And** asking for a new code cancels the earlier one
 
+**Given** a Shopper whose requests carry her language (Story 2.14)
+**When** her code is verified
+**Then** the workflow `save-shopper-language` saves that language on her Shopper account, and every later message to her is enqueued with it; the sign-in code itself is sent in the language of the request that asked for it
+**And** when a signed-in Shopper changes language with the control of Story 2.14, the control calls the same workflow through `packages/api-client`; a language that is not configured is refused
+
+**Given** the end-to-end test of Story 1.27
+**When** this story is finished
+**Then** the test is updated for this change (it no longer signs a Shopper up with an email and a password; it signs her in with a one-time code read from the SMS adapter's test sink) and passes, so that deploys are not blocked
+
 **Given** a signed-in Shopper's token
 **When** it is sent to an admin route, an `/internal/*` route or the content admin
 **Then** it is refused; and an admin session or service token is refused by Shopper routes (AD-15)
@@ -2758,15 +3107,15 @@ So that I can check out and see my Orders without remembering a password.
 
 **Requirements:** FR-26, FR-54 (sign-in code), NFR-13, AD-13, AD-15, AD-19, AD-26
 **Notes for the developer:**
-- Touches `apps/commerce` (`providers/one-time-code`, rate-limit middleware, `store/shop/auth/*`), `packages/api-client`, `apps/web` (sign-in step).
+- Touches `apps/commerce` (`providers/one-time-code`, rate-limit middleware, `store/shop/auth/*`, the `save-shopper-language` workflow and the language on the Shopper account), `packages/api-client`, `apps/web` (sign-in step, the language control of Story 2.14), and the end-to-end test of Story 1.27.
 - Replaces the email-and-password customer sign-in of Story 1.2 behind the same `api-client` functions and removes its sign-up page; `begin-checkout` already requires a signed-in Shopper.
 - The reviewer account with a fixed sign-in code (spine, Consistency Conventions: App-store review) is added to this provider by Story 7.13; leave one place in the verification step where it can be checked.
-- An anonymous cart is attached to the account at sign-in when the account has no cart; merging two carts is Story 3.8. Terms acceptance is Story 3.7.
+- An anonymous cart is attached to the account at sign-in when the account has no cart; merging two carts is Story 3.10. Terms acceptance is Story 3.9.
 - Test through the SMS adapter's test sink. Styled from DESIGN.md when it exists.
 
 ---
 
-### Story 3.7: Accept the terms at first sign-in, change mobile number, give an email
+### Story 3.9: Accept the terms at first sign-in, change mobile number, give an email
 
 As a Shopper,
 I want to accept the terms once, clearly, and keep my contact details right,
@@ -2793,13 +3142,17 @@ So that I know what I agreed to and my invoices and messages reach me.
 **When** a new Shopper reaches the acceptance step
 **Then** she is told sign-in is not available right now, no acceptance is recorded, and the Owner is alerted by a `message.send` job
 
+**Given** the end-to-end test of Story 1.27
+**When** this story is finished
+**Then** the test is updated for this change (its Shopper accepts the terms of use and the privacy policy at first sign-in, with version 1 of both published by the seed of Story 3.3) and passes, so that deploys are not blocked
+
 **Given** a Shopper who accepted version 1
 **When** she signs in again
 **Then** she is not asked again, and her record still shows version 1
 
 **Given** a signed-in Shopper who wants to change her mobile number
 **When** she enters the new number
-**Then** a code is sent to the new number under the same limits as Story 3.6, and the number changes only when she enters that code correctly within 5 minutes
+**Then** a code is sent to the new number under the same limits as Story 3.8, and the number changes only when she enters that code correctly within 5 minutes
 **And** if the new number already belongs to another account the change is refused with `auth.mobile_in_use` after the code is verified, and nothing changes
 **And** on success a message goes to the old number saying the number on the account was changed, and her Orders and cart stay with her
 
@@ -2814,10 +3167,11 @@ So that I know what I agreed to and my invoices and messages reach me.
 - Acceptances of terms, policies and the Try-on consent notice all live in the `consent` module (AD-31).
 - The PRD asks for acceptance at first sign-in only; asking again when a new terms version is published is not built.
 - Adds the template `account.mobile-changed`. Styled from DESIGN.md when it exists.
+- Owner alerts raised in this story are `message.send` jobs with the generic `owner.alert` template seeded in Story 3.5 (purpose `owner-alert`), sent to the Owner's alert email and mobile number from settings (Story 3.7); no new template is needed.
 
 ---
 
-### Story 3.8: One cart on every device
+### Story 3.10: One cart on every device
 
 As a Shopper,
 I want my cart to be the same on my phone and my laptop once I sign in,
@@ -2842,7 +3196,7 @@ So that I can choose on one and pay on the other.
 **Given** her account's cart has a live Hold because a Checkout is in progress on another device
 **When** she signs in on this device with an anonymous cart
 **Then** the cart under Hold is not changed (AD-6); she is told a payment is in progress, and the anonymous items are merged once the Hold has ended
-**And** any attempt to add, change or remove a line while the Hold is live returns `cart.locked_by_checkout`
+**And** any attempt to add, change or remove a line while the Hold is live returns `cart.locked`, the code Story 1.9 defined for this case
 
 **Given** a Variant with 2 Pieces available
 **When** she sets its quantity to 3
@@ -2865,7 +3219,7 @@ So that I can choose on one and pay on the other.
 
 ---
 
-### Story 3.9: Delivery check by pincode, with dates and the shipping charge shown early
+### Story 3.11: Delivery check by pincode, with dates and the shipping charge shown early
 
 As a Shopper,
 I want to enter my pincode and learn whether you deliver to me, when, and what shipping costs,
@@ -2903,6 +3257,11 @@ So that I do not reach payment and find out I cannot have the saree.
 **When** `begin-checkout` runs
 **Then** it repeats the delivery check on the address pincode before it places a Hold, and refuses with the same error codes, so that no Hold is placed and no money is taken for an address Alar cannot deliver to
 **And** the earliest and latest dates are saved in the Checkout snapshot and shown on the Order
+**And** the snapshot also records the language of the Shopper's request, so that a message about this Checkout or its Order still has a language after her account is deleted
+
+**Given** the end-to-end test of Story 1.27
+**When** this story is finished
+**Then** the test is updated for this change (its delivery address has a pincode inside the delivery region that the shipping adapter's test mode serves, and it asserts that a pincode outside the region is refused before a Hold) and passes, so that deploys are not blocked
 
 **Given** a change to the delivery region setting takes effect
 **When** the same pincode is checked again
@@ -2912,13 +3271,14 @@ So that I do not reach payment and find out I cannot have the saree.
 **Notes for the developer:**
 - Touches `apps/commerce` (`providers/shipping`: add `checkServiceability(pincode)` returning state, serviceable, and transit days; `store/shop/delivery-check`; `begin-checkout` step), `packages/api-client`, `apps/web` (Design page, cart, checkout).
 - The shipping vendor is a setting: write against the adapter interface and its test mode with fixture pincodes; add a contract test (NFR-11).
+- The shipping line in the cart was built by Story 2.21 and the charge rule made editable by Story 3.7; this story adds only the test that the snapshot total equals the cart total.
 - The Design page's "delivery estimate" (FR-3) uses this route once a pincode has been entered and remembers the last pincode on the device.
 - Tax on a shipping charge is an open question for the accountant; use the money functions in `packages/contracts` as they stand and do not compute tax anywhere else (AD-5).
 - Styled from DESIGN.md when it exists.
 
 ---
 
-### Story 3.10: All Order states, driven by the shipping service
+### Story 3.12: All Order states, driven by the shipping service
 
 As a Shopper,
 I want my Order's state to move by itself as the parcel moves,
@@ -2928,7 +3288,7 @@ So that what I see is true without anyone at the shop typing it in.
 
 **Given** `packages/contracts`
 **When** this story is complete
-**Then** the Order state enum holds exactly Paid, Packed, Dispatched, Out for delivery, Delivered, Delivery failed, Returned to shop, Cancelled, Refunded, with one table of allowed transitions: Paid→Packed; Paid→Cancelled; Packed→Dispatched; Packed→Cancelled; Dispatched→Out for delivery; Dispatched→Delivery failed; Out for delivery→Delivered; Out for delivery→Delivery failed; Delivery failed→Out for delivery; Delivery failed→Returned to shop; Cancelled→Refunded; Returned to shop→Refunded; and Dispatched, Out for delivery, Delivery failed or Delivered→Refunded only when every item in the Order has been refunded; a partial refund shows on the Return and the Order keeps its state (AD-24, AD-31)
+**Then** the Order state enum and transition table that Story 1.10 created are extended, not created again, so that the enum holds exactly Paid, Packed, Dispatched, Out for delivery, Delivered, Delivery failed, Returned to shop, Cancelled, Refunded, with one table of allowed transitions: Paid→Packed; Paid→Cancelled; Packed→Dispatched; Packed→Cancelled; Dispatched→Out for delivery; Dispatched→Delivery failed; Out for delivery→Delivered; Out for delivery→Delivery failed; Delivery failed→Out for delivery; Delivery failed→Returned to shop; Cancelled→Refunded; Returned to shop→Refunded; and Dispatched, Out for delivery, Delivery failed or Delivered→Refunded. Every transition into Refunded happens only when the total refunded for the Order equals the total paid; any smaller refund is recorded against the Order or its Return and the Order keeps its state (AD-24, AD-31)
 **And** one workflow performs each transition, refuses any transition not in the table with `order.transition_not_allowed`, and writes a state-history row with the time and the cause
 
 **Given** an Order in Dispatched
@@ -2959,6 +3319,10 @@ So that what I see is true without anyone at the shop typing it in.
 **And** if the payment service refuses the refund, the Order stays Returned to shop, the Owner is alerted, and a retry does not refund twice
 **And** the Pieces are not added back to available stock by this workflow (FR-25)
 
+**Given** the end-to-end test of Story 1.27
+**When** this story is finished
+**Then** the test is updated for this change (it runs against the extended transition table, and a second run asserts that a parcel reported back at the shop ends in Returned to shop, then Refunded, with one refund of the whole amount paid) and passes, so that deploys are not blocked
+
 **Given** the only table that maps shipping events to transitions
 **When** the code is searched
 **Then** it is in the shipping adapter and nowhere else, and clients receive the state from the server and never derive it
@@ -2966,14 +3330,15 @@ So that what I see is true without anyone at the shop typing it in.
 **Requirements:** FR-21, FR-24, FR-25, AD-4, AD-6, AD-7, AD-24, AD-25
 **Notes for the developer:**
 - Touches `packages/contracts` (states, transition table, events), `apps/commerce` (`order-state` module, transition workflows, `providers/shipping` event mapping, `api/webhooks/shipping`).
-- Extends the states, transition workflows and shipping mapping table of Stories 1.13 and 1.15; migrate existing Orders without changing their state.
-- `refund-undeliverable-order` reuses the refund-to-source and credit-note steps of `refund-order` (Story 1.17). It replaces Story 1.17's rule that an Order in Returned to shop is refunded when the Owner records its inspection: the refund now starts from the shipping event, and inspection governs only restocking (Story 3.15).
-- Test with the adapter's test mode and recorded events. Paid→Packed, Packed→Dispatched and the two Cancelled transitions are exercised from the Shopper side in Story 3.12 and from the Admin in Story 3.15; inspection of undelivered Pieces is in Story 3.15.
-- Messages for these events are added in Story 3.18; raise the events (`order.dispatched`, `order.delivered` and so on) here.
+- Extends the states of Story 1.10 and the transition workflows and shipping mapping table of Stories 1.15, 1.16 and 1.17; migrate existing Orders without changing their state.
+- `refund-undeliverable-order` reuses the refund-to-source and credit-note steps of `refund-order` (Story 1.20). It replaces Story 1.21's rule that an Order in Returned to shop is refunded when the Owner records its inspection: the refund now starts from the shipping event, and inspection governs only restocking (Story 3.17).
+- Test with the adapter's test mode and recorded events. Paid→Packed, Packed→Dispatched and the two Cancelled transitions are exercised from the Shopper side in Story 3.14 and from the Admin in Story 3.17; inspection of undelivered Pieces is in Story 3.17.
+- Messages for these events are added in Story 3.20; raise the events (`order.dispatched`, `order.delivered` and so on) here.
+- Owner alerts raised in this story are `message.send` jobs with the generic `owner.alert` template seeded in Story 3.5 (purpose `owner-alert`), sent to the Owner's alert email and mobile number from settings (Story 3.7); no new template is needed.
 
 ---
 
-### Story 3.11: Order history and tracking for the Shopper
+### Story 3.13: Order history and tracking for the Shopper
 
 As a Shopper,
 I want to see all my Orders and exactly where each one is,
@@ -3015,12 +3380,12 @@ So that I do not have to call anyone to find out.
 **Notes for the developer:**
 - Touches `apps/commerce` (`store/shop/orders`, `store/shop/orders/{id}`, invoice link route), `packages/contracts` (Order view models), `packages/api-client`, `apps/web` (order history, Order page).
 - Reading her own Orders is not an admin read, so no access event is written here.
-- The buttons to cancel, return and rate are added by Stories 3.12, 3.13 and 3.19; leave their places empty.
+- The buttons to cancel, return and rate are added by Stories 3.14, 3.15 and 3.21; leave their places empty.
 - Styled from DESIGN.md when it exists.
 
 ---
 
-### Story 3.12: Cancel an Order before dispatch
+### Story 3.14: Cancel an Order before dispatch
 
 As a Shopper,
 I want to cancel an Order that has not left the shop and get all my money back,
@@ -3051,6 +3416,10 @@ So that a change of mind costs me nothing.
 **Then** the Order stays Cancelled, the Owner is alerted by a `message.send` job, and a retry with the same idempotency key does not refund twice
 **And** a refund not started by the end of the second working day after cancellation is listed as overdue for the Owner (FR-24)
 
+**Given** the end-to-end test of Story 1.27
+**When** this story is finished
+**Then** the test is updated for this change (a second purchase is cancelled by the Shopper while Paid, and the test asserts Cancelled, then Refunded, one credit note, and the Piece available again) and passes, so that deploys are not blocked
+
 **Given** she sends the same cancel request twice
 **When** the second arrives
 **Then** it returns the same result and nothing is refunded twice
@@ -3062,12 +3431,13 @@ So that a change of mind costs me nothing.
 **Requirements:** FR-22, FR-24, FR-36, AD-4, AD-6, AD-7, AD-24, AD-25
 **Notes for the developer:**
 - Touches `apps/commerce` (`workflows/cancel-order`, created here as the stock workflow AD-6 names, with refund and credit-note steps; `store/shop/orders/{id}/cancel`; `providers/shipping` cancel-shipment), `packages/api-client`, `apps/web` (Order page).
-- Reuses the refund-to-source and credit-note steps of `refund-order` (Story 1.17); do not write a second refund path. Working days are counted by the function of Story 3.5.
-- Raise `order.cancelled` and `refund.started`; their messages are added in Story 3.18. The overdue list itself appears on the Owner's refund page in Story 3.17; here, store what that page will need (cancelled time, refund started time).
+- Reuses the refund-to-source and credit-note steps of `refund-order` (Story 1.20); do not write a second refund path. Working days are counted by the function of Story 3.7.
+- Raise `order.cancelled` and `refund.started`; their messages are added in Story 3.20. The overdue list itself appears on the Owner's refund page in Story 3.19; here, store what that page will need (cancelled time, refund started time).
+- Owner alerts raised in this story are `message.send` jobs with the generic `owner.alert` template seeded in Story 3.5 (purpose `owner-alert`), sent to the Owner's alert email and mobile number from settings (Story 3.7); no new template is needed.
 
 ---
 
-### Story 3.13: Request a Return and book a pickup
+### Story 3.15: Request a Return and book a pickup
 
 As a Shopper,
 I want to ask to send a saree back, say why, and book a pickup from my Order page,
@@ -3077,7 +3447,7 @@ So that a saree that disappointed me is collected without argument.
 
 **Given** `packages/contracts`
 **When** this story is complete
-**Then** the Return state enum holds exactly Requested, Pickup booked, Picked up, Received, Accepted, Rejected, Refunded, with the allowed transitions Requested→Pickup booked; Pickup booked→Picked up; Picked up→Received; Received→Accepted; Received→Rejected; Accepted→Refunded, each performed by one workflow (AD-24)
+**Then** the Return state enum and transition table that Story 1.18 created are extended, not created again, so that the enum holds exactly Requested, Pickup booked, Picked up, Received, Accepted, Rejected, Refunded, with the allowed transitions Requested→Pickup booked; Pickup booked→Picked up; Picked up→Received; Received→Accepted; Received→Rejected; Accepted→Refunded, each performed by one workflow (AD-24)
 
 **Given** a Delivered Order whose return period has not ended
 **When** the Shopper opens it
@@ -3108,20 +3478,25 @@ So that a saree that disappointed me is collected without argument.
 **When** the event is handled through the adapter's mapping table
 **Then** the Return moves to Picked up without Owner action, and she sees each state with its time, named exactly as in the Glossary
 
+**Given** the end-to-end test of Story 1.27
+**When** this story is finished
+**Then** the test is updated for this change (the Return is requested through `request-return` inside the return period stored in the Checkout snapshot, and the pickup is booked on a date the shipping adapter offers) and passes, so that deploys are not blocked
+
 **Given** a Design page and the checkout review step
 **When** a Shopper views them
 **Then** the return period in days and the return conditions are shown with a link to the returns policy, read from settings and content (FR-23)
 
 **Requirements:** FR-23, FR-21, FR-56, NFR-13, AD-4, AD-13, AD-24
 **Notes for the developer:**
-- Touches `packages/contracts` (Return states, transitions, reasons), `apps/commerce` (`order-state` module Return entity completed, `workflows/request-return`, `workflows/book-return-pickup`, `providers/shipping` pickup slots and booking, `store/shop/returns`), `packages/api-client`, `apps/web`.
+- Touches `packages/contracts` (Return states, transitions, reasons), `apps/commerce` (`order-state` module Return entity completed, `workflows/request-return` and `workflows/book-return-pickup`, both named in Story 1.18 and completed here, `providers/shipping` pickup slots and booking, `store/shop/returns`), `packages/api-client`, `apps/web`.
 - Extends Epic 1's basic Return; migrate existing Returns to the nearest state. `begin-checkout` must now write the return period into the Checkout snapshot.
-- Received, Accepted, Rejected and Refunded are moved by the Owner in Story 3.16; the Shopper's page must already show them when they occur.
+- Received, Accepted, Rejected and Refunded are moved by the Owner in Story 3.18; the Shopper's page must already show them when they occur.
 - The glossary has no state for a Return the Shopper withdraws, so withdrawing is not built. Styled from DESIGN.md when it exists.
+- Owner alerts raised in this story are `message.send` jobs with the generic `owner.alert` template seeded in Story 3.5 (purpose `owner-alert`), sent to the Owner's alert email and mobile number from settings (Story 3.7); no new template is needed.
 
 ---
 
-### Story 3.14: Record every Admin read of personal data
+### Story 3.16: Record every Admin read of personal data
 
 As an Owner,
 I want every look at a Shopper's personal data in the Admin to be recorded,
@@ -3155,20 +3530,16 @@ So that I can show who saw what and when if a Shopper or an authority asks.
 **Then** the matching events are listed, newest first
 **And** opening the access log does not itself read a Shopper's data and writes no event
 
-**Given** staging
-**When** the security checks run
-**Then** every public route answers only over HTTPS and plain HTTP is redirected; the `documents` bucket refuses a request without a signed link; the backup repository is configured with encryption; and `infra/` documents that the server's database volume is encrypted and how to verify it
-
-**Requirements:** NFR-5, NFR-6, AD-4, AD-14, AD-22, AD-17
+**Requirements:** NFR-5, NFR-6, AD-4, AD-14
 **Notes for the developer:**
-- Touches `apps/commerce` (`shop-audit` module: access event entity; an admin middleware and a route declaration helper; `src/admin` access log page), `packages/contracts`, `infra/` (Caddy and backup configuration checks, a short security note).
-- Uses the `shop-audit` module of Story 1.18, which already records a first access event when the Owner opens an Order; this story gives the access event its schema, the route declaration helper, the masking rule and the log page, and brings that first event under them.
+- Touches `apps/commerce` (`shop-audit` module: access event entity; an admin middleware and a route declaration helper; `src/admin` access log page), `packages/contracts`. The staging checks of encryption in transit and at rest (TLS, the `documents` bucket, backup and volume encryption) are made once, in Story 7.9.
+- Uses the `shop-audit` module of Story 1.22, which already records a first access event when the Owner opens an Order; this story gives the access event its schema, the route declaration helper, the masking rule and the log page, and brings that first event under them.
 - Purging events older than one year is not built: how the one-year duty sits with erasure is a question for the lawyer (NFR-6).
 - Every later Admin story in this epic declares its routes with this helper. Shopper photos do not exist until Epic 4, which marks its own routes the same way.
 
 ---
 
-### Story 3.15: The Owner's Orders page: find, pack, label, dispatch, cancel, inspect
+### Story 3.17: The Owner's Orders page: find, pack, label, dispatch, cancel, inspect
 
 As an Owner,
 I want one page where I find any Order and send it out,
@@ -3202,27 +3573,27 @@ So that packing and dispatch take minutes and I never retype an address.
 
 **Given** an Order in Paid or Packed
 **When** the Owner cancels it and enters a reason
-**Then** the same `cancel-order` workflow as Story 3.12 runs, with the Owner as actor and the reason recorded
+**Then** the same `cancel-order` workflow as Story 3.14 runs, with the Owner as actor and the reason recorded
 
 **Given** an Order in Returned to shop or Refunded after an undelivered parcel
 **When** the Owner records the inspection of each Piece as "sellable" or "damaged"
-**Then** "sellable" runs `restock-return` and the Piece becomes available with a stock movement of cause "undelivered, inspected"; "damaged" writes a stock movement and the Piece is not returned to stock (FR-25)
+**Then** each result is handed to `restock-return`, the only workflow that writes these stock-movement rows (AD-6): for "sellable" the Piece becomes available with a stock movement of cause "undelivered, inspected"; for "damaged" stock is unchanged, a stock movement of cause "undelivered, damaged" is written, and the Piece is not returned to stock (FR-25)
 **And** until inspection is recorded, those Pieces are not available to Shoppers
 
 **Given** the Owner opens one Order
 **When** the page loads
 **Then** it shows the state history, lines, totals, invoice and credit notes, shipment events, any Returns and refunds, and the Shopper's name, mobile number and address
-**And** an access event is recorded as in Story 3.14
+**And** an access event is recorded as in Story 3.16
 
 **Requirements:** FR-47, FR-25, FR-36, NFR-10, AD-4, AD-6, AD-14, AD-21, AD-24
 **Notes for the developer:**
 - Touches `apps/commerce` (`admin/shop/orders/*`, `src/admin` Orders pages, `providers/shipping` label creation hardened), `packages/contracts`.
 - Completes Epic 1's first Orders page; keep its workflows and extend them.
-- Returns are handled on their own page in Story 3.16; refunds and disputes in Story 3.17. Show links to them here only as read-only summaries.
+- Returns are handled on their own page in Story 3.18; refunds and disputes in Story 3.19. Show links to them here only as read-only summaries.
 
 ---
 
-### Story 3.16: The Owner's Returns page: receive, inspect, accept or reject with photos
+### Story 3.18: The Owner's Returns page: receive, inspect, accept or reject with photos
 
 As an Owner,
 I want to move each Return through its states and record what I found on inspection,
@@ -3247,8 +3618,8 @@ So that a fair return is refunded quickly and an unfair one is explained with ev
 **When** the Owner records the inspection as passed
 **Then** the workflow `accept-return` moves it to Accepted and starts the refund to the payment method used: the price paid for the returned items, less the return shipping charge stored on the Return (zero for "Not as shown" and "Defective or wrong item")
 **And** a credit note linked to the original invoice is created, and the Return moves to Refunded when the payment service accepts the refund (FR-24)
-**And** the Order moves to Refunded only if every item in it has now been refunded; otherwise the refund shows on the Return and the Order keeps its state (AD-31)
-**And** the Owner then records each Piece as "sellable" or "damaged"; only "sellable" runs `restock-return` (FR-25)
+**And** the Order moves to Refunded only when the total refunded for the Order equals the total paid; otherwise, as when a return shipping charge was deducted or a shipping charge paid is not refunded, the refund shows on the Return and the Order keeps its state (AD-31)
+**And** the Owner then records each Piece as "sellable" or "damaged", and `restock-return` runs with that result: it returns a sellable Piece to stock and, for a damaged one, writes the stock-movement row without returning it (FR-25, AD-6)
 
 **Given** a Return in Received
 **When** the Owner records the inspection as failed
@@ -3267,6 +3638,10 @@ So that a fair return is refunded quickly and an unfair one is explained with ev
 **When** the workflow reaches that step
 **Then** the Return stays Accepted, the Owner is alerted, and a retry does not refund twice
 
+**Given** the end-to-end test of Story 1.27
+**When** this story is finished
+**Then** the test is updated for this change (the Owner's single inspection action is replaced by `accept-return` followed by the "sellable" result, and the test still ends with the Return Refunded, one refund, one credit note and the Piece back in stock) and passes, so that deploys are not blocked
+
 **Given** the Owner tries a transition the table does not allow, such as Requested→Accepted
 **When** the request is made
 **Then** it is refused with `return.transition_not_allowed`
@@ -3275,14 +3650,15 @@ So that a fair return is refunded quickly and an unfair one is explained with ev
 **Requirements:** FR-47, FR-23, FR-24, FR-25, AD-4, AD-6, AD-14, AD-22, AD-24, AD-25, AD-31
 **Notes for the developer:**
 - Touches `apps/commerce` (`workflows/accept-return`, `workflows/reject-return`, `admin/shop/returns/*`, `src/admin` Returns pages, upload-link route), `packages/api-client` and `apps/web` (Rejected view on the Return).
-- Builds on the inspection, refund and restock of Story 1.17: `accept-return` and `reject-return` replace its single inspection action and reuse the refund-to-source and credit-note steps of `refund-order`.
+- Builds on the inspection and restock of Story 1.19 and the refund of Story 1.20: `accept-return` and `reject-return` replace its single inspection action and reuse the refund-to-source and credit-note steps of `refund-order`.
 - Inspection photos are files in the `documents` bucket, linked to the Return (AD-31).
 - Who pays to send a rejected saree back is a founder decision; no charge is made to the Shopper here.
-- Raise `return.state-changed` for each transition; its messages are added in Story 3.18.
+- Raise `return.state-changed` for each transition; its messages are added in Story 3.20.
+- Owner alerts raised in this story are `message.send` jobs with the generic `owner.alert` template seeded in Story 3.5 (purpose `owner-alert`), sent to the Owner's alert email and mobile number from settings (Story 3.7); no new template is needed.
 
 ---
 
-### Story 3.17: The Owner's refunds and payment disputes
+### Story 3.19: The Owner's refunds and payment disputes
 
 As an Owner,
 I want to refund all or part of an Order and see every dispute raised against a payment,
@@ -3301,13 +3677,13 @@ So that I can put things right for a Shopper and never miss a dispute deadline.
 
 **Given** an amount above what can still be refunded, an amount of zero, or no reason
 **When** the Owner submits
-**Then** it is refused with `refund.amount_exceeds_paid`, `refund.amount_invalid` or `refund.reason_required`, and nothing is refunded
+**Then** it is refused with `refund.exceeds_paid` (the code Story 1.21 defined), `refund.amount_invalid` or `refund.reason_required`, and nothing is refunded
 
-**Given** a refund after which every item in an Order that is Dispatched, Out for delivery, Delivery failed or Delivered has been refunded
+**Given** a refund that brings the total refunded for an Order that is Dispatched, Out for delivery, Delivery failed or Delivered up to the total paid
 **When** the refund is started
 **Then** the Order moves to Refunded (AD-31)
-**And** a part refund never changes the Order's state; when it belongs to a Return it shows on the Return
-**And** a full refund of an Order in Paid or Packed is refused with a pointer to cancel the Order instead
+**And** a refund that leaves the total refunded below the total paid is recorded against the Order, or against its Return when it belongs to one, and the Order keeps its state; part refunds that together reach the total paid do move it to Refunded
+**And** a refund that would bring the total refunded for an Order in Paid or Packed up to the total paid is refused with a pointer to cancel the Order instead
 
 **Given** the Owner submits the same refund twice, or the page is sent twice
 **When** the second request arrives with the same idempotency key
@@ -3334,15 +3710,16 @@ So that I can put things right for a Shopper and never miss a dispute deadline.
 
 **Requirements:** FR-48, FR-24, NFR-4, AD-4, AD-5, AD-7, AD-14, AD-21, AD-25, AD-31
 **Notes for the developer:**
-- Touches `apps/commerce` (`workflows/refund-order` from Story 1.17, completed here; `workflows/record-payment-dispute`; the `checkout` module's dispute record; `providers/razorpay` dispute events through the kernel's payment hook route; `src/jobs` refund-deadline job; `admin/shop/refunds/*`, `admin/shop/disputes/*`, `src/admin` pages).
+- Touches `apps/commerce` (`workflows/refund-order` from Stories 1.20 and 1.21, completed here; `workflows/record-payment-dispute`; the `checkout` module's dispute record; `providers/razorpay` dispute events through the kernel's payment hook route; `src/jobs` refund-deadline job; `admin/shop/refunds/*`, `admin/shop/disputes/*`, `src/admin` pages).
 - A payment dispute is a record of the `checkout` module, linked to the Order (AD-31).
-- Which refunds make an item "refunded" when a part refund is not tied to an item is not said by AD-31. `[ASSUMPTION: an item counts as refunded when refunds tied to it, through a Return or by the Owner naming the item, cover the price paid for it]`.
+- AD-31 decides Refunded by amounts: the Order is Refunded only when the total refunded equals the total paid. No refund needs to be tied to an item for that test; use the one function Story 1.20 wrote for it.
+- Owner alerts raised in this story are `message.send` jobs with the generic `owner.alert` template seeded in Story 3.5 (purpose `owner-alert`), sent to the Owner's alert email and mobile number from settings (Story 3.7); no new template is needed.
 - Answering a dispute is done at the payment service; this story shows and links, it does not submit evidence.
 - How tax is split on a part refund that is not tied to an item is for the accountant; implement one money function that spreads it across the invoice lines in proportion and sums exactly.
 
 ---
 
-### Story 3.18: Messages for every Order, Return and refund event
+### Story 3.20: Messages for every Order, Return and refund event
 
 As a Shopper,
 I want to be told when my Order is confirmed, sent, delivered, returned or refunded,
@@ -3350,9 +3727,9 @@ So that I never have to wonder what is happening with my money or my saree.
 
 **Acceptance Criteria:**
 
-**Given** the events raised by Epic 1 and Stories 3.10 to 3.17
+**Given** the events raised by Epic 1 and Stories 3.12 to 3.19
 **When** each of these occurs
-**Then** one `message.send` job per channel is enqueued with the Shopper's saved language: Order confirmed (with invoice), dispatched, out for delivery, delivered, delivery failed, each Return state change (Requested, Pickup booked, Picked up, Received, Accepted, Rejected, Refunded), refund started, Order cancelled, payment refunded automatically (FR-54)
+**Then** one `message.send` job per channel is enqueued with the Shopper's saved language (saved on her account by Story 3.8; when the account has been deleted, the language recorded in the Checkout snapshot by Story 3.11): Order confirmed (with invoice), dispatched, out for delivery, delivered, delivery failed, each Return state change (Requested, Pickup booked, Picked up, Received, Accepted, Rejected, Refunded), refund started, Order cancelled, payment refunded automatically (FR-54)
 **And** the content seed creates one template per event and channel, in English, and the Owner can edit each one
 
 **Given** a Shopper with no email on her account
@@ -3378,9 +3755,10 @@ So that I never have to wonder what is happening with my money or my saree.
 **When** jobs are enqueued
 **Then** the job id (event id plus channel) makes the second a no-op and one message is sent
 
-**Given** these events need the Owner to act: a new Order is Paid; a Return is Requested; a Return is Received and awaits inspection; a pickup could not be booked; a refund failed; a dispute was opened
+**Given** these events, which need the Owner to act and have no alert yet: a new Order is Paid; a Return is Requested; a Return is Received and awaits inspection
 **When** each occurs
-**Then** the Owner receives an alert by email and SMS at the addresses in settings, through `message.send` with an `owner-alert` template
+**Then** the Owner receives an alert by email and SMS at the addresses in settings, through `message.send` with the `owner.alert` template of Story 3.5
+**And** the alerts for a pickup that could not be booked, a refund that failed and a dispute that was opened were built by Stories 3.14, 3.15, 3.18 and 3.19 and are not built again here; one test lists all six events and asserts that each sends exactly one alert
 
 **Given** a message job fails on every attempt
 **When** the outcome is reported
@@ -3394,12 +3772,12 @@ So that I never have to wonder what is happening with my money or my saree.
 **Notes for the developer:**
 - Touches `apps/commerce` (`src/subscribers` mapping events to `message.send`, one table of event → template key in `packages/contracts`), `apps/content` (seeded templates), `apps/worker` (invoice attachment in the email path).
 - Epic 1 sent no messages. This story is where `payment.auto-refunded` (Story 1.11) and the Order confirmation are first delivered, so there is one sender (AD-26).
-- "Try-on result ready" is shown in the app and belongs to Epic 4. Complaint and account-deletion messages are added by Stories 3.20 and 3.21 with their own events.
+- "Try-on result ready" is shown in the app and belongs to Epic 4. Complaint and account-deletion messages are added by Stories 3.22 and 3.23 with their own events.
 - No template may contain a one-time code, a photo or a signed link to Shopper media.
 
 ---
 
-### Story 3.19: Ask whether the saree matched what she saw
+### Story 3.21: Ask whether the saree matched what she saw
 
 As a Shopper,
 I want to say, from 1 to 5, whether the saree matched what I saw online,
@@ -3441,13 +3819,13 @@ So that the shop learns when its photos mislead and fixes them.
 **Requirements:** FR-53, FR-54, NFR-13, AD-4, AD-13, AD-14, AD-26
 **Notes for the developer:**
 - Touches `apps/commerce` (`rating` module created here, `workflows/record-rating`, `store/shop/orders/{id}/ratings`, `src/jobs` rating reminder, `admin/shop/ratings`, `src/admin` page), `packages/api-client`, `apps/web` (Order page).
-- Epic 4 changes only the "used Try-on" function to read its Try-on requests; the schema already holds the field.
-- Ratings are not shown to other Shoppers; the PRD asks only that the Owner sees them. A comment shown in the Admin is linked to an Order, so the ratings route is declared as returning personal data (Story 3.14).
+- Story 4.12 changes only the "used Try-on" function to read its Try-on requests; the schema already holds the field.
+- Ratings are not shown to other Shoppers; the PRD asks only that the Owner sees them. A comment shown in the Admin is linked to an Order, so the ratings route is declared as returning personal data (Story 3.16).
 - Adds the setting "ask for rating after" `[ASSUMPTION: 2 days after delivery; FR-53 says only "after delivery"]` and the template `order.rate-request`. Styled from DESIGN.md when it exists.
 
 ---
 
-### Story 3.20: Privacy requests and complaints, each with a ticket and two deadlines
+### Story 3.22: Privacy requests and complaints, each with a ticket and two deadlines
 
 As a Shopper,
 I want to ask what data the shop holds about me, ask for it to be corrected or erased, or file a complaint,
@@ -3493,12 +3871,12 @@ So that I can use my rights and know when I will be answered.
 **Notes for the developer:**
 - Touches `apps/commerce` (`complaint` module created here, `workflows/file-complaint`, `store/shop/complaints`, `src/jobs` complaint-deadline job), `packages/api-client`, `apps/web` (grievance page, account requests list), `apps/content` (templates `complaint.acknowledged`, `complaint.resolved`, Owner alerts).
 - `[ASSUMPTION: the three complaint states Open, Acknowledged and Resolved, and alert lead times of 12 hours and 7 days; the PRD gives only the two deadlines]`. The lead times are settings.
-- The Owner's reply, closing a ticket, and carrying out a data request are in Story 3.22, which sends `complaint.resolved`. The account deletion page is built in Story 3.21; until then the pointer names the grievance contact.
-- Epic 4 adds a request type for a person who appears in a Try-on result without agreeing (FR-9). Styled from DESIGN.md when it exists.
+- The Owner's reply, closing a ticket, and carrying out a data request are in Story 3.24, which sends `complaint.resolved`. The account deletion page is built in Story 3.23; until then the pointer names the grievance contact.
+- Story 4.24 adds a request type for a person who appears in a Try-on result without agreeing (FR-9). Styled from DESIGN.md when it exists.
 
 ---
 
-### Story 3.21: Delete my account, on the website and from a public page
+### Story 3.23: Delete my account, on the website and from a public page
 
 As a Shopper,
 I want to delete my account myself, whether or not I can still sign in on my usual device,
@@ -3514,12 +3892,13 @@ So that the shop stops holding my details when I no longer want it to.
 **Given** anyone on the public web page `/delete-account`, reachable without signing in and without the app, linked from the footer and the privacy policy
 **When** she enters her mobile number and the one-time code sent to it
 **Then** she is shown the same explanation and the same confirmation, and the same workflow runs
-**And** a number with no account gets the same first response as one with an account, and the code limits of Story 3.6 apply
+**And** a number with no account gets the same first response as one with an account, and the code limits of Story 3.8 apply
 
 **Given** she has confirmed
 **When** the workflow `delete-shopper-account` runs
 **Then** her sessions end at once and her number can no longer sign in to that account
 **And** it calls `erase-shopper-media`, the only erasure path (AD-23), which writes an erasure ledger entry for her with each step and its time, deletes every file of hers in `shopper-media`, and enqueues one `media.erase-at-provider` job per AI service that received a photo of hers; with no Try-on in the system yet it records zero files and zero providers
+**And** the private `shopper-media` bucket, never versioned and encrypted at rest, is created in this story, in `infra/` for local and staging, so that the file step acts on a real bucket from the start (AD-22); Story 4.4 puts the first files in it
 **And** it removes her personal details from the account, deletes her cart, removes the comment from and the Shopper link to her ratings while keeping the rating value and Design, and blanks the recipient on stored message records
 **And** invoices, credit notes, Orders, payments, refunds, complaints, audit events, access events and the erasure ledger are not changed
 
@@ -3544,15 +3923,15 @@ So that the shop stops holding my details when I no longer want it to.
 
 **Requirements:** FR-27, FR-28, NFR-6, AD-4, AD-22, AD-23, AD-26, AD-31
 **Notes for the developer:**
-- The open-Order rule is AD-31's; "Delivered past its return period" uses the return period stored in the Order's Checkout snapshot (Story 3.13). The explanation shown before she confirms says that deletion waits for an open Order.
-- Touches `apps/commerce` (`erasure` module and ledger created here, `workflows/erase-shopper-media`, `workflows/delete-shopper-account`, `src/jobs` erasure-deadline job, `store/shop/account/delete`), `packages/contracts` (`media.erase-at-provider` payload), `packages/api-client`, `apps/web` (account page, `/delete-account`).
+- The open-Order rule is AD-31's; "Delivered past its return period" uses the return period stored in the Order's Checkout snapshot (Story 3.15). The explanation shown before she confirms says that deletion waits for an open Order.
+- Touches `apps/commerce` (`erasure` module and ledger created here, `workflows/erase-shopper-media`, `workflows/delete-shopper-account`, `src/jobs` erasure-deadline job, `store/shop/account/delete`), `packages/contracts` (`media.erase-at-provider` payload), `packages/api-client`, `apps/web` (account page, `/delete-account`), `infra/` (the `shopper-media` bucket).
 - This story covers everything that exists so far. Epic 4 extends the same `erase-shopper-media` workflow with Shopper photos, Try-on results, Try-on requests and the worker's `media.erase-at-provider` job and provider answers; it adds no second erasure path, and withdrawal and the retention job will call the same workflow.
 - `[ASSUMPTION: the list of records kept after deletion, as named in the first criterion, and that they are kept without a time limit; pending the lawyer]`. The kept list shown to the Shopper comes from content, not code.
 - Adds the template `account.deleted`. Styled from DESIGN.md when it exists.
 
 ---
 
-### Story 3.22: The Owner answers complaints and carries out data requests
+### Story 3.24: The Owner answers complaints and carries out data requests
 
 As an Owner,
 I want to see every open complaint with its deadlines, reply, close it, and carry out a data request,
@@ -3588,7 +3967,7 @@ So that every Shopper is answered inside 48 hours and one month.
 
 **Given** an erasure request
 **When** the Owner confirms it for that Shopper
-**Then** the same `delete-shopper-account` workflow as Story 3.21 runs, with the Owner as actor and the ticket number recorded in the erasure ledger
+**Then** the same `delete-shopper-account` workflow as Story 3.23 runs, with the Owner as actor and the ticket number recorded in the erasure ledger
 **And** the same open-Order rule applies: while she has an open Order the account deletion is refused, her Shopper photos and Try-on results are erased at once, and the ticket shows that the rest waits for the Order (AD-31)
 
 **Given** a resolved complaint
@@ -3599,12 +3978,12 @@ So that every Shopper is answered inside 48 hours and one month.
 **Notes for the developer:**
 - Touches `apps/commerce` (`workflows/resolve-complaint`, `workflows/prepare-data-report`, `admin/shop/complaints/*`, `src/admin` Complaints pages), `packages/api-client` and `apps/web` (reply and report under a ticket).
 - The report file is stored in the private `documents` bucket and deleted by `delete-shopper-account`; add that step to the workflow here.
-- Epic 4 extends the AI-provider function and adds Try-on consents and requests to the report.
-- Finding a Shopper outside a complaint, and deactivating an account, are in Story 3.23.
+- Story 4.23 extends the AI-provider function and adds Try-on consents, withdrawals, stored photos and requests to the report.
+- Finding a Shopper outside a complaint, and deactivating an account, are in Story 3.25.
 
 ---
 
-### Story 3.23: Look up a Shopper and deactivate an account
+### Story 3.25: Look up a Shopper and deactivate an account
 
 As an Owner,
 I want to find a Shopper by her mobile number or an Order number and see everything about her dealings with the shop,
@@ -3650,7 +4029,7 @@ So that I can answer her in one call and stop an account that is being misused.
 
 ---
 
-### Story 3.24: The honest-design checklist and its yearly record
+### Story 3.26: The honest-design checklist and its yearly record
 
 As an Owner,
 I want the shop checked against the official list of dark patterns, by tests on every build and by my own recorded audit once a year,
@@ -3695,7 +4074,7 @@ So that no Shopper is pushed or tricked and I can prove I looked.
 - Touches `docs/`, `apps/web` (end-to-end honest-design tests), `apps/commerce` (`admin/shop/honest-design-audit`, a workflow that writes the audit event, `src/jobs` audit-due job, `src/admin` page).
 - The checklist items shown in the Admin are read from a versioned file in `packages/contracts` generated from the document, so the page and the document cannot drift.
 - The official list must be read from its published source when the document is written; do not write it from memory. If it cannot be read, list that as an open item at the top of the document.
-- Try-on consent screens (Epic 4) and the Android app (Epic 6) add their own cases to the same tests and checklist.
+- The Try-on consent screen (Story 4.3) and the Android app (Story 6.15) add their own cases to the same tests and checklist.
 
 ## Epic 4: Try-on with consent, under the Owner's control
 
@@ -3707,12 +4086,12 @@ An adult Shopper accepts the Try-on consent notice, uploads her Shopper photo an
 **Rules that hold for every story in this epic**
 
 - Try-on is built for the website (`apps/web`) here; the Android app follows in Epic 6 through the same `packages/api-client` functions.
-- Automated tests never call a real AI provider. They use the fake provider and the fake result check from Stories 4.5 and 4.6. Only the test bench used by hand (Story 4.9) and the launch gate (Story 4.23) reach real providers.
+- Automated tests never call a real AI provider. They use the fake provider and the fake result check from Stories 4.5 and 4.6. Only the test bench used by hand (Story 4.9) and the launch gate run by the Owner (Story 4.26) reach real providers.
 - Every shape that crosses a unit boundary is a zod schema in `packages/contracts` (AD-19); every state change is a named workflow (AD-4); every state-changing Admin request writes a `shop-audit` event (AD-14); no photo, link or image bytes appear in logs, job results or error reports (AD-22).
-- Shopper-facing screens are described by behaviour only and are styled from DESIGN.md when it exists. Shopper-facing text comes from content (the notice and other documents, message templates) or the clients' translation files (interface text), as AD-28 divides them.
+- Shopper-facing screens are described by behaviour only and are styled from DESIGN.md when it exists. Shopper-facing text comes from content (the notice and other documents, message templates) or the interface translation bundles of Story 3.4, with the clients' built-in translation files as the fallback (interface text), as AD-28 divides them.
 - Try-on cost is recorded in integer paise (AD-5). A provider's price, recorded on the Approved-model list in the provider's currency, is converted to paise with the exchange-rate setting at the moment the cost is recorded (AD-32). The amount an AI provider reports is stored beside it unchanged, with its currency, for comparison.
 - `ResultCheck` uses a check model: a vision-capable model on the Approved-model list, marked as a check model and reached through the same `TryOnProvider` port. If the check fails to run, the result is not shown (AD-32).
-- This epic builds on Epic 3: the notice's publish path and `record-notice-version` (Story 3.2), the `consent` module's acceptance records (Story 3.7), the `erasure` module, its ledger and `erase-shopper-media` (Story 3.21), `message.send` (Story 3.4) and Shopper support (Story 3.23).
+- This epic builds on Epic 3: the notice's publish path and `record-notice-version` (Story 3.2), the `consent` module's acceptance records (Story 3.9), the `erasure` module, its ledger and `erase-shopper-media` (Story 3.23), `message.send` (Story 3.5) and Shopper support (Story 3.25).
 - "AI service" means each outside party that receives a Shopper photo for a model: the aggregator and the company that runs the model behind it. Each has a stable AI-service id (a lower-case slug).
 
 ---
@@ -3728,7 +4107,8 @@ So that consent always refers to one numbered notice whose list of recipients an
 **Given** the Try-on consent notice in the content admin, which since Story 3.2 has one integer version shared by all its translations and a list of AI-service ids
 **When** the Owner edits it
 **Then** she can also enter the retention period shown to the Shopper, shared by all translations of that version
-**And** a draft without AI-service ids or without a retention period cannot be published.
+**And** a draft without AI-service ids or without a retention period cannot be published
+**And** a draft that lacks the notice text in any configured language (the list from `/internal/settings/languages`, Story 3.2) cannot be published either, so that no Shopper is shown, and asked to accept, a notice in a language she did not choose (FR-8).
 
 **Given** a draft that changes the notice's meaning, its list of AI-service ids or its retention period
 **When** the Owner publishes it
@@ -3749,7 +4129,7 @@ So that consent always refers to one numbered notice whose list of recipients an
 
 **Given** a published notice version
 **When** a client calls `GET /store/shop/tryon/notice` with a language
-**Then** commerce returns the latest published version number, its AI-service ids, its retention period and the notice text in that language, falling back to English when the translation is missing.
+**Then** commerce returns the latest published version number, its AI-service ids, its retention period and the notice text in that language; every configured language has its text because publishing requires it, and only a request in a language that is not configured is answered in English.
 
 **Given** no notice version has been published
 **When** a client calls the route
@@ -3761,6 +4141,8 @@ So that consent always refers to one numbered notice whose list of recipients an
 - `apps/content`: the retention period on the notice collection; the content audit event is already written by Story 3.1's rule.
 - `apps/commerce`: the `consent` module's notice-version record gains the retention period; route `store/shop/tryon/notice`.
 - `packages/contracts`: `AiServiceId` and `NoticeVersion` (extend what Story 3.2 defined), the notice view model. `packages/api-client`: `getTryOnNotice`.
+- Seeds the retention period key in the `settings` module (30 days, FR-51), the first setting this epic reads; Story 4.24 builds the retention job and the warning when the notice and the setting differ.
+- The publish call carries the content admin's email since Story 3.2, so the notice version's audit event has its actor (Story 4.21 shows it).
 - The consent record itself is Story 4.3. The check of a Model route against the notice is Story 4.11.
 
 ---
@@ -3793,7 +4175,8 @@ So that Try-on stays off until it passes the launch gate and I can stop it at an
 
 **Given** Try-on is switched on but no notice version has been published
 **When** a client calls `GET /store/shop/tryon/status`
-**Then** it answers unavailable, and the entry point is absent.
+**Then** it answers unavailable, and the entry point is absent
+**And** it also answers unavailable for a request in a configured language in which the published notice has no text, which can happen only when a language was configured after the notice was published, until a translation fix adds that text (FR-8).
 
 **Given** a Shopper who is not signed in
 **When** she taps the Try-on entry point
@@ -3807,8 +4190,9 @@ So that Try-on stays off until it passes the launch gate and I can stop it at an
 
 **Requirements:** FR-42, FR-3 (entry point), FR-26; AD-2, AD-4, AD-13, AD-14
 **Notes for the developer:**
+- Creates the `tryon` module in `apps/commerce/src/modules/tryon`, which the status read of this story uses and to which Story 4.4 adds the first entity.
 - `settings` module: the Try-on switch and the list of chosen Designs as dated settings; workflows `set-tryon-switch` and `set-tryon-designs`; routes `admin/shop/tryon/switch` and `admin/shop/tryon/designs`; a new Admin page "Try-on controls" that later stories add to.
-- The chosen-Designs limit is how a "narrow" outcome of the launch gate is applied (FR-42, Story 4.23). Refusing a request for a Design outside the list is in Story 4.12.
+- The chosen-Designs limit is how a "narrow" outcome of the launch gate is applied (FR-42, Story 4.25). Refusing a request for a Design outside the list is in Story 4.12.
 - `store/shop/tryon/status` takes a Design id and returns `{ available, reason }`; later stories add reasons (daily cap, Model route not usable). `api-client`: `getTryOnStatus`.
 - `apps/web`: the entry point on the Design page and an empty Try-on screen for a Design, which later stories fill.
 - Refusing requests while switched off is in Story 4.12 and stopping queued jobs in Story 4.13, where requests and jobs first exist.
@@ -3853,16 +4237,21 @@ So that my photo is sent to AI services only with my informed agreement.
 **When** `GET /store/shop/tryon/consent` is called with her session
 **Then** it returns current, the version and the time; without a Shopper session the route is refused (AD-15).
 
+**Given** the honest-design tests and checklist of Story 3.26
+**When** this story is finished
+**Then** they are extended with the Try-on consent screen: the tests fail if the adult confirmation or the accept control is selected by default, if the notice screen carries any other terms, or if declining stops her browsing or buying
+**And** `docs/honest-design-checklist.md` gains these items (NFR-13).
+
 **Given** the Owner looks up a Shopper in Shopper support (FR-49)
 **When** the Shopper has given Try-on consent
 **Then** the consent's version, language and time are listed with her other consents.
 
 **Requirements:** FR-8, FR-9, FR-59; AD-11, AD-15, AD-4; NFR-13
 **Notes for the developer:**
-- `consent` module: a Try-on consent is an acceptance record of the same kind as the terms acceptances of Story 3.7 (document type, version, language, time; AD-31), with the AI-service ids and the adult confirmation added; one row per acceptance, never edited. Workflow `give-tryon-consent`; routes `store/shop/tryon/consent` (read and accept, with `Idempotency-Key`).
-- Shopper support's consents list (Story 3.23) reads every consent type through one function, so this record appears there without changing that page.
+- `consent` module: a Try-on consent is an acceptance record of the same kind as the terms acceptances of Story 3.9 (document type, version, language, time; AD-31), with the AI-service ids and the adult confirmation added; one row per acceptance, never edited. Workflow `give-tryon-consent`; routes `store/shop/tryon/consent` (read and accept, with `Idempotency-Key`).
+- Shopper support's consents list (Story 3.25) reads every consent type through one function, so this record appears there without changing that page.
 - `apps/web`: the notice screen, styled from DESIGN.md when it exists. Text comes from Story 4.1's route.
-- The own-photo confirmation is taken with each upload in Story 4.4. Withdrawal is Story 4.20.
+- The own-photo confirmation is taken with each upload in Story 4.4. Withdrawal is Story 4.22.
 
 ---
 
@@ -3907,7 +4296,7 @@ So that Try-on has a usable photo and the shop never sees the rest of my gallery
 **Then** the old one is erased by `erase-shopper-media` scoped to that photo, with a row in the erasure ledger, and she has exactly one stored Shopper photo.
 
 **Given** a Shopper with a stored Shopper photo
-**When** she asks to delete her account through Story 3.21, whether the deletion is carried out or refused because she has an open Order
+**When** she asks to delete her account through Story 3.23, whether the deletion is carried out or refused because she has an open Order
 **Then** `erase-shopper-media` deletes the photo file at once and marks the photo record erased (AD-31).
 
 **Given** an upload link that was issued but never confirmed
@@ -3917,9 +4306,10 @@ So that Try-on has a usable photo and the shop never sees the rest of my gallery
 **Requirements:** FR-9, FR-10; AD-22, AD-23, AD-11, AD-4; NFR-5
 **Notes for the developer:**
 - `tryon` module: the `shopper_photo` entity. Workflows `issue-photo-upload-link` and `store-shopper-photo`. Routes `store/shop/tryon/photo/upload-link` and `store/shop/tryon/photo`.
-- Extend the `erase-shopper-media` workflow of Story 3.21 to cover Shopper photos, for a whole Shopper and for one photo; the `erasure` module and its ledger already exist from that story.
+- Extend the `erase-shopper-media` workflow of Story 3.23 to cover Shopper photos, for a whole Shopper and for one photo; the `erasure` module and its ledger already exist from that story.
 - `apps/web`: the photo step and the on-device checks. No image analysis library is added; the checks are type, size, pixel size and orientation only.
-- The `shopper-media` bucket is created here: private, never versioned, encrypted at rest (AD-22). Requests to AI providers are Story 4.13.
+- The `shopper-media` bucket exists from Story 3.23 (private, never versioned, encrypted at rest; AD-22); this story puts the first files in it and does not create it again. Requests to AI providers are Story 4.13.
+- Seeds the settings keys it first reads: the photo's maximum file size, minimum pixel size and maximum long side, and the upload-link rate limit `[ASSUMPTION: 15 MB, 1,000 pixels, 2,048 pixels and 10 links per Shopper per hour; the PRD gives none]`.
 
 ---
 
@@ -3970,8 +4360,9 @@ So that I can change models without changing the shop and no setting of mine can
 **Notes for the developer:**
 - `apps/worker/src/providers/`: `TryOnProvider` interface, `openrouter` adapter, `fake` adapter, the fixed safety wording and the prompt composer. Provider choice is by configuration plus the request's provider name.
 - `packages/contracts`: the port's input and result schemas and the reason codes.
+- Seeds the Try-on time limit as a dated key of the `settings` module (90 seconds, FR-11, AD-13). The port takes the limit as an argument from its caller; nothing in the worker holds it as a constant.
 - The OpenRouter key and base address are environment variables checked at start. No vendor SDK beyond plain HTTP is added.
-- If OpenRouter offers no erasure call, `requestErasure` returns `unsupported`; Story 4.21 records that in the erasure ledger as AD-32 says. `ResultCheck` is Story 4.6; the port also carries the call that asks a check model about an image, so the check goes through the same port (AD-32).
+- If OpenRouter offers no erasure call, `requestErasure` returns `unsupported`; Story 4.23 records that in the erasure ledger as AD-32 says. `ResultCheck` is Story 4.6; the port also carries the call that asks a check model about an image, so the check goes through the same port (AD-32).
 
 ---
 
@@ -4017,7 +4408,7 @@ So that I am never shown an image with nudity or sexual content.
 **Notes for the developer:**
 - `apps/worker/src/providers/`: `ResultCheck`, which calls the port of Story 4.5, and a fake. The fixed question and the verdict rule sit beside the fixed safety wording.
 - Marking a model as a check model on the Approved-model list is Story 4.7; naming the check model on the Model route, with its AI services required in the notice and its price counted against the cost ceiling, is Story 4.11. Until those exist, tests pass the check model in the job input.
-- Using the verdict in a job is Story 4.13; showing it on the test bench is Story 4.9.
+- Using the verdict in a job is Stories 4.13 and 4.14; showing it on the test bench is Story 4.9.
 
 ---
 
@@ -4109,6 +4500,7 @@ So that I can improve the instructions sent with a Try-on request and know exact
 **Notes for the developer:**
 - `tryon` module: the `prompt_version` entity with states draft, tested, published, retired. Workflows `save-prompt-version`, `copy-prompt-version`. Routes under `admin/shop/tryon/prompts`.
 - The safety wording itself lives only in worker code (Story 4.5); the Admin shows a fixed sentence from a translation file.
+- Seeds the prompt maximum length key in the `settings` module `[ASSUMPTION: 4,000 characters]`.
 - Running a version on the sample set is Story 4.9; publishing and rolling back is Story 4.10.
 
 ---
@@ -4124,7 +4516,8 @@ So that I can judge border, pallu and colour before any Shopper sees a change.
 **Given** the Owner on the sample set page
 **When** she adds a sample photo
 **Then** she must record the person's name and the date that person agreed to this use, and the photo is stored privately under a samples prefix in `shopper-media`
-**And** a sample photo without that record cannot be saved, and it is never shown to a Shopper.
+**And** a sample photo without that record cannot be saved, and it is never shown to a Shopper
+**And** objects under the samples prefix are left alone, by prefix, by `erase-shopper-media` and by every job that sweeps Shopper media (the retention job of Story 4.24 applies the same rule when it is built), because a sample person is not a Shopper (AD-22, AD-23); a sample person withdraws by asking the Owner, who deletes the sample photo.
 
 **Given** the sample set page
 **When** she adds a sample saree
@@ -4154,7 +4547,8 @@ So that I can judge border, pallu and colour before any Shopper sees a change.
 
 **Given** the Owner deletes a run or a sample photo
 **When** the workflow completes
-**Then** its stored images are deleted from the bucket and a `shop-audit` event records the deletion.
+**Then** its stored images are deleted from the bucket and a `shop-audit` event records the deletion
+**And** deleting a sample photo also deletes every test-bench output made from it, which is how a sample person's withdrawal is honoured.
 
 **Given** the automated tests for this story
 **When** they run
@@ -4165,7 +4559,8 @@ So that I can judge border, pallu and colour before any Shopper sees a change.
 - `tryon` module: entities `sample_photo`, `sample_saree`, `bench_run`, `bench_item`. Workflows `start-bench-run`, `record-bench-item`, `delete-bench-run`. Routes under `admin/shop/tryon/bench` and `internal/tryon/bench-items/:id`.
 - `packages/contracts`: job `tryon.bench` and its payload. `apps/worker/src/jobs/tryon.bench`. The worker reads and writes images only through signed links from commerce, valid at most 10 minutes.
 - Sample people are not Shoppers; their agreement is the record on the sample photo, not a Try-on consent. A bench run does not need the model's AI services to be in the published notice.
-- Rating outputs is Story 4.22.
+- Rating outputs is Story 4.25.
+- The time limit used is the setting seeded in Story 4.5.
 
 ---
 
@@ -4298,6 +4693,12 @@ So that I can keep browsing while my Try-on result is made.
 **Then** it returns the state (queued, running, ready, blocked, failed, erased) and nothing about the model
 **And** another Shopper's session gets "not found".
 
+**Given** the "used Try-on" function of Story 3.21, which has answered "no" until now
+**When** this story is finished
+**Then** it reads Try-on requests: it answers "yes" when the Shopper has a Try-on request for that Design that was accepted before the Order was paid, and "no" otherwise, so every rating recorded from now on is linked to whether she used Try-on (FR-53)
+**And** the answer is fixed when the Order is created: `confirm-payment` asks the function once per Order item and stores the yes or no on that item, so the rating link survives a later erasure, and an erased Try-on request keeps no Shopper identity (AD-23)
+**And** the Owner's Ratings page of Story 3.21 then shows real figures in its "used Try-on" and "did not" split.
+
 **Given** a Shopper who closed the browser after requesting
 **When** she later calls `GET /store/shop/tryon/requests`
 **Then** she gets her requests from the retention period with their Designs and states, so a result that became ready is shown to her on return.
@@ -4306,15 +4707,15 @@ So that I can keep browsing while my Try-on result is made.
 **Notes for the developer:**
 - `tryon` module: the `tryon_request` entity (Shopper, Design, photo, state, times; route, prompt, cost and attempt fields are filled by Story 4.13). Workflow `request-tryon`. Routes `store/shop/tryon/requests`.
 - `packages/contracts`: job `tryon.generate` and its payload (request id only; never a link), the request view model, the error codes. `api-client`: `requestTryOn`, `getTryOnRequest`, `listTryOnRequests`.
-- The per-Shopper limit value is the Try-on limit already in shop settings (FR-56, Epic 3). The daily spending cap is Story 4.16. The worker job is Story 4.13 and the Shopper's screen is Story 4.14; until then a request stays queued.
+- The per-Shopper limit value is the Try-on limit already in shop settings (FR-56, Epic 3). The daily spending cap is Story 4.18. The worker job is Story 4.13 and the Shopper's screen is Story 4.16; until then a request stays queued.
 
 ---
 
-### Story 4.13: The `tryon.generate` job: primary, fallback, time limit, cost and check
+### Story 4.13: The `tryon.generate` job: start, primary model, check, store and cost
 
 As a Shopper,
-I want my request tried on the main model and once on the fallback, checked, and stored safely,
-So that I get a Try-on result when one can be made and an honest answer when it cannot.
+I want my request run on the main model, checked and stored safely,
+So that I get a Try-on result when the main model can make one.
 
 **Acceptance Criteria:**
 
@@ -4330,6 +4731,35 @@ So that I get a Try-on result when one can be made and an honest answer when it 
 **When** the worker finishes
 **Then** it stores the provider's file unchanged in `shopper-media` through a signed write link, reports the result to `/internal/tryon/requests/:id/result`, and the `record-tryon-result` workflow sets the request to ready
 **And** the request records the AI provider, model, check model, AI services, Prompt version, duration of each attempt and the cost in paise, converted from the provider's price with the exchange-rate setting in force when it is recorded (AD-32).
+
+**Given** a stored Try-on result
+**When** a test compares it with the bytes the provider returned
+**Then** the stored object is byte-identical (the same hash), so provenance information placed in the image by the AI provider is kept (FR-12, AD-22).
+
+**Given** the primary model fails, times out or is blocked, or `ResultCheck` does not return `pass`
+**When** the worker reports it in this story
+**Then** nothing is stored or shown, the request ends failed with the reason recorded, and it does not count against her limit; Story 4.14 replaces this single ending with the fallback call and the distinct blocked and rejected outcomes.
+
+**Given** the job's logs, results and error reports
+**When** they are inspected
+**Then** they contain ids, states, durations and costs, and no photo, link or image bytes.
+
+**Requirements:** FR-11, FR-12 (provenance kept), FR-52; NFR-2, NFR-3; AD-1, AD-8, AD-9, AD-10, AD-11, AD-22, AD-32
+**Notes for the developer:**
+- The check fails closed: `unassessable`, which includes the check model not answering, never lets a result be stored or shown (AD-32).
+- `apps/worker/src/jobs/tryon.generate` using Story 4.5's port and Story 4.6's check. Commerce: workflows `start-tryon-request`, `record-tryon-attempt`, `record-tryon-result`; routes `internal/tryon/requests/:id/{start,attempts,result}`.
+- The time limit is the dated setting seeded in Story 4.5 (90 seconds at launch, AD-13), read at job start, never hardcoded.
+- Tests use the fake provider: success, start refused, and the single failure ending. The fallback and the other outcomes are Story 4.14; erasure of results and requests is Story 4.15.
+
+---
+
+### Story 4.14: The `tryon.generate` job: fallback, blocked, rejected and repeated runs
+
+As a Shopper,
+I want my request tried once on the fallback when the main model fails, and an honest answer when no result can be shown,
+So that a fault at one model does not cost me my Try-on, and I am never shown a result that failed its check.
+
+**Acceptance Criteria:**
 
 **Given** the primary model fails or gives no result within 90 seconds
 **When** the limit passes
@@ -4348,33 +4778,60 @@ So that I get a Try-on result when one can be made and an honest answer when it 
 **When** the worker handles it
 **Then** the image is not stored and not shown, the request ends with the outcome "rejected by check", it is counted as blocked in the cost and failure figures, its cost is still recorded, and the Shopper sees the same neutral failure message without being blamed.
 
-**Given** a result is reported for a request that has been marked erased
-**When** `record-tryon-result` runs
-**Then** the result is discarded, any stored file for it is deleted, the discard is written to the erasure ledger, and the request stays erased.
-
 **Given** the job runs twice, or the worker stops in the middle of an attempt
 **When** the job runs again
 **Then** a request already finished is left alone, an attempt recorded as started without an outcome is treated as failed, and no request ever causes more than one primary call and one fallback call.
+
+**Given** a fallback attempt that returns an image
+**When** `ResultCheck` passes it
+**Then** it is stored, recorded and costed exactly as a primary result is in Story 4.13, with both attempts' durations and costs on the request.
+
+**Requirements:** FR-11, FR-52; NFR-2, NFR-3; AD-8, AD-10, AD-22, AD-32
+**Notes for the developer:**
+- Extends `apps/worker/src/jobs/tryon.generate` and the workflows `record-tryon-attempt` and `record-tryon-result` of Story 4.13; adds the outcomes blocked and "rejected by check" and the error code `tryon.photo_blocked` (checked in `request-tryon`).
+- Tests use the fake provider: timeout then fallback success, both fail, blocked, check reject, check unassessable, double run, worker stopped mid-attempt.
+- A request left queued or running for too long is ended by the scheduled job of Story 4.17.
+
+---
+
+### Story 4.15: Erasure reaches Try-on results and requests
+
+As a Shopper,
+I want my Try-on results and requests erased with my photos, and no result to appear after I have erased,
+So that erasure leaves nothing of me behind and no late job brings an image back.
+
+**Acceptance Criteria:**
 
 **Given** a Shopper whose account is deleted, or whose media are erased, after this story
 **When** `erase-shopper-media` runs
 **Then** it deletes her Try-on result files, marks her Try-on requests erased, and removes personal fields from them while keeping model, cost and times.
 
-**Given** the job's logs, results and error reports
-**When** they are inspected
-**Then** they contain ids, states, durations and costs, and no photo, link or image bytes.
+**Given** a result is reported for a request that has been marked erased
+**When** `record-tryon-result` runs
+**Then** the result is discarded, any stored file for it is deleted, the discard is written to the erasure ledger, and the request stays erased.
 
-**Requirements:** FR-11, FR-52; NFR-2, NFR-3; AD-1, AD-8, AD-9, AD-10, AD-11, AD-22, AD-23, AD-32
+**Given** a request marked erased while its job is still queued
+**When** the worker asks to start it
+**Then** the start is refused as in Story 4.13 and no AI provider is called.
+
+**Given** `erase-shopper-media` fails after deleting some result files
+**When** it is retried
+**Then** it resumes from the erasure ledger, deletes the rest, and marks each request erased once.
+
+**Given** erased requests
+**When** the Shopper lists her Try-on requests
+**Then** none of them returns an image or a link.
+
+**Requirements:** FR-15, FR-27; NFR-6; AD-4, AD-22, AD-23
 **Notes for the developer:**
-- The check fails closed: `unassessable`, which includes the check model not answering, never lets a result be stored or shown (AD-32).
-- `apps/worker/src/jobs/tryon.generate` using Story 4.5's port and Story 4.6's check. Commerce: workflows `start-tryon-request`, `record-tryon-attempt`, `record-tryon-result`; routes `internal/tryon/requests/:id/{start,attempts,result}`.
-- The time limit is a dated setting (90 seconds at launch, AD-13), read at job start, never hardcoded.
-- Extend `erase-shopper-media` to cover Try-on results and requests. Requests to AI providers for erasure are Story 4.21.
-- All tests use the fake provider: success, timeout then fallback success, both fail, blocked, check reject, check unassessable, erased before result, double run.
+- Extends the `erase-shopper-media` workflow of Story 3.23, which Story 4.4 extended to Shopper photos, to cover Try-on result files and Try-on requests; it stays the only erasure path (AD-23).
+- Extends `record-tryon-result` of Story 4.13 with the discard rule.
+- Requests to AI providers for erasure are Story 4.23; withdrawal, which calls this workflow for a whole Shopper, is Story 4.22.
+- Tests use the fake provider: erased before start, erased before result, erasure retried part-way.
 
 ---
 
-### Story 4.14: See the Try-on result, labelled as AI-generated, and add the Design to the cart
+### Story 4.16: See the Try-on result, labelled as AI-generated, and add the Design to the cart
 
 As a Shopper,
 I want to see my Try-on result clearly marked as AI-generated, with a way back to the real photos and a way to buy,
@@ -4403,7 +4860,8 @@ So that I can judge the saree on me without mistaking the image for a photograph
 **Given** the result screen
 **When** she chooses to save or share the image
 **Then** the client fetches `GET /store/shop/tryon/requests/:id/labelled`, which returns a copy with the "AI-generated" label drawn into the pixels in her language, and offers only that copy
-**And** the stored original stays unchanged, the route is refused for any other Shopper, and its answer is never cached by a shared cache.
+**And** the stored original stays unchanged, the route is refused for any other Shopper, and its answer is never cached by a shared cache
+**And** the labelled copy carries over the provenance metadata of the stored original where the image format and sharp allow it; where they do not, the limit is written in `docs/`, and the stored original, byte-identical to the provider's file (Story 4.13), remains the record (FR-12).
 
 **Given** a request that ended failed, blocked, or rejected by the check, or a refusal with `tryon.limit_reached`, `tryon.photo_blocked` or Try-on unavailable
 **When** the Shopper sees the screen
@@ -4417,12 +4875,12 @@ So that I can judge the saree on me without mistaking the image for a photograph
 **Notes for the developer:**
 - `apps/web`: the Try-on screen (progress, result, messages, list of her results), styled from DESIGN.md when it exists. Data only through `packages/api-client`.
 - `apps/commerce`: route `store/shop/tryon/requests/:id/labelled`, drawing the label with sharp, which is already in the stack; label text from the translation file.
-- Reading a result or the labelled copy counts as use for retention (Story 4.22 reads the last-used time; record it here on the request and photo).
-- Reporting a result is Story 4.17. "Try-on result ready" is shown in the product, not sent by SMS (FR-54); there is no push service at launch, so a ready result is found by polling (spine, Consistency Conventions).
+- Reading a result or the labelled copy counts as use for retention (Story 4.24 reads the last-used time; record it here on the request and photo).
+- Reporting a result is Story 4.19. "Try-on result ready" is shown in the product, not sent by SMS (FR-54); there is no push service at launch, so a ready result is found by polling (spine, Consistency Conventions).
 
 ---
 
-### Story 4.15: Try-on never slows or breaks the Design page
+### Story 4.17: Try-on never slows or breaks the Design page
 
 As a Shopper,
 I want the Design page and my purchase to work whatever state Try-on is in,
@@ -4444,7 +4902,7 @@ So that a problem with AI never stops me buying a saree.
 
 **Given** 20 fake-provider requests with a fixed delay
 **When** they are run through the queue in a test
-**Then** the time from acceptance to ready is recorded for each request, so that NFR-2 (95% within 60 seconds) can be measured from the same field in Story 4.18.
+**Then** the time from acceptance to ready is recorded for each request, so that NFR-2 (95% within 60 seconds) can be measured from the same field in Story 4.20.
 
 **Given** the worker's concurrency setting for `tryon.generate`
 **When** more requests are queued than it allows
@@ -4454,11 +4912,11 @@ So that a problem with AI never stops me buying a saree.
 **Notes for the developer:**
 - `apps/commerce/src/jobs`: `expire-stale-tryon-requests`, which starts a workflow (AD-4). Worker concurrency is an environment variable.
 - `apps/web`: the entry point's failure path. No new entity.
-- Alerts on a rising Try-on failure rate (NFR-9) are Story 7.2, which reads the Try-on request records. The 80% spend alert is built in Story 4.16.
+- Alerts on a rising Try-on failure rate (NFR-9) are Story 7.2, which reads the Try-on request records. The 80% spend alert is built in Story 4.18.
 
 ---
 
-### Story 4.16: The daily spending cap
+### Story 4.18: The daily spending cap
 
 As an Owner,
 I want a daily cap on Try-on spending with a warning before it is reached,
@@ -4511,7 +4969,7 @@ So that a busy day or a fault cannot run up a bill I did not agree to.
 
 ---
 
-### Story 4.17: Report a Try-on result, and the Owner's review queue
+### Story 4.19: Report a Try-on result, and the Owner's review queue
 
 As a Shopper,
 I want to report a Try-on result as wrong or offensive from the screen where I see it,
@@ -4552,12 +5010,12 @@ So that the shop learns about bad results and can act.
 **Requirements:** FR-13, FR-44; AD-14, AD-22; NFR-5
 **Notes for the developer:**
 - `tryon` module: the `tryon_report` entity. Workflows `report-tryon-result`, `handle-tryon-report`. Routes `store/shop/tryon/requests/:id/report` and `admin/shop/tryon/reports`.
-- `apps/web`: the report control on the result screen (Story 4.14). `apps/commerce/src/admin`: the review queue page.
+- `apps/web`: the report control on the result screen (Story 4.16). `apps/commerce/src/admin`: the review queue page.
 - A new unhandled report alerts the Owner through the existing `message.send` job, at most once an hour.
 
 ---
 
-### Story 4.18: The cost and failure view
+### Story 4.20: The cost and failure view
 
 As an Owner,
 I want to see by day and by Model route how many Try-on results were made, what they cost, how long they took and how many failed or were blocked,
@@ -4601,7 +5059,7 @@ So that I can tell whether a route is worth its price and meets its time target.
 
 ---
 
-### Story 4.19: The change history of Try-on controls
+### Story 4.21: The change history of Try-on controls
 
 As an Owner,
 I want one history of every change to the Model route, the Approved-model list, Prompt versions, limits, the chosen Designs, the cap, the cost ceiling, the exchange rate and the off switch,
@@ -4614,7 +5072,7 @@ So that I can see who changed what and when, and nobody can rewrite it.
 **Then** every such change is listed newest first with who made it, when, the action, and the before and after values
 **And** she can filter by kind of change and by date.
 
-**Given** each workflow from Stories 4.2, 4.7, 4.8, 4.10, 4.11 and 4.16, and the Try-on limit in shop settings
+**Given** each workflow from Stories 4.2, 4.7, 4.8, 4.10, 4.11 and 4.18, and the Try-on limit in shop settings
 **When** a test runs the workflow
 **Then** exactly one `shop-audit` event with before and after values appears in the history, and a refused change writes none.
 
@@ -4637,7 +5095,7 @@ So that I can see who changed what and when, and nobody can rewrite it.
 
 ---
 
-### Story 4.20: Withdraw Try-on consent and erase everything
+### Story 4.22: Withdraw Try-on consent and erase everything
 
 As a Shopper,
 I want to withdraw my Try-on consent as easily as I gave it,
@@ -4682,13 +5140,13 @@ So that my photos and Try-on results are gone and nothing more is sent anywhere.
 **Requirements:** FR-15; NFR-6; AD-11, AD-23, AD-22, AD-4
 **Notes for the developer:**
 - Workflow `withdraw-tryon-consent` in `apps/commerce/src/workflows`; route `store/shop/tryon/consent/withdraw`; `consent` module records withdrawal as a new fact, never by editing the acceptance row.
-- `erase-shopper-media` already covers photos (4.4) and results (4.13); this story adds the whole-Shopper trigger, resumable steps and the ledger rows for each.
+- `erase-shopper-media` already covers photos (Story 4.4) and results (Story 4.15); this story adds the whole-Shopper trigger, resumable steps and the ledger rows for each.
 - `apps/web`: the withdrawal control in account and on the Try-on screen, styled from DESIGN.md when it exists.
-- Erasure requests to AI providers and the 24-hour check are Story 4.21.
+- Erasure requests to AI providers and the 24-hour check are Story 4.23.
 
 ---
 
-### Story 4.21: Ask AI providers to erase, and keep the erasure ledger honest
+### Story 4.23: Ask AI providers to erase, and keep the erasure ledger honest
 
 As a Shopper,
 I want the AI services that received my photo asked to erase it, and the outcome recorded,
@@ -4734,18 +5192,19 @@ So that erasure does not stop at the shop's own storage.
 
 **Given** a data request under FR-28
 **When** the Owner answers it for a Shopper
-**Then** the AI services that received her Shopper photos can be read from her requests and ledger entries.
+**Then** the AI services that received her Shopper photos can be read from her requests and ledger entries
+**And** the data report of Story 3.24 now also lists her Try-on consents with version, language and time, her withdrawals, whether a Shopper photo is stored and since when, and her Try-on requests with state and time only, never an image or a link (FR-28).
 
 **Requirements:** FR-15, FR-28; NFR-6; AD-8, AD-9, AD-10, AD-23, AD-26, AD-32
 **Notes for the developer:**
-- `apps/worker/src/jobs/media.erase-at-provider`; the `media.erase-at-provider` payload that Story 3.21 put in `packages/contracts` (erasure id and AI-service id; never a photo). Commerce: workflow `record-provider-erasure`, route `internal/erasure/:id/provider-outcome`, Admin ledger page. The erasure-deadline job in `apps/commerce/src/jobs` exists from Story 3.21; extend it to count open provider lines.
-- This story also extends the one function of Story 3.22 that lists the AI providers that received a Shopper's photos, for data requests.
+- `apps/worker/src/jobs/media.erase-at-provider`; the `media.erase-at-provider` payload that Story 3.23 put in `packages/contracts` (erasure id and AI-service id; never a photo). Commerce: workflow `record-provider-erasure`, route `internal/erasure/:id/provider-outcome`, Admin ledger page. The erasure-deadline job in `apps/commerce/src/jobs` exists from Story 3.23; extend it to count open provider lines.
+- This story also extends the one function of Story 3.24 that lists the AI providers that received a Shopper's photos, and adds the Try-on section (consents, withdrawals, stored photo, requests) to the `prepare-data-report` workflow of that story.
 - Tests use the fake provider for `confirmed`, `accepted`, `unsupported`, `failed` and no answer.
 - With the no-retention option always set (Story 4.5) an AI provider may hold nothing to erase; the request is still sent and the answer recorded.
 
 ---
 
-### Story 4.22: Delete a single item, and delete what has not been used for 30 days
+### Story 4.24: Delete a single item, and delete what has not been used for 30 days
 
 As a Shopper,
 I want to delete one Shopper photo or one Try-on result when I choose, and to have unused ones deleted for me,
@@ -4755,7 +5214,7 @@ So that nothing of me is kept longer than I want or longer than the notice says.
 
 **Given** a Shopper looking at her stored Shopper photo or one of her Try-on results
 **When** she chooses delete and confirms
-**Then** `erase-shopper-media` runs scoped to that item, with the same steps as withdrawal including the AI-service requests of Story 4.21, and her consent and other items stay as they are.
+**Then** `erase-shopper-media` runs scoped to that item, with the same steps as withdrawal including the AI-service requests of Story 4.23, and her consent and other items stay as they are.
 
 **Given** she deletes her Shopper photo while a request using it is running
 **When** the result arrives
@@ -4774,6 +5233,10 @@ So that nothing of me is kept longer than I want or longer than the notice says.
 **When** the Owner saves either
 **Then** she is warned that they differ, and the Try-on controls page shows the mismatch until they agree.
 
+**Given** the grievance form of Story 3.22
+**When** this story is finished
+**Then** it offers one more request type, "I appear in a Try-on image without agreeing", open to a person who is not signed in; it creates a ticket with a number, an acknowledgement and the same two deadlines, asks for a description and a way to answer her, and never asks her to upload the image (FR-9).
+
 **Given** a person who appears in a Try-on result or Shopper photo without agreeing asks for removal through the published contact
 **When** the Owner finds the item in Shopper support and chooses "erase this item"
 **Then** `erase-shopper-media` runs scoped to it with the cause "depicted person's request", the view is recorded as an access event, and the action is audited.
@@ -4785,16 +5248,17 @@ So that nothing of me is kept longer than I want or longer than the notice says.
 **Requirements:** FR-15, FR-51, FR-9; NFR-6; AD-4, AD-13, AD-14, AD-23
 **Notes for the developer:**
 - Routes `store/shop/tryon/photo` (delete) and `store/shop/tryon/requests/:id` (delete); job `retention` in `apps/commerce/src/jobs`, which only starts the workflow; the retention period is a dated setting.
-- `apps/web`: delete controls on the photo step and the result screen. Admin: "erase this item" in Shopper support.
-- The last-used time was recorded from Story 4.14 on; this story adds any missing writes and the tests at 29, 30 and 31 days.
+- `apps/web`: delete controls on the photo step and the result screen, and the new request type on the grievance form (the `complaint` module's type list in `packages/contracts`). Admin: "erase this item" in Shopper support.
+- The retention job and every Shopper erasure skip the samples prefix of Story 4.9.
+- The last-used time was recorded from Story 4.16 on; this story adds any missing writes and the tests at 29, 30 and 31 days.
 
 ---
 
-### Story 4.23: Run the launch gate test and record the decision
+### Story 4.25: The launch gate tools: rating view, decision record and the rules that follow from it
 
 As an Owner,
-I want real sarees and consenting adults' photos run through the candidate models and rated by saree buyers, with the decision recorded,
-So that Try-on ships only if it shows border, pallu and colour faithfully, and stays off if it does not.
+I want a blind rating view for test-bench outputs and a recorded launch gate decision that the off switch obeys,
+So that Try-on can be switched on only on the strength of a recorded test.
 
 **Acceptance Criteria:**
 
@@ -4803,20 +5267,11 @@ So that Try-on ships only if it shows border, pallu and colour faithfully, and s
 **Then** the rater is shown each sample pair's outputs beside the real saree photo with models hidden behind letters in a shuffled order, and gives each output a score from 1 to 5 for border, for pallu and for colour, and marks whether it is still a draped saree
 **And** scores are stored per rater and per output, and the run's summary shows, per model and Prompt version, the mean of each score, the share of outputs still a draped saree, the cost per image and the 95th-percentile time.
 
-**Given** the launch gate
-**When** the Owner prepares it
-**Then** the sample set holds real sarees from the launch catalogue covering its weaves and border styles, and full-length photos of adults who each agreed to this use (recorded as in Story 4.9); no Shopper's photo is used.
+**Given** runs chosen for a decision
+**When** any output of any model in them lacks a score from any named rater
+**Then** a decision cannot be recorded, and the page lists what is missing.
 
-**Given** the candidate models in the technical research (OpenAI `gpt-image-2.6`, Google `gemini-nano-banana-2.1`, Qwen-Image-Edit-2511 untuned, FASHN v1.6)
-**When** the Owner runs the gate
-**Then** each candidate reachable through the OpenRouter adapter and approvable under Story 4.7 is approved and run on the whole sample set through the real AI provider
-**And** each candidate that cannot be reached or approved is recorded in the decision as not tested, with the reason.
-
-**Given** the runs are finished
-**When** saree buyers named by the Owner rate them in the rating view
-**Then** every output of every tested model has scores from every rater before a decision can be recorded.
-
-**Given** the ratings
+**Given** the ratings are complete
 **When** the Owner records the decision on the launch gate page
 **Then** she enters the pass mark she has set, the raters, and one of: go (with the model and Prompt version to publish), no-go, or narrow (go only for the Designs she lists)
 **And** the decision is stored with the runs it rests on, her account and the time, is audited, and cannot be edited; a later test records a new decision.
@@ -4830,21 +5285,53 @@ So that Try-on ships only if it shows border, pallu and colour faithfully, and s
 **Then** `record-gate-decision` sets the Owner's chosen-Designs limit of Story 4.2 to the listed Designs, through `set-tryon-designs`, so the narrow outcome is applied by the same control the Owner can use at any time (FR-42)
 **And** when Try-on is switched on, the status route answers available only for those Designs, the entry point is absent on every other Design, and a request for another Design is refused (Stories 4.2 and 4.12).
 
+**Given** the automated tests for the rating view, the decision record, the switch rule and the chosen-Designs limit
+**When** they run
+**Then** they use the fake provider and pass with no real AI provider and no human rater.
+
+**Requirements:** PRD §6.3; FR-43, FR-42; AD-10, AD-14
+**Notes for the developer:**
+- `tryon` module: entities `bench_rating` and `gate_decision`; workflows `rate-bench-item`, `record-gate-decision`; extend `set-tryon-switch` for the decision; the Design list is the chosen-Designs setting of Story 4.2, not a second list. Admin pages: rating view and launch gate.
+- This story is complete when the tools are built and tested with the fake provider. Running the gate with real sarees, real people and real providers is Story 4.26, which the Owner does.
+- The research found that untuned older try-on models turned sarees into western-style garments; the "still a draped saree" mark exists to catch exactly that.
+
+---
+
+### Story 4.26: The Owner runs the launch gate and records the decision
+
+As an Owner,
+I want real sarees and consenting adults' photos run through the candidate models and rated by saree buyers, with the decision recorded,
+So that Try-on ships only if it shows border, pallu and colour faithfully, and stays off if it does not.
+
+**Acceptance Criteria:**
+
+**Given** the launch gate
+**When** the Owner prepares it
+**Then** the sample set holds real sarees from the launch catalogue covering its weaves and border styles, and full-length photos of adults who each agreed to this use (recorded as in Story 4.9); no Shopper's photo is used.
+
+**Given** the candidate models in the technical research (OpenAI `gpt-image-2.6`, Google `gemini-nano-banana-2.1`, Qwen-Image-Edit-2511 untuned, FASHN v1.6)
+**When** the Owner runs the gate on staging with the real provider key
+**Then** each candidate reachable through the OpenRouter adapter and approvable under Story 4.7 is approved and run on the whole sample set through the real AI provider
+**And** each candidate that cannot be reached or approved is recorded in the decision as not tested, with the reason.
+
+**Given** the runs are finished
+**When** saree buyers named by the Owner rate them in the rating view of Story 4.25
+**Then** every output of every tested model has scores from every rater, and the Owner records go, no-go or narrow with her pass mark on the launch gate page.
+
 **Given** the decision is go or narrow
 **When** the Owner publishes the Model route
 **Then** it still passes every check of Story 4.11, including the notice naming its AI services and the cost ceiling
 **And** she resets the Try-on time target and the cost ceiling in settings from the measured figures (NFR-2, NFR-3).
 
-**Given** the automated tests for the rating view, the decision record, the switch rule and the chosen-Designs limit
-**When** they run
-**Then** they use the fake provider; only the Owner's gate runs call real AI providers.
+**Given** no candidate passes
+**When** the decision is recorded as no-go
+**Then** the switch stays off by the rule of Story 4.25 and the shop launches without Try-on (PRD §6.3).
 
-**Requirements:** PRD §6.3; FR-43, FR-42, FR-39; NFR-2, NFR-3; AD-10, AD-14
+**Requirements:** PRD §6.3; FR-43, FR-42, FR-39; NFR-2, NFR-3; AD-10
 **Notes for the developer:**
-- `tryon` module: entities `bench_rating` and `gate_decision`; workflows `rate-bench-item`, `record-gate-decision`; extend `set-tryon-switch` for the decision; the Design list is the chosen-Designs setting of Story 4.2, not a second list. Admin pages: rating view and launch gate.
-- The build part of this story is the rating view, the decision record and the two rules. Running the gate is the Owner's task, done in staging with the real key; the story is complete when a decision is recorded.
+- This is the Owner's task, not a build task: it needs real sarees, consenting adults, human raters and real provider keys, and a developer agent cannot finish it. It is tracked as an item on the launch checklist of Story 7.14 and is complete when a decision is recorded.
+- What a developer agent can do here: check that Story 4.25's pages work on staging with the real key configured, prepare a one-page run sheet in `docs/` for the Owner, and hand the story back marked "waiting for the Owner".
 - A fine-tuned or self-hosted model is deferred by the spine; if no candidate passes, that is the next thing to try, behind a new adapter.
-- The research found that untuned older try-on models turned sarees into western-style garments; the "still a draped saree" mark exists to catch exactly that.
 
 ## Epic 5: The Owner changes the shop's screens without a release
 
@@ -4859,7 +5346,7 @@ The Owner builds the home, category and campaign screens, and one region of the 
 - Every create, save, publish, schedule and restore in the content admin writes an audit event to content's append-only collection with the Owner's email, the time, the action and the before and after values (AD-14). Stories do not repeat this in each criterion.
 - The content admin is reached through the access gate and the Owner's content sign-in (AD-15).
 - Items tagged `[ASSUMPTION]` are choices made while writing the stories where the PRD and spine are still silent; each says what is assumed.
-- This epic builds on the content application of Stories 1.19 and 3.1 (gate, audit rule, versioning helper, content reader in commerce) and on the first `ScreenV1` schema and `packages/blocks` of Story 1.24.
+- This epic builds on the content application of Stories 1.23 and 3.1 (gate, audit rule, versioning helper, content reader in commerce) and on the first `ScreenV1` schema and `packages/blocks` of Story 1.28.
 
 ---
 
@@ -4897,7 +5384,7 @@ So that I can prepare the home screen or a campaign without it going live.
 
 **Given** a text, banner or image Block
 **When** she enters its wording
-**Then** she can enter it for English and for each configured language, and a missing translation falls back to English (NFR-14)
+**Then** she can enter it for English and for each configured language, the list read from the `/internal/settings/languages` lookup of Story 3.2, and a missing translation falls back to English (NFR-14)
 
 **Given** a draft screen
 **When** she saves it
@@ -4910,7 +5397,7 @@ So that I can prepare the home screen or a campaign without it going live.
 
 **Requirements:** FR-30, FR-31 (draft), FR-33; AD-3, AD-12, AD-14, AD-15, AD-19
 **Notes for the developer:**
-- Completes the `ScreenV1` schema that Story 1.24 began in `packages/contracts` and adds the fixed action list of AD-12 to it; completes `packages/blocks`, which Story 1.24 created for its sample, with the full properties of banner, text and image (no UI code); creates the screens collection with drafts in `apps/content`, using the versioning helper and audit rule of Story 3.1.
+- Completes the `ScreenV1` schema that Story 1.28 began in `packages/contracts` and adds the fixed action list of AD-12 to it; completes `packages/blocks`, which Story 1.28 created for its sample, with the full properties of banner, text and image (no UI code); creates the screens collection with drafts in `apps/content`, using the versioning helper and audit rule of Story 3.1.
 - `ScreenV1` and Block properties may only ever gain optional fields (AD-12); write the schema so that unknown fields are ignored by readers.
 - Blocks that show Designs or Weavers are Story 5.2. Publishing is Story 5.3. The Design-page region is Story 5.5.
 
@@ -5280,6 +5767,7 @@ So that I never meet an error or a blank page because the Owner changed somethin
 **Given** a last copy is being shown
 **When** a Shopper opens a Design from it
 **Then** the Design page shows the current price and availability from the server, so an out-of-date card cannot lead to a wrong charge
+**And** while a last copy is shown, the screen carries a plain notice that prices and availability on it may be out of date, because price and availability are never served as current from a stored copy (AD-12)
 
 **Given** the continuous-integration checks
 **When** they run
@@ -5303,10 +5791,10 @@ A Shopper does in the Android app everything she can do on the website: she brow
 
 - "Same behaviour as the website" means the acceptance criteria of the website story for the same FR in Epics 1 to 5 apply unchanged; each story below lists only what differs on the app and what must be proven again on a phone.
 - UI code gets data only from `packages/api-client` (AD-2). Where the app needs a function that the website did not, it is added to `api-client` with its view model in `packages/contracts`, additively (AD-19, AD-27). No story adds a business rule, a total, a state or an availability calculation to `apps/mobile` (AD-5, AD-24, AD-28).
-- No Shopper-facing text is written in code (Conventions): interface text is in the app's translation files, Design and Weaver text comes from commerce, and documents come from content through commerce (AD-28). Every interactive element has a label and every layout holds at the largest system font size (NFR-15).
+- No Shopper-facing text is written in code (Conventions): interface text comes from the translation bundle that content holds and commerce serves (Story 3.4), with the app's bundled translation files as the built-in fallback, Design and Weaver text comes from commerce, and documents come from content through commerce (AD-28). Every interactive element has a label and every layout holds at the largest system font size (NFR-15).
 - Screens are described by behaviour only; they are styled from DESIGN.md when it exists.
 - iOS is out of scope. There is no push service at launch, so a ready Try-on result is found by polling (spine, Consistency Conventions: Payments in the app). No analytics or advertising SDK is added (AD-29).
-- The app is built on the minimal Expo application of Story 1.24, which settled spike items 5, 6 and 8 on a real phone; no story here creates `apps/mobile` again.
+- The app is built on the minimal Expo application of Story 1.28, which settled spike items 5, 6 and 8 on a real phone; no story here creates `apps/mobile` again.
 
 ---
 
@@ -5318,7 +5806,7 @@ So that everything else in the app has a dependable place to live.
 
 **Acceptance Criteria:**
 
-**Given** the minimal Expo application that Story 1.24 created in `apps/mobile`, with its neutral application id and `packages/contracts` and `packages/blocks` already wired in
+**Given** the minimal Expo application that Story 1.28 created in `apps/mobile`, with its neutral application id and `packages/contracts` and `packages/blocks` already wired in
 **When** the developer builds the app shell on it, with Expo 58 and expo-router, and adds `packages/api-client`
 **Then** a debug build installs and starts on an Android phone and on an emulator
 **And** the proof's sample screen, sample tile page and measurement screens are removed from the shell or kept only in a development build
@@ -5350,7 +5838,7 @@ So that everything else in the app has a dependable place to live.
 
 **Requirements:** NFR-12, AD-2, AD-16, AD-19, AD-20, AD-27, AD-29
 **Notes for the developer:**
-- Builds on Story 1.24: `apps/mobile` exists; this story turns the proof into the shell and does not create the application or change its application id. Touches `apps/mobile` and, only if needed, a storage and header hook in `packages/api-client` so it runs outside a browser; `packages/*` still import no UI framework.
+- Builds on Story 1.28: `apps/mobile` exists; this story turns the proof into the shell and does not create the application or change its application id. Touches `apps/mobile` and, only if needed, a storage and header hook in `packages/api-client` so it runs outside a browser; `packages/*` still import no UI framework.
 - Use the versions in the spine's Stack table. Add no library that is not part of the Expo SDK or named in the spine.
 - Placeholder texts here are temporary; Story 6.3 moves all interface text to the app's translation files.
 - Left for later stories: every real screen, sign-in, the forced-update screen.
@@ -5414,8 +5902,14 @@ So that I can shop without struggling to read or reach anything.
 
 **Given** the app's interface text
 **When** a screen shows it
-**Then** it comes from the translation files bundled with the app, one for English and one for Tamil, with the same keys as the website's where the wording is shared (AD-28)
+**Then** it comes from the translation bundle for her language, fetched with `getTranslations` in `packages/api-client` from `/store/shop/translations/{language}` (Story 3.4) and cached on the phone (AD-28)
+**And** the translation files bundled with the app, one for English and one for Tamil with the same keys as the website's where the wording is shared, are the built-in copy: the app uses them before its first fetch, for any key the bundle lacks, and whenever the fetch fails
 **And** Design and Weaver text arrives in view models from commerce in the Shopper's language, and documents and notices arrive from content through commerce, so a change the Owner makes to those appears the next time the screen is loaded, without a release (NFR-14)
+
+**Given** the Owner publishes a changed interface text in a translation bundle
+**When** the app is next opened or brought to the front with a connection
+**Then** it fetches the newer bundle version and shows the new wording, with no app release (NFR-14)
+**And** with no network it shows the last bundle it cached, or the built-in copy; no screen waits on the bundle, a bundle key the app does not know is ignored, and bundle text is shown as plain text and never run (AD-27, FR-33)
 
 **Given** the phone's language is one the shop has published (English at launch; Tamil is the first added language)
 **When** the Shopper first opens the app
@@ -5443,8 +5937,8 @@ So that I can shop without struggling to read or reach anything.
 
 **Requirements:** NFR-14, NFR-15, FR-5, AD-2, AD-5, AD-28
 **Notes for the developer:**
-- Touches `apps/mobile` (translation files, text lookup, language choice, the basic components). The language is sent on every request by `packages/api-client`, as on the website (Story 2.12). The app never calls `apps/content` directly (AD-2).
-- As on the website (Story 2.11), a change to interface text needs an app release because AD-28 puts it in the client; only Design, Weaver, document and message text changes without one. This difference from NFR-14 is reported to the founder.
+- Touches `apps/mobile` (translation files, text lookup, language choice, the basic components). The language is sent on every request by `packages/api-client`, as on the website (Story 2.14). The app never calls `apps/content` directly (AD-2).
+- AD-28: interface text is a translation bundle per language, held in content and served through commerce; the app caches it and carries a built-in copy as the fallback, so a wording change needs no app release (NFR-14). The route, the view model and `getTranslations` exist from Story 3.4; this story adds the app's cache, its built-in files and the lookup order. Add the app's own text keys to the bundles' seed so the Owner can edit them.
 - Every later story builds its screens from these basic components; Story 6.18 audits the finished app.
 - Styled from DESIGN.md when it exists.
 
@@ -5542,7 +6036,7 @@ So that I always see the current shop without updating the app.
 
 **Requirements:** FR-30, FR-31, FR-32, FR-33, FR-1, FR-5, AD-2, AD-12, AD-27
 **Notes for the developer:**
-- Touches `apps/mobile` only: a Block registry mapping each type in `packages/blocks` to one component, a screen renderer, and a saved-screen store on the phone. Start from the sample renderer of Story 1.24 and bring it up to these criteria.
+- Touches `apps/mobile` only: a Block registry mapping each type in `packages/blocks` to one component, a screen renderer, and a saved-screen store on the phone. Start from the sample renderer of Story 1.28 and bring it up to these criteria.
 - The app never reads content's own shape and never resolves a rule or a price itself (AD-12).
 - Add unit tests with recorded screens: one with an unknown Block type, one with an unknown action, one with extra fields.
 - The Design page's Server-driven region is in Story 6.7.
@@ -5671,7 +6165,7 @@ So that I can inspect the body, border and pallu as if it were laid out in front
 **Given** the viewer is open on an Android phone
 **When** she uses one finger to pan, two fingers to pinch, and a double tap
 **Then** the saree pans, zooms and steps in smoothly; the native screen does not scroll, swipe back or zoom the whole page instead (AD-18)
-**And** because Story 1.24 settled the touch-behaviour spike item with a sample tile set, this story re-runs the same checks and frame-rate measurement on the finished screen with a real Design, and records the result in `docs/` with the phone models and Android versions tested
+**And** because Story 1.28 settled the touch-behaviour spike item with a sample tile set, this story re-runs the same checks and frame-rate measurement on the finished screen with a real Design, and records the result in `docs/` with the phone models and Android versions tested
 
 **Given** the viewer is open
 **When** she presses the Android back button or the close action
@@ -6071,9 +6565,14 @@ So that I can use Try-on knowing exactly what happens to my photo.
 **When** she returns to the app
 **Then** nothing is uploaded and she is back at the photo step
 
+**Given** the honest-design tests and checklist of Story 3.26, which Story 4.3 extended for the website's consent screen
+**When** this story is finished
+**Then** the app's cases are added: automated tests on the app fail if a confirmation or the accept control is selected by default, if the notice is combined with other terms, or if declining is followed by a repeated prompt
+**And** `docs/honest-design-checklist.md` gains the app's cart, checkout, sign-in and consent screens as items for the Owner's yearly audit (NFR-13)
+
 **Requirements:** FR-8, FR-9, FR-10, FR-51, NFR-13, AD-2, AD-11, AD-22
 **Notes for the developer:**
-- Touches `apps/mobile` only, using the picker and camera modules that ship with the Expo SDK; configure them so no broad media permission is merged into the manifest.
+- Touches `apps/mobile` and `docs/honest-design-checklist.md`, using the picker and camera modules that ship with the Expo SDK; configure them so no broad media permission is merged into the manifest.
 - Consent, age confirmation, upload links and limits are all decided on the server (AD-11, AD-22); the app shows and sends.
 - Requesting a Try-on result is Story 6.16.
 - Styled from DESIGN.md when it exists.
@@ -6202,7 +6701,7 @@ So that I can shop comfortably whatever phone and eyesight I have.
 
 **Acceptance Criteria:**
 
-**Given** the reference phone and network of the spine's test profile, written down in `docs/` with the phone's model before measuring: an Android phone with 4 GB of memory on a throttled 4G connection of 10 Mbit/s down with 100 ms delay, the same phone as Story 1.24 where it is still available
+**Given** the reference phone and network of the spine's test profile, written down in `docs/` with the phone's model before measuring: an Android phone with 4 GB of memory on a throttled 4G connection of 10 Mbit/s down with 100 ms delay, the same phone as Story 1.28 where it is still available
 **When** a release build opens a Design page from a list, 10 times, with the app already running
 **Then** in at least 9 of the 10 runs the page is usable within 3 seconds, where usable means the name, price, first photo and stock status are shown and the add-to-cart, Full saree view and Try-on entry points respond (NFR-1)
 **And** the measurements and the build they were taken on are recorded in `docs/`
@@ -6234,9 +6733,10 @@ So that I can shop comfortably whatever phone and eyesight I have.
 **Requirements:** NFR-1, NFR-15, FR-2
 **Notes for the developer:**
 - Touches `apps/mobile` and `docs/`; measure release builds only, against staging.
+- The measurements and walks on the real phone need a person holding it. The developer agent prepares the release build, the measurement steps and the record sheet and closes the automated criteria; the on-phone criteria wait for the Owner, and the story is handed back saying which are outstanding.
 - The part of the journey inside the payment service's own screen is outside the app's control; note what was observed.
-- "Mid-range phone" and "4G" are defined by the spine's test profile (Consistency Conventions, "Test profiles"), held as settings; Story 2.20 used the same profile by emulation and Story 7.11 uses this phone.
-- Repeat here the blurred-bar frame-rate measurement of Story 1.24 on the styled app, if DESIGN.md uses that bar.
+- "Mid-range phone" and "4G" are defined by the spine's test profile (Consistency Conventions, "Test profiles"), held as settings; Story 2.22 used the same profile by emulation and Story 7.11 uses this phone.
+- Repeat here the blurred-bar frame-rate measurement of Story 1.28 on the styled app, if DESIGN.md uses that bar.
 - Styled from DESIGN.md when it exists.
 
 ---
@@ -6297,7 +6797,8 @@ The Owner is told within minutes when something breaks, can rebuild the whole sh
 
 - Every alert and every message to the Owner or a Shopper is a `message.send` job with a template from content (AD-26). The one exception is the "shop is down" alert, which must come from outside the shop.
 - Thresholds, limits and regulated values are settings with an effective date, changed in the Admin and audited (AD-13, AD-14). Nothing here hardcodes one.
-- No story adds a vendor SDK, an analytics or advertising SDK, or a tool the spine does not name (AD-16, AD-29). Where the spine defers a vendor choice (uptime check, SMS, email), the choice is configuration behind the existing adapter.
+- No story adds a vendor SDK, an analytics or advertising SDK, or a tool the spine does not name (AD-16, AD-29). Where the spine defers a vendor choice (uptime check, SMS, email), the choice is configuration behind the existing adapter; the real SMS and email adapters are those of Story 3.6.
+- Production never runs in a vendor's test mode and never holds a test Order, invoice or credit note, because invoices are immutable and gapless (AD-25) and nothing could remove one. Every test-mode check in this epic (load test, message checks, drills, rehearsals, the end-to-end purchase, purchases shown to store reviewers) runs on staging. Production's checkout stays closed until Story 7.15 switches the vendors to live mode.
 - Some stories are done by the Owner with papers and consoles rather than by code. Their acceptance criteria are records that can be checked; the developer agent prepares the inputs and the checks, and the Owner performs the outside steps.
 - Any Shopper-facing screen touched is described by behaviour only and is styled from DESIGN.md when it exists.
 
@@ -6374,7 +6875,7 @@ So that I learn of trouble from the shop and not from a Shopper.
 **When** the condition continues
 **Then** no further alert is sent for it except one reminder every 60 minutes, and when the rate falls back under the threshold one "cleared" message is sent `[ASSUMPTION: a reminder every 60 minutes while an alert is active]`
 
-**Given** the 80% spend alert and the alert and pause at 100% of the daily cap, both built in Story 4.16
+**Given** the 80% spend alert and the alert and pause at 100% of the daily cap, both built in Story 4.18
 **When** this story is complete
 **Then** they are not built again: each is shown on the alerts page with the other alerts, and a test proves the 80% alert still reaches the Owner once for that day, within 5 minutes, with the amount spent and the cap (NFR-9, FR-42)
 **And** this story adds one thing to it: raising the cap during the day re-arms the 80% alert against the new cap
@@ -6401,7 +6902,7 @@ So that I learn of trouble from the shop and not from a Shopper.
 **Notes for the developer:**
 - Touches `apps/commerce` (a scheduled job in `src/jobs` that starts an alert workflow, the `settings` module, a tally of requests and errors kept in the commerce database, an admin page) and `apps/content` (message templates for each alert).
 - Keep the tally out of the Redis that holds queues and locks (AD-8). Payment and Try-on figures are read from existing payment and Try-on request records.
-- The thresholds are settings (spine, Consistency Conventions, "Test profiles"). The Owner's alert email and mobile number are the settings of Story 3.5, and `owner-alert` templates follow Story 3.18.
+- The thresholds are settings (spine, Consistency Conventions, "Test profiles"). The Owner's alert email and mobile number are the settings of Story 3.7, and `owner-alert` templates follow Story 3.20.
 - Errors inside `apps/web` pages are not counted here; the outside check in Story 7.1 covers the website being down.
 
 ---
@@ -6579,6 +7080,7 @@ So that losing the server does not lose the shop.
 **Given** a backup taken last night
 **When** the check job verifies it
 **Then** the backup's integrity is confirmed by pgBackRest's own check, and the result is stored with the time
+**And** commerce learns each result without reaching into the backup tool: the backup, log-shipping and bucket-copy scripts in `infra/` post their result to `/internal/ops/backup-status` with the service token, and that route starts a workflow that stores it (AD-9)
 
 **Given** backups older than the retention the Owner has set `[ASSUMPTION: 14 days of point-in-time recovery at launch; NFR-8 gives no retention]`
 **When** the nightly job runs
@@ -6590,7 +7092,7 @@ So that losing the server does not lose the shop.
 
 **Requirements:** NFR-8, NFR-5, AD-8, AD-16, AD-17, AD-22, AD-23, AD-26, AD-30
 **Notes for the developer:**
-- Builds on Story 1.21, which set up pgBackRest and the first restore script; this story completes the backups. Touches `infra/` (pgBackRest configuration, the bucket copy job using an S3 client only, the secrets bundle script), `apps/commerce` (a scheduled check that reads backup status and raises the alert) and `docs/`.
+- Builds on Story 1.25, which set up pgBackRest and the first restore script; this story completes the backups. Touches `infra/` (pgBackRest configuration, the bucket copy job using an S3 client only, the secrets bundle script), `apps/commerce` (the `/internal/ops/backup-status` route and its workflow, and a scheduled check that reads the stored status and raises the alert when a result is late or failed) and `docs/`.
 - "A different location" means a different region or provider from the server; record which in `docs/`.
 - The Admin page that shows backup status is in Story 7.10; the restore itself is Story 7.7.
 
@@ -6627,7 +7129,7 @@ So that I know a failure costs me hours and not the business.
 **Given** a Shopper photo that was erased before the failure
 **When** the restore is complete
 **Then** the photo does not exist anywhere in the restored system (AD-22)
-**And** any Shopper-media record whose file is absent after the restore is taken through `erase-shopper-media` and written to the erasure ledger as "found absent after restore" (AD-23)
+**And** any Shopper-media record whose file is absent after the restore is taken through `erase-shopper-media` and written to the erasure ledger as "found absent after restore" (AD-23); sample photos under the samples prefix of Story 4.9 are not Shopper media and are left out of this sweep
 **And** the runbook states plainly that a withdrawal of Try-on consent made in the last 15 minutes before a failure may need to be made again, and that affected Shoppers' Try-on is paused until they are asked again `[ASSUMPTION: this handling of a withdrawal lost in the last 15 minutes; AD-17 and AD-23 do not cover it]`
 
 **Given** work that was queued when the server was lost
@@ -6645,7 +7147,7 @@ So that I know a failure costs me hours and not the business.
 
 **Requirements:** NFR-8, NFR-4, NFR-10, AD-8, AD-16, AD-17, AD-22, AD-23, AD-25, AD-30
 **Notes for the developer:**
-- Builds on Story 1.21 (the restore script, the counter reset and the first rehearsal) and Story 1.12 (the rebuild from a recovery file). Touches `infra/` (the restore script), `apps/commerce` (the re-enqueue step as a workflow, the reminder job, the stored rehearsal date) and `docs/` (the restore runbook and the rehearsal record).
+- Builds on Story 1.25 (the restore script, the counter reset and the first rehearsal) and Story 1.12 (the rebuild from a recovery file). Touches `infra/` (the restore script), `apps/commerce` (the re-enqueue step as a workflow, the reminder job, the stored rehearsal date) and `docs/` (the restore runbook and the rehearsal record).
 - The rehearsal is run by the Owner with the developer agent's script. The quarterly restore drill is not a routine task under NFR-10: it follows the written runbook and may use a command line. Keep it to one command and one document.
 - On the free hosting tier the 4-hour and 15-minute figures are targets to test (NFR-8); record the measured figures either way.
 
@@ -6668,7 +7170,8 @@ So that a breach is handled correctly even though I am alone.
 **When** the Owner opens the breach-notice page
 **Then** she can choose the affected Shoppers as: all Shoppers; Shoppers with Shopper photos or Try-on results in a date range; Shoppers with Orders in a date range; or a list of mobile numbers or Order numbers she pastes
 **And** she sees how many Shoppers are selected before sending, and must confirm
-**And** sending enqueues one `message.send` job per Shopper and channel (SMS, and email where given) from a breach-notice template in content, in each Shopper's language (AD-26)
+**And** sending enqueues one `message.send` job per Shopper and channel (SMS, and email where given) from a breach-notice template in content, in each Shopper's saved language (Story 3.8) (AD-26)
+**And** the template has the purpose `breach-notice`, which this story adds to `packages/contracts`; `message.send` accepts that purpose only from the `send-breach-notice` workflow behind this page, and the test of Story 3.20 that no route or page sends a message to a list of Shoppers is amended to allow exactly this one page and still fails for any other
 **And** the send is audited with who, when, the selection rule and the count, and retrying it sends nothing twice (AD-14)
 
 **Given** the Admin
@@ -6692,7 +7195,7 @@ So that a breach is handled correctly even though I am alone.
 
 **Requirements:** NFR-7, NFR-5, FR-54, AD-14, AD-26
 **Notes for the developer:**
-- Touches `docs/` (runbook, drill record), `apps/commerce` (one admin page, one workflow that enqueues notices, two export routes) and `apps/content` (the breach-notice template and translations).
+- Touches `docs/` (runbook, drill record), `apps/commerce` (one admin page, the `send-breach-notice` workflow that enqueues notices, two export routes), `packages/contracts` and `apps/worker` (the `breach-notice` purpose in the purpose check of Story 3.5) and `apps/content` (the breach-notice template and translations).
 - The wording of the notice and the authority to notify are for the founder's lawyer; the runbook marks them as such and the launch checklist in Story 7.14 tracks the answer.
 - Selection uses only data commerce already owns (AD-3).
 
@@ -6742,7 +7245,7 @@ So that Shoppers' data and photos are protected the way the shop says they are.
 
 **Given** data in transit and at rest
 **When** it is checked
-**Then** every public address serves only encrypted connections and redirects plain ones; the database storage, the backups and the `shopper-media` bucket are encrypted at rest (NFR-5)
+**Then** every public address serves only encrypted connections and redirects plain ones; the database storage, the backups and the `shopper-media` bucket are encrypted at rest, and `infra/` documents how the server's volume encryption is verified (NFR-5); these checks are made here once, having been moved out of Story 3.16
 **And** the Android release build allows no unencrypted traffic and holds the session only in secure storage
 
 **Given** the Owner views a Shopper's details, a reported Try-on result or a data request
@@ -6780,7 +7283,7 @@ So that running the shop never needs a command line or a release.
 
 **Given** a shop-queue job that failed after its last retry (a message, an invoice file, a tile build, an erasure at an AI provider)
 **When** the Owner chooses "run again"
-**Then** commerce enqueues it again with the same deterministic id, the action is audited, and nothing is sent or made twice (AD-8, AD-14)
+**Then** the admin route starts the `requeue-job` workflow, which enqueues it again with the same deterministic id (only commerce workflows enqueue, AD-8), the action is audited, and nothing is sent or made twice (AD-8, AD-14)
 **And** a failed Try-on generation is not offered for re-run, because the Shopper was already told it failed
 
 **Given** the list of routine tasks written in `docs/` by this story
@@ -6802,7 +7305,7 @@ So that running the shop never needs a command line or a release.
 
 **Requirements:** NFR-10, AD-4, AD-8, AD-14, AD-21
 **Notes for the developer:**
-- Touches `apps/commerce` (`src/admin` operations page, one admin route to re-enqueue, any gap pages), `apps/content` (links only) and `docs/`.
+- Touches `apps/commerce` (`src/admin` operations page, one admin route that starts the `requeue-job` workflow, any gap pages), `apps/content` (links only) and `docs/`.
 - Kernel admin screens that are hidden under AD-21 stay hidden; a gap is closed with a shop page that starts a workflow, never by un-hiding a kernel screen.
 - Staff accounts (FR-50) remain deferred; every action here is still recorded against the named account.
 
@@ -6817,9 +7320,9 @@ So that real payments start on hosting I know can carry them.
 **Acceptance Criteria:**
 
 **Given** staging on the free ARM server, loaded with 100 Designs of about 10 Pieces each, their photos and Full saree views
-**When** the k6 load script of Story 1.22 runs the whole launch load of the spine's test profile for 30 minutes: 50 Shoppers browsing, searching and opening Design pages at once, 5 Checkouts a minute through the payment service's test mode, 2 Try-on jobs at once against a stand-in AI provider, and Full saree view tiles being requested
+**When** the k6 load script of Story 1.26 runs the whole launch load of the spine's test profile for 30 minutes: 50 Shoppers browsing, searching and opening Design pages at once, 5 Checkouts a minute through the payment service's test mode, 2 Try-on jobs at once against a stand-in AI provider, and Full saree view tiles being requested
 **Then** the results are recorded: response times, error rate, memory and processor use of each container, and queue waiting times
-**And** the test passes only if the pass conditions of Story 1.22 hold and also: the catalogue read behind the Design page answers within 1 second for 95% of requests; search answers within 2 seconds (FR-2); fewer than 0.5% of requests fail; total memory stays under 80% of the server's 12 GB; and the Try-on queue's waiting time leaves room for the 60-second target in NFR-2 `[ASSUMPTION: the 1-second, 0.5% and 80% figures and the 30-minute length; the spine gives the load, not the pass conditions]`
+**And** the test passes only if the pass conditions of Story 1.26 hold and also: the catalogue read behind the Design page answers within 1 second for 95% of requests; search answers within 2 seconds (FR-2); fewer than 0.5% of requests fail; total memory stays under 80% of the server's 12 GB; and the Try-on queue's waiting time leaves room for the 60-second target in NFR-2 `[ASSUMPTION: the 1-second, 0.5% and 80% figures and the 30-minute length; the spine gives the load, not the pass conditions]`
 
 **Given** the same load
 **When** 20 simulated Shoppers begin payment for the last Piece of one Design at the same moment
@@ -6831,14 +7334,15 @@ So that real payments start on hosting I know can carry them.
 
 **Given** the results
 **When** the size gate is applied
-**Then** the decision that Story 1.22 recorded in `docs/` is confirmed or revised: if every pass condition held, production takes the free server and staging runs on demand; if any did not, production starts on a paid server, with its size chosen from the measured use (spine: Deployment and environments)
+**Then** the decision that Story 1.26 recorded in `docs/` is confirmed or revised: if every pass condition held, production takes the free server and staging runs on demand; if any did not, production starts on a paid server, with its size chosen from the measured use (spine: Deployment and environments)
 **And** the decision records the monthly cost, who decided and the date, and answers PRD Open Question 7
 
 **Given** the decision
 **When** the production environment is built
 **Then** it runs the same images from the same compose file as staging, with its own secrets, its own databases and buckets, backups to another location as in Story 7.6, and the outside uptime check from Story 7.1 pointed at it (AD-16, AD-17)
-**And** it starts in the vendors' test modes, and the configuration check at start refuses to run production with a missing value
-**And** if production is on a different processor type from staging, the end-to-end purchase test passes on it before this story is done
+**And** production never runs in a vendor's test mode: until go-live it holds no payment keys, and its `shop open` setting, a dated setting created in this story that is off on a new production installation, makes `begin-checkout` refuse with `shop.not_open` while clients say the shop opens soon; so no Checkout, Order, invoice or credit note can exist on production before Story 7.15, and nothing ever has to be removed from it (AD-25)
+**And** the configuration check at start refuses to run production with a missing value, with any vendor's test key, or with the fake AI provider selected
+**And** if production is on a different processor type from staging, the end-to-end purchase test passes on a separate stack of that processor type built from the same images and the same compose file, never on production itself
 
 **Given** production runs on the free server
 **When** staging is needed for a restore rehearsal or a release check
@@ -6846,8 +7350,9 @@ So that real payments start on hosting I know can carry them.
 
 **Requirements:** NFR-1, NFR-2, NFR-8, FR-2, FR-19, AD-6, AD-16, AD-17
 **Notes for the developer:**
-- Builds on Story 1.22, which ran the size gate without Try-on and with a small catalogue. Touches `infra/` (the k6 load script extended with search, tiles and the Try-on part; production compose overrides and Caddy configuration) and `docs/`. The load tool is k6 (spine Stack); add no other.
-- The stand-in AI provider is an adapter behind `TryOnProvider` used only by tests (AD-10); it must be impossible to select it in production.
+- Builds on Story 1.26, which ran the size gate without Try-on and with a small catalogue. Touches `infra/` (the k6 load script extended with search, tiles and the Try-on part; production compose overrides and Caddy configuration) and `docs/`. The load tool is k6 (spine Stack); add no other.
+- The stand-in AI provider is the fake provider of Story 4.5, not a new adapter; this story adds the production guard that makes it impossible to select there (AD-10).
+- The `shop open` setting is a key of the `settings` module changed through `update-setting` and audited; on staging and locally it is seeded on, so every existing test still passes.
 - Vendor live modes are switched on in Story 7.15, not here.
 
 ---
@@ -6893,8 +7398,9 @@ So that I know who I am buying from and what happens to my data and my photo.
 **Then** the Try-on consent notice exists in that language at the same version number, and every other document falls back to English where no translation exists (FR-8, NFR-14, AD-11)
 
 **Given** the message templates in content
-**When** each Shopper event in FR-54 is triggered on production in test mode
+**When** each Shopper event in FR-54 is triggered on staging, after production's published templates and disclosures have been copied there by the import of this story
 **Then** each message uses its template with the real shop name and contact details, and none contains a placeholder
+**And** nothing is triggered on production, which holds no test Order or invoice (Story 7.11)
 
 **Requirements:** FR-3, FR-8, FR-27, FR-29, FR-39, FR-40, FR-51, FR-59, NFR-14, AD-10, AD-11, AD-13, AD-14
 **Notes for the developer:**
@@ -6932,7 +7438,7 @@ So that Shoppers can install it from the store.
 **Then** the Admin has a "store review access" setting, as the spine's Consistency Conventions provide: one reviewer account with a fixed sign-in code can be switched on for a single mobile number, and is off otherwise
 **And** switching it on or off is audited, it is shown on the operations page while on, and the normal rate limits and Try-on limits still apply to it
 **And** it has an end date at which it switches itself off `[ASSUMPTION: the end date; the spine says only that it is off otherwise]`
-**And** the review notes give that number and code, say that payments are in test mode during review if they are, and explain Try-on, its consent step and its "AI-generated" label
+**And** the review notes give that number and code, say that checkout on production is closed until the launch date so that no test invoice is ever issued there, point to a recorded test purchase made on staging (and offer a staging-pointed build on an internal track if reviewers ask to buy), and explain Try-on, its consent step and its "AI-generated" label
 
 **Given** the Try-on launch gate decided that Try-on does not ship at launch
 **When** the declarations are made
@@ -6953,7 +7459,7 @@ So that Shoppers can install it from the store.
 
 **Requirements:** FR-9, FR-10, FR-13, FR-27, FR-29, FR-33, FR-52, NFR-12, NFR-13, AD-13, AD-14, AD-20, AD-29
 **Notes for the developer:**
-- Touches `docs/` (the requirements record, the Data safety inputs, review notes), `apps/commerce` (the store review access setting in the `settings` module and its check in the one-time-code provider of Story 3.6) and continuous integration (the manifest checks from Stories 6.15 and 7.4 reused as evidence).
+- Touches `docs/` (the requirements record, the Data safety inputs, review notes), `apps/commerce` (the store review access setting in the `settings` module and its check in the one-time-code provider of Story 3.8) and continuous integration (the manifest checks from Stories 6.15 and 7.4 reused as evidence).
 - The Owner performs the Play Console steps; the developer agent cannot.
 - Promotion from the testing track to public release happens in Story 7.15.
 
@@ -6969,7 +7475,7 @@ So that I launch knowing nothing was left on an unconfirmed assumption.
 
 **Given** the launch checklist in `docs/`
 **When** it is opened
-**Then** it has one row for each of NFR-1 to NFR-16 with the evidence that it holds and where that evidence is: NFR-1 the phone measurements (Stories 6.18, 7.11); NFR-2 the share of Try-on results within 60 seconds from the cost and failure view; NFR-3 the cost ceiling set and a Model route above it refused; NFR-4 reconciliation clean (7.5); NFR-5 and NFR-6 the security pass and an erasure completed within 24 hours (7.9); NFR-7 the drill (7.8); NFR-8 the rehearsal (7.7); NFR-9 each alert received (7.1, 7.2); NFR-10 the routine-task walk (7.10); NFR-11 the vendor contract tests passing before release; NFR-12 the name check; NFR-13 the self-audit below; NFR-14 a document in content and a Design's translated text in commerce each changed and appearing on the website and app without a release, and every interface text key present in each language's translation file (the difference between NFR-14 and AD-28 on interface text, noted in Story 2.11, is listed for the founder); NFR-15 the accessibility walk on the app (6.18) and on the website; NFR-16 the counts (7.3, 7.4)
+**Then** it has one row for each of NFR-1 to NFR-16 with the evidence that it holds and where that evidence is: NFR-1 the phone measurements (Stories 6.18, 7.11); NFR-2 the share of Try-on results within 60 seconds from the cost and failure view; NFR-3 the cost ceiling set and a Model route above it refused; NFR-4 reconciliation clean (7.5); NFR-5 and NFR-6 the security pass and an erasure completed within 24 hours (7.9); NFR-7 the drill (7.8); NFR-8 the rehearsal (7.7); NFR-9 each alert received (7.1, 7.2); NFR-10 the routine-task walk (7.10); NFR-11 the vendor contract tests passing before release, those of the SMS and email adapters of Story 3.6 included; NFR-12 the name check; NFR-13 the self-audit below; NFR-14 a document in content, a Design's translated text in commerce and one interface text in a translation bundle (Stories 3.4 and 6.3) each changed and appearing on the website and in the app without a release, and every interface text key present in each language's built-in file; NFR-15 the accessibility walk on the app (6.18) and on the website; NFR-16 the counts (7.3, 7.4)
 **And** a row without evidence, or with a failed check, is marked open, and launch is blocked while any row is open
 
 **Given** the items marked ⚖ in PRD §8
@@ -6985,9 +7491,9 @@ So that I launch knowing nothing was left on an unconfirmed assumption.
 **And** an answer that cannot be met by a setting or a document is recorded as a blocker for the founder, not worked around
 
 **Given** the official list of dark patterns
-**When** the Owner audits the website and the app screen by screen against each pattern on it
-**Then** a dated record in `docs/` states for each pattern whether any instance was found, with the screen and the fix, and specifically confirms: no pre-ticked extras; no false urgency; no charge added after the cart; no sign-up demanded for anything unrelated to the purchase; consent to Try-on never bundled or nagged (NFR-13)
-**And** a `message.send` reminder to the Owner is scheduled for one year after the audit date
+**When** the Owner completes the audit on the Admin page of Story 3.26, covering the website and the app screen by screen against each pattern on it
+**Then** the audit is recorded there as a `shop-audit` event that states for each pattern whether any instance was found, with the screen and the fix, and specifically confirms: no pre-ticked extras; no false urgency; no charge added after the cart; no sign-up demanded for anything unrelated to the purchase; consent to Try-on never bundled or nagged (NFR-13)
+**And** no second record and no second reminder is built here: the audit-due job of Story 3.26 reminds the Owner when the next yearly audit is due
 
 **Given** the PRD's open questions
 **When** the checklist is completed
@@ -6996,11 +7502,11 @@ So that I launch knowing nothing was left on an unconfirmed assumption.
 
 **Given** the remaining launch conditions
 **When** the checklist is reviewed
-**Then** it also shows: the legal documents published (7.12); the store review outcome (7.13); the Owner's second-factor recovery rehearsed (FR-60); backups running on production (7.6); and the uptime check watching production (7.1)
+**Then** it also shows: the Try-on launch gate run by the Owner with its recorded decision (Story 4.26); the legal documents published (7.12); the store review outcome (7.13); the Owner's second-factor recovery rehearsed (FR-60); backups running on production (7.6); and the uptime check watching production (7.1)
 
 **Requirements:** NFR-1 to NFR-16, FR-37, FR-60, PRD §8, PRD §10, AD-5, AD-13, AD-25
 **Notes for the developer:**
-- Touches `docs/` and one scheduled reminder in `apps/commerce`; the website accessibility walk is done here because Epic 6 walked only the app.
+- Touches `docs/` only; the yearly reminder is the audit-due job of Story 3.26, which is not built again. The website accessibility walk is done here because Epic 6 walked only the app.
 - The developer agent gathers evidence and runs the checks; the lawyer's and accountant's answers come from the founder.
 - A failed NFR check is fixed in the unit that fails it and re-checked before this story closes.
 
@@ -7021,14 +7527,14 @@ So that real Shoppers can buy real sarees.
 
 **Given** production
 **When** the vendors are switched to live mode
-**Then** the payment service uses live keys with its webhook pointing at production and verified by signature; the shipping service uses the live account; the SMS and email services use the approved live sender and templates; and the AI provider uses the live key with logging off and the no-retention option on where offered (AD-7, AD-10, AD-26, FR-40)
+**Then** the payment service uses live keys with its webhook pointing at production and verified by signature; the shipping service uses the live account; the SMS and email adapters of Story 3.6 use the vendors' live credentials with the approved live sender and templates; and the AI provider uses the live key with logging off and the no-retention option on where offered (AD-7, AD-10, AD-26, FR-40)
 **And** the configuration check at start refuses to run production with any vendor's test key, and staging keeps only test keys (Conventions: Config and secrets)
 
 **Given** production before it is opened
 **When** it is inspected
-**Then** it holds no test Design, test Order, test Shopper, test invoice or test Try-on data; the invoice and credit-note counter rows for the financial year stand at zero, so numbering starts at the beginning and is gapless from there (AD-25); the store review access setting is off unless a review is in progress; and the minimum app version equals the released version (FR-55)
+**Then** it holds no test Order, invoice or credit note, because no Checkout could begin there before now (Story 7.11) and every test ran on staging; a check finds that no invoice or credit-note number has been issued, so numbering starts at the beginning and is gapless from there, with nothing deleted (AD-25); any Design or Weaver listed only for the store review is unpublished or deleted by the Owner in the Admin, and the reviewer account is deactivated through Shopper support; the store review access setting is off unless a review is in progress; and the minimum app version equals the released version (FR-55)
 
-**Given** live modes are on
+**Given** live modes are on and the Owner has switched the `shop open` setting of Story 7.11 on, which is audited
 **When** the Owner buys one real Design with her own money, on the website and again in the app
 **Then** each payment is confirmed by the payment service to the server, an Order is created with a correct invoice, the confirmation messages arrive by SMS and email, and a real shipping label can be created (FR-18, FR-20, FR-47, FR-54)
 **And** she cancels one Order and returns the other; each refund goes back to the payment method used, with a credit note linked to its invoice (FR-22, FR-24)
@@ -7046,7 +7552,7 @@ So that real Shoppers can buy real sarees.
 
 **Given** something goes wrong during go-live
 **When** a step fails
-**Then** the go-live list says how to go back: return a vendor to test mode, start the previous images, or switch Try-on off; and the shop is not opened until the step passes
+**Then** the go-live list says how to go back: switch the `shop open` setting off so that no new Checkout can begin, start the previous images, or switch Try-on off; production is never returned to a vendor's test mode; and the shop is not opened until the step passes
 
 **Given** the shop is open
 **When** the first day ends
@@ -7056,5 +7562,6 @@ So that real Shoppers can buy real sarees.
 **Notes for the developer:**
 - Touches production configuration, `infra/` and `docs/` only; no feature code. Anything found broken is fixed in its own unit, redeployed through continuous integration and re-checked.
 - Vendor contract tests keep running against test modes on staging before every release (NFR-11); live modes are checked only by the real purchases above.
-- Any requirement the SMS service has for approving sender names and templates is handled as part of its live mode and recorded in the go-live list.
+- Any requirement the SMS service has for approving sender names and templates was listed in `docs/` by Story 3.6; it is completed as part of live mode and ticked in the go-live list. This story builds no adapter.
+- The developer agent prepares the go-live list and the configuration checks; the live keys, the real purchases and the sign-off are the Owner's.
 

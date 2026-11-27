@@ -9,7 +9,8 @@ The Owner is told within minutes when something breaks, can rebuild the whole sh
 
 - Every alert and every message to the Owner or a Shopper is a `message.send` job with a template from content (AD-26). The one exception is the "shop is down" alert, which must come from outside the shop.
 - Thresholds, limits and regulated values are settings with an effective date, changed in the Admin and audited (AD-13, AD-14). Nothing here hardcodes one.
-- No story adds a vendor SDK, an analytics or advertising SDK, or a tool the spine does not name (AD-16, AD-29). Where the spine defers a vendor choice (uptime check, SMS, email), the choice is configuration behind the existing adapter.
+- No story adds a vendor SDK, an analytics or advertising SDK, or a tool the spine does not name (AD-16, AD-29). Where the spine defers a vendor choice (uptime check, SMS, email), the choice is configuration behind the existing adapter; the real SMS and email adapters are those of Story 3.6.
+- Production never runs in a vendor's test mode and never holds a test Order, invoice or credit note, because invoices are immutable and gapless (AD-25) and nothing could remove one. Every test-mode check in this epic (load test, message checks, drills, rehearsals, the end-to-end purchase, purchases shown to store reviewers) runs on staging. Production's checkout stays closed until Story 7.15 switches the vendors to live mode.
 - Some stories are done by the Owner with papers and consoles rather than by code. Their acceptance criteria are records that can be checked; the developer agent prepares the inputs and the checks, and the Owner performs the outside steps.
 - Any Shopper-facing screen touched is described by behaviour only and is styled from DESIGN.md when it exists.
 
@@ -86,7 +87,7 @@ So that I learn of trouble from the shop and not from a Shopper.
 **When** the condition continues
 **Then** no further alert is sent for it except one reminder every 60 minutes, and when the rate falls back under the threshold one "cleared" message is sent `[ASSUMPTION: a reminder every 60 minutes while an alert is active]`
 
-**Given** the 80% spend alert and the alert and pause at 100% of the daily cap, both built in Story 4.16
+**Given** the 80% spend alert and the alert and pause at 100% of the daily cap, both built in Story 4.18
 **When** this story is complete
 **Then** they are not built again: each is shown on the alerts page with the other alerts, and a test proves the 80% alert still reaches the Owner once for that day, within 5 minutes, with the amount spent and the cap (NFR-9, FR-42)
 **And** this story adds one thing to it: raising the cap during the day re-arms the 80% alert against the new cap
@@ -113,7 +114,7 @@ So that I learn of trouble from the shop and not from a Shopper.
 **Notes for the developer:**
 - Touches `apps/commerce` (a scheduled job in `src/jobs` that starts an alert workflow, the `settings` module, a tally of requests and errors kept in the commerce database, an admin page) and `apps/content` (message templates for each alert).
 - Keep the tally out of the Redis that holds queues and locks (AD-8). Payment and Try-on figures are read from existing payment and Try-on request records.
-- The thresholds are settings (spine, Consistency Conventions, "Test profiles"). The Owner's alert email and mobile number are the settings of Story 3.5, and `owner-alert` templates follow Story 3.18.
+- The thresholds are settings (spine, Consistency Conventions, "Test profiles"). The Owner's alert email and mobile number are the settings of Story 3.7, and `owner-alert` templates follow Story 3.20.
 - Errors inside `apps/web` pages are not counted here; the outside check in Story 7.1 covers the website being down.
 
 ---
@@ -291,6 +292,7 @@ So that losing the server does not lose the shop.
 **Given** a backup taken last night
 **When** the check job verifies it
 **Then** the backup's integrity is confirmed by pgBackRest's own check, and the result is stored with the time
+**And** commerce learns each result without reaching into the backup tool: the backup, log-shipping and bucket-copy scripts in `infra/` post their result to `/internal/ops/backup-status` with the service token, and that route starts a workflow that stores it (AD-9)
 
 **Given** backups older than the retention the Owner has set `[ASSUMPTION: 14 days of point-in-time recovery at launch; NFR-8 gives no retention]`
 **When** the nightly job runs
@@ -302,7 +304,7 @@ So that losing the server does not lose the shop.
 
 **Requirements:** NFR-8, NFR-5, AD-8, AD-16, AD-17, AD-22, AD-23, AD-26, AD-30
 **Notes for the developer:**
-- Builds on Story 1.21, which set up pgBackRest and the first restore script; this story completes the backups. Touches `infra/` (pgBackRest configuration, the bucket copy job using an S3 client only, the secrets bundle script), `apps/commerce` (a scheduled check that reads backup status and raises the alert) and `docs/`.
+- Builds on Story 1.25, which set up pgBackRest and the first restore script; this story completes the backups. Touches `infra/` (pgBackRest configuration, the bucket copy job using an S3 client only, the secrets bundle script), `apps/commerce` (the `/internal/ops/backup-status` route and its workflow, and a scheduled check that reads the stored status and raises the alert when a result is late or failed) and `docs/`.
 - "A different location" means a different region or provider from the server; record which in `docs/`.
 - The Admin page that shows backup status is in Story 7.10; the restore itself is Story 7.7.
 
@@ -339,7 +341,7 @@ So that I know a failure costs me hours and not the business.
 **Given** a Shopper photo that was erased before the failure
 **When** the restore is complete
 **Then** the photo does not exist anywhere in the restored system (AD-22)
-**And** any Shopper-media record whose file is absent after the restore is taken through `erase-shopper-media` and written to the erasure ledger as "found absent after restore" (AD-23)
+**And** any Shopper-media record whose file is absent after the restore is taken through `erase-shopper-media` and written to the erasure ledger as "found absent after restore" (AD-23); sample photos under the samples prefix of Story 4.9 are not Shopper media and are left out of this sweep
 **And** the runbook states plainly that a withdrawal of Try-on consent made in the last 15 minutes before a failure may need to be made again, and that affected Shoppers' Try-on is paused until they are asked again `[ASSUMPTION: this handling of a withdrawal lost in the last 15 minutes; AD-17 and AD-23 do not cover it]`
 
 **Given** work that was queued when the server was lost
@@ -357,7 +359,7 @@ So that I know a failure costs me hours and not the business.
 
 **Requirements:** NFR-8, NFR-4, NFR-10, AD-8, AD-16, AD-17, AD-22, AD-23, AD-25, AD-30
 **Notes for the developer:**
-- Builds on Story 1.21 (the restore script, the counter reset and the first rehearsal) and Story 1.12 (the rebuild from a recovery file). Touches `infra/` (the restore script), `apps/commerce` (the re-enqueue step as a workflow, the reminder job, the stored rehearsal date) and `docs/` (the restore runbook and the rehearsal record).
+- Builds on Story 1.25 (the restore script, the counter reset and the first rehearsal) and Story 1.12 (the rebuild from a recovery file). Touches `infra/` (the restore script), `apps/commerce` (the re-enqueue step as a workflow, the reminder job, the stored rehearsal date) and `docs/` (the restore runbook and the rehearsal record).
 - The rehearsal is run by the Owner with the developer agent's script. The quarterly restore drill is not a routine task under NFR-10: it follows the written runbook and may use a command line. Keep it to one command and one document.
 - On the free hosting tier the 4-hour and 15-minute figures are targets to test (NFR-8); record the measured figures either way.
 
@@ -380,7 +382,8 @@ So that a breach is handled correctly even though I am alone.
 **When** the Owner opens the breach-notice page
 **Then** she can choose the affected Shoppers as: all Shoppers; Shoppers with Shopper photos or Try-on results in a date range; Shoppers with Orders in a date range; or a list of mobile numbers or Order numbers she pastes
 **And** she sees how many Shoppers are selected before sending, and must confirm
-**And** sending enqueues one `message.send` job per Shopper and channel (SMS, and email where given) from a breach-notice template in content, in each Shopper's language (AD-26)
+**And** sending enqueues one `message.send` job per Shopper and channel (SMS, and email where given) from a breach-notice template in content, in each Shopper's saved language (Story 3.8) (AD-26)
+**And** the template has the purpose `breach-notice`, which this story adds to `packages/contracts`; `message.send` accepts that purpose only from the `send-breach-notice` workflow behind this page, and the test of Story 3.20 that no route or page sends a message to a list of Shoppers is amended to allow exactly this one page and still fails for any other
 **And** the send is audited with who, when, the selection rule and the count, and retrying it sends nothing twice (AD-14)
 
 **Given** the Admin
@@ -404,7 +407,7 @@ So that a breach is handled correctly even though I am alone.
 
 **Requirements:** NFR-7, NFR-5, FR-54, AD-14, AD-26
 **Notes for the developer:**
-- Touches `docs/` (runbook, drill record), `apps/commerce` (one admin page, one workflow that enqueues notices, two export routes) and `apps/content` (the breach-notice template and translations).
+- Touches `docs/` (runbook, drill record), `apps/commerce` (one admin page, the `send-breach-notice` workflow that enqueues notices, two export routes), `packages/contracts` and `apps/worker` (the `breach-notice` purpose in the purpose check of Story 3.5) and `apps/content` (the breach-notice template and translations).
 - The wording of the notice and the authority to notify are for the founder's lawyer; the runbook marks them as such and the launch checklist in Story 7.14 tracks the answer.
 - Selection uses only data commerce already owns (AD-3).
 
@@ -454,7 +457,7 @@ So that Shoppers' data and photos are protected the way the shop says they are.
 
 **Given** data in transit and at rest
 **When** it is checked
-**Then** every public address serves only encrypted connections and redirects plain ones; the database storage, the backups and the `shopper-media` bucket are encrypted at rest (NFR-5)
+**Then** every public address serves only encrypted connections and redirects plain ones; the database storage, the backups and the `shopper-media` bucket are encrypted at rest, and `infra/` documents how the server's volume encryption is verified (NFR-5); these checks are made here once, having been moved out of Story 3.16
 **And** the Android release build allows no unencrypted traffic and holds the session only in secure storage
 
 **Given** the Owner views a Shopper's details, a reported Try-on result or a data request
@@ -492,7 +495,7 @@ So that running the shop never needs a command line or a release.
 
 **Given** a shop-queue job that failed after its last retry (a message, an invoice file, a tile build, an erasure at an AI provider)
 **When** the Owner chooses "run again"
-**Then** commerce enqueues it again with the same deterministic id, the action is audited, and nothing is sent or made twice (AD-8, AD-14)
+**Then** the admin route starts the `requeue-job` workflow, which enqueues it again with the same deterministic id (only commerce workflows enqueue, AD-8), the action is audited, and nothing is sent or made twice (AD-8, AD-14)
 **And** a failed Try-on generation is not offered for re-run, because the Shopper was already told it failed
 
 **Given** the list of routine tasks written in `docs/` by this story
@@ -514,7 +517,7 @@ So that running the shop never needs a command line or a release.
 
 **Requirements:** NFR-10, AD-4, AD-8, AD-14, AD-21
 **Notes for the developer:**
-- Touches `apps/commerce` (`src/admin` operations page, one admin route to re-enqueue, any gap pages), `apps/content` (links only) and `docs/`.
+- Touches `apps/commerce` (`src/admin` operations page, one admin route that starts the `requeue-job` workflow, any gap pages), `apps/content` (links only) and `docs/`.
 - Kernel admin screens that are hidden under AD-21 stay hidden; a gap is closed with a shop page that starts a workflow, never by un-hiding a kernel screen.
 - Staff accounts (FR-50) remain deferred; every action here is still recorded against the named account.
 
@@ -529,9 +532,9 @@ So that real payments start on hosting I know can carry them.
 **Acceptance Criteria:**
 
 **Given** staging on the free ARM server, loaded with 100 Designs of about 10 Pieces each, their photos and Full saree views
-**When** the k6 load script of Story 1.22 runs the whole launch load of the spine's test profile for 30 minutes: 50 Shoppers browsing, searching and opening Design pages at once, 5 Checkouts a minute through the payment service's test mode, 2 Try-on jobs at once against a stand-in AI provider, and Full saree view tiles being requested
+**When** the k6 load script of Story 1.26 runs the whole launch load of the spine's test profile for 30 minutes: 50 Shoppers browsing, searching and opening Design pages at once, 5 Checkouts a minute through the payment service's test mode, 2 Try-on jobs at once against a stand-in AI provider, and Full saree view tiles being requested
 **Then** the results are recorded: response times, error rate, memory and processor use of each container, and queue waiting times
-**And** the test passes only if the pass conditions of Story 1.22 hold and also: the catalogue read behind the Design page answers within 1 second for 95% of requests; search answers within 2 seconds (FR-2); fewer than 0.5% of requests fail; total memory stays under 80% of the server's 12 GB; and the Try-on queue's waiting time leaves room for the 60-second target in NFR-2 `[ASSUMPTION: the 1-second, 0.5% and 80% figures and the 30-minute length; the spine gives the load, not the pass conditions]`
+**And** the test passes only if the pass conditions of Story 1.26 hold and also: the catalogue read behind the Design page answers within 1 second for 95% of requests; search answers within 2 seconds (FR-2); fewer than 0.5% of requests fail; total memory stays under 80% of the server's 12 GB; and the Try-on queue's waiting time leaves room for the 60-second target in NFR-2 `[ASSUMPTION: the 1-second, 0.5% and 80% figures and the 30-minute length; the spine gives the load, not the pass conditions]`
 
 **Given** the same load
 **When** 20 simulated Shoppers begin payment for the last Piece of one Design at the same moment
@@ -543,14 +546,15 @@ So that real payments start on hosting I know can carry them.
 
 **Given** the results
 **When** the size gate is applied
-**Then** the decision that Story 1.22 recorded in `docs/` is confirmed or revised: if every pass condition held, production takes the free server and staging runs on demand; if any did not, production starts on a paid server, with its size chosen from the measured use (spine: Deployment and environments)
+**Then** the decision that Story 1.26 recorded in `docs/` is confirmed or revised: if every pass condition held, production takes the free server and staging runs on demand; if any did not, production starts on a paid server, with its size chosen from the measured use (spine: Deployment and environments)
 **And** the decision records the monthly cost, who decided and the date, and answers PRD Open Question 7
 
 **Given** the decision
 **When** the production environment is built
 **Then** it runs the same images from the same compose file as staging, with its own secrets, its own databases and buckets, backups to another location as in Story 7.6, and the outside uptime check from Story 7.1 pointed at it (AD-16, AD-17)
-**And** it starts in the vendors' test modes, and the configuration check at start refuses to run production with a missing value
-**And** if production is on a different processor type from staging, the end-to-end purchase test passes on it before this story is done
+**And** production never runs in a vendor's test mode: until go-live it holds no payment keys, and its `shop open` setting, a dated setting created in this story that is off on a new production installation, makes `begin-checkout` refuse with `shop.not_open` while clients say the shop opens soon; so no Checkout, Order, invoice or credit note can exist on production before Story 7.15, and nothing ever has to be removed from it (AD-25)
+**And** the configuration check at start refuses to run production with a missing value, with any vendor's test key, or with the fake AI provider selected
+**And** if production is on a different processor type from staging, the end-to-end purchase test passes on a separate stack of that processor type built from the same images and the same compose file, never on production itself
 
 **Given** production runs on the free server
 **When** staging is needed for a restore rehearsal or a release check
@@ -558,8 +562,9 @@ So that real payments start on hosting I know can carry them.
 
 **Requirements:** NFR-1, NFR-2, NFR-8, FR-2, FR-19, AD-6, AD-16, AD-17
 **Notes for the developer:**
-- Builds on Story 1.22, which ran the size gate without Try-on and with a small catalogue. Touches `infra/` (the k6 load script extended with search, tiles and the Try-on part; production compose overrides and Caddy configuration) and `docs/`. The load tool is k6 (spine Stack); add no other.
-- The stand-in AI provider is an adapter behind `TryOnProvider` used only by tests (AD-10); it must be impossible to select it in production.
+- Builds on Story 1.26, which ran the size gate without Try-on and with a small catalogue. Touches `infra/` (the k6 load script extended with search, tiles and the Try-on part; production compose overrides and Caddy configuration) and `docs/`. The load tool is k6 (spine Stack); add no other.
+- The stand-in AI provider is the fake provider of Story 4.5, not a new adapter; this story adds the production guard that makes it impossible to select there (AD-10).
+- The `shop open` setting is a key of the `settings` module changed through `update-setting` and audited; on staging and locally it is seeded on, so every existing test still passes.
 - Vendor live modes are switched on in Story 7.15, not here.
 
 ---
@@ -605,8 +610,9 @@ So that I know who I am buying from and what happens to my data and my photo.
 **Then** the Try-on consent notice exists in that language at the same version number, and every other document falls back to English where no translation exists (FR-8, NFR-14, AD-11)
 
 **Given** the message templates in content
-**When** each Shopper event in FR-54 is triggered on production in test mode
+**When** each Shopper event in FR-54 is triggered on staging, after production's published templates and disclosures have been copied there by the import of this story
 **Then** each message uses its template with the real shop name and contact details, and none contains a placeholder
+**And** nothing is triggered on production, which holds no test Order or invoice (Story 7.11)
 
 **Requirements:** FR-3, FR-8, FR-27, FR-29, FR-39, FR-40, FR-51, FR-59, NFR-14, AD-10, AD-11, AD-13, AD-14
 **Notes for the developer:**
@@ -644,7 +650,7 @@ So that Shoppers can install it from the store.
 **Then** the Admin has a "store review access" setting, as the spine's Consistency Conventions provide: one reviewer account with a fixed sign-in code can be switched on for a single mobile number, and is off otherwise
 **And** switching it on or off is audited, it is shown on the operations page while on, and the normal rate limits and Try-on limits still apply to it
 **And** it has an end date at which it switches itself off `[ASSUMPTION: the end date; the spine says only that it is off otherwise]`
-**And** the review notes give that number and code, say that payments are in test mode during review if they are, and explain Try-on, its consent step and its "AI-generated" label
+**And** the review notes give that number and code, say that checkout on production is closed until the launch date so that no test invoice is ever issued there, point to a recorded test purchase made on staging (and offer a staging-pointed build on an internal track if reviewers ask to buy), and explain Try-on, its consent step and its "AI-generated" label
 
 **Given** the Try-on launch gate decided that Try-on does not ship at launch
 **When** the declarations are made
@@ -665,7 +671,7 @@ So that Shoppers can install it from the store.
 
 **Requirements:** FR-9, FR-10, FR-13, FR-27, FR-29, FR-33, FR-52, NFR-12, NFR-13, AD-13, AD-14, AD-20, AD-29
 **Notes for the developer:**
-- Touches `docs/` (the requirements record, the Data safety inputs, review notes), `apps/commerce` (the store review access setting in the `settings` module and its check in the one-time-code provider of Story 3.6) and continuous integration (the manifest checks from Stories 6.15 and 7.4 reused as evidence).
+- Touches `docs/` (the requirements record, the Data safety inputs, review notes), `apps/commerce` (the store review access setting in the `settings` module and its check in the one-time-code provider of Story 3.8) and continuous integration (the manifest checks from Stories 6.15 and 7.4 reused as evidence).
 - The Owner performs the Play Console steps; the developer agent cannot.
 - Promotion from the testing track to public release happens in Story 7.15.
 
@@ -681,7 +687,7 @@ So that I launch knowing nothing was left on an unconfirmed assumption.
 
 **Given** the launch checklist in `docs/`
 **When** it is opened
-**Then** it has one row for each of NFR-1 to NFR-16 with the evidence that it holds and where that evidence is: NFR-1 the phone measurements (Stories 6.18, 7.11); NFR-2 the share of Try-on results within 60 seconds from the cost and failure view; NFR-3 the cost ceiling set and a Model route above it refused; NFR-4 reconciliation clean (7.5); NFR-5 and NFR-6 the security pass and an erasure completed within 24 hours (7.9); NFR-7 the drill (7.8); NFR-8 the rehearsal (7.7); NFR-9 each alert received (7.1, 7.2); NFR-10 the routine-task walk (7.10); NFR-11 the vendor contract tests passing before release; NFR-12 the name check; NFR-13 the self-audit below; NFR-14 a document in content and a Design's translated text in commerce each changed and appearing on the website and app without a release, and every interface text key present in each language's translation file (the difference between NFR-14 and AD-28 on interface text, noted in Story 2.11, is listed for the founder); NFR-15 the accessibility walk on the app (6.18) and on the website; NFR-16 the counts (7.3, 7.4)
+**Then** it has one row for each of NFR-1 to NFR-16 with the evidence that it holds and where that evidence is: NFR-1 the phone measurements (Stories 6.18, 7.11); NFR-2 the share of Try-on results within 60 seconds from the cost and failure view; NFR-3 the cost ceiling set and a Model route above it refused; NFR-4 reconciliation clean (7.5); NFR-5 and NFR-6 the security pass and an erasure completed within 24 hours (7.9); NFR-7 the drill (7.8); NFR-8 the rehearsal (7.7); NFR-9 each alert received (7.1, 7.2); NFR-10 the routine-task walk (7.10); NFR-11 the vendor contract tests passing before release, those of the SMS and email adapters of Story 3.6 included; NFR-12 the name check; NFR-13 the self-audit below; NFR-14 a document in content, a Design's translated text in commerce and one interface text in a translation bundle (Stories 3.4 and 6.3) each changed and appearing on the website and in the app without a release, and every interface text key present in each language's built-in file; NFR-15 the accessibility walk on the app (6.18) and on the website; NFR-16 the counts (7.3, 7.4)
 **And** a row without evidence, or with a failed check, is marked open, and launch is blocked while any row is open
 
 **Given** the items marked ⚖ in PRD §8
@@ -697,9 +703,9 @@ So that I launch knowing nothing was left on an unconfirmed assumption.
 **And** an answer that cannot be met by a setting or a document is recorded as a blocker for the founder, not worked around
 
 **Given** the official list of dark patterns
-**When** the Owner audits the website and the app screen by screen against each pattern on it
-**Then** a dated record in `docs/` states for each pattern whether any instance was found, with the screen and the fix, and specifically confirms: no pre-ticked extras; no false urgency; no charge added after the cart; no sign-up demanded for anything unrelated to the purchase; consent to Try-on never bundled or nagged (NFR-13)
-**And** a `message.send` reminder to the Owner is scheduled for one year after the audit date
+**When** the Owner completes the audit on the Admin page of Story 3.26, covering the website and the app screen by screen against each pattern on it
+**Then** the audit is recorded there as a `shop-audit` event that states for each pattern whether any instance was found, with the screen and the fix, and specifically confirms: no pre-ticked extras; no false urgency; no charge added after the cart; no sign-up demanded for anything unrelated to the purchase; consent to Try-on never bundled or nagged (NFR-13)
+**And** no second record and no second reminder is built here: the audit-due job of Story 3.26 reminds the Owner when the next yearly audit is due
 
 **Given** the PRD's open questions
 **When** the checklist is completed
@@ -708,11 +714,11 @@ So that I launch knowing nothing was left on an unconfirmed assumption.
 
 **Given** the remaining launch conditions
 **When** the checklist is reviewed
-**Then** it also shows: the legal documents published (7.12); the store review outcome (7.13); the Owner's second-factor recovery rehearsed (FR-60); backups running on production (7.6); and the uptime check watching production (7.1)
+**Then** it also shows: the Try-on launch gate run by the Owner with its recorded decision (Story 4.26); the legal documents published (7.12); the store review outcome (7.13); the Owner's second-factor recovery rehearsed (FR-60); backups running on production (7.6); and the uptime check watching production (7.1)
 
 **Requirements:** NFR-1 to NFR-16, FR-37, FR-60, PRD §8, PRD §10, AD-5, AD-13, AD-25
 **Notes for the developer:**
-- Touches `docs/` and one scheduled reminder in `apps/commerce`; the website accessibility walk is done here because Epic 6 walked only the app.
+- Touches `docs/` only; the yearly reminder is the audit-due job of Story 3.26, which is not built again. The website accessibility walk is done here because Epic 6 walked only the app.
 - The developer agent gathers evidence and runs the checks; the lawyer's and accountant's answers come from the founder.
 - A failed NFR check is fixed in the unit that fails it and re-checked before this story closes.
 
@@ -733,14 +739,14 @@ So that real Shoppers can buy real sarees.
 
 **Given** production
 **When** the vendors are switched to live mode
-**Then** the payment service uses live keys with its webhook pointing at production and verified by signature; the shipping service uses the live account; the SMS and email services use the approved live sender and templates; and the AI provider uses the live key with logging off and the no-retention option on where offered (AD-7, AD-10, AD-26, FR-40)
+**Then** the payment service uses live keys with its webhook pointing at production and verified by signature; the shipping service uses the live account; the SMS and email adapters of Story 3.6 use the vendors' live credentials with the approved live sender and templates; and the AI provider uses the live key with logging off and the no-retention option on where offered (AD-7, AD-10, AD-26, FR-40)
 **And** the configuration check at start refuses to run production with any vendor's test key, and staging keeps only test keys (Conventions: Config and secrets)
 
 **Given** production before it is opened
 **When** it is inspected
-**Then** it holds no test Design, test Order, test Shopper, test invoice or test Try-on data; the invoice and credit-note counter rows for the financial year stand at zero, so numbering starts at the beginning and is gapless from there (AD-25); the store review access setting is off unless a review is in progress; and the minimum app version equals the released version (FR-55)
+**Then** it holds no test Order, invoice or credit note, because no Checkout could begin there before now (Story 7.11) and every test ran on staging; a check finds that no invoice or credit-note number has been issued, so numbering starts at the beginning and is gapless from there, with nothing deleted (AD-25); any Design or Weaver listed only for the store review is unpublished or deleted by the Owner in the Admin, and the reviewer account is deactivated through Shopper support; the store review access setting is off unless a review is in progress; and the minimum app version equals the released version (FR-55)
 
-**Given** live modes are on
+**Given** live modes are on and the Owner has switched the `shop open` setting of Story 7.11 on, which is audited
 **When** the Owner buys one real Design with her own money, on the website and again in the app
 **Then** each payment is confirmed by the payment service to the server, an Order is created with a correct invoice, the confirmation messages arrive by SMS and email, and a real shipping label can be created (FR-18, FR-20, FR-47, FR-54)
 **And** she cancels one Order and returns the other; each refund goes back to the payment method used, with a credit note linked to its invoice (FR-22, FR-24)
@@ -758,7 +764,7 @@ So that real Shoppers can buy real sarees.
 
 **Given** something goes wrong during go-live
 **When** a step fails
-**Then** the go-live list says how to go back: return a vendor to test mode, start the previous images, or switch Try-on off; and the shop is not opened until the step passes
+**Then** the go-live list says how to go back: switch the `shop open` setting off so that no new Checkout can begin, start the previous images, or switch Try-on off; production is never returned to a vendor's test mode; and the shop is not opened until the step passes
 
 **Given** the shop is open
 **When** the first day ends
@@ -768,4 +774,5 @@ So that real Shoppers can buy real sarees.
 **Notes for the developer:**
 - Touches production configuration, `infra/` and `docs/` only; no feature code. Anything found broken is fixed in its own unit, redeployed through continuous integration and re-checked.
 - Vendor contract tests keep running against test modes on staging before every release (NFR-11); live modes are checked only by the real purchases above.
-- Any requirement the SMS service has for approving sender names and templates is handled as part of its live mode and recorded in the go-live list.
+- Any requirement the SMS service has for approving sender names and templates was listed in `docs/` by Story 3.6; it is completed as part of live mode and ticked in the go-live list. This story builds no adapter.
+- The developer agent prepares the go-live list and the configuration checks; the live keys, the real purchases and the sign-off are the Owner's.

@@ -2,7 +2,7 @@
 
 The Owner lists one Design with stock; a Shopper pays for it on the website, sees her Order and its tax invoice, has it shipped, returns it and is refunded to the payment method she used. To make that slice work, this epic also creates the repository from the Medusa DTC starter, the shared contracts and the api-client seam, the local and staging environments, the route allow-list, admin sign-in with an enforced second factor, continuous database backup with one rehearsed restore, the size gate, one automated test that buys, ships and returns a saree, and a proof on a real Android phone of the three things the app depends on. It builds only the first working version of FR-3, FR-16, FR-18, FR-19, FR-20, FR-21, FR-23, FR-24, FR-25, FR-34, FR-36, FR-47, FR-48 and FR-60; later epics complete them. In this slice a Shopper signs in with the kernel's email-and-password customer sign-in, the simplest the kernel offers; sign-in by one-time code (FR-26) replaces it in Epic 3. Catalogue browsing and filters, Try-on, Server-driven screens and the Android app are not in this epic. Screens are described by behaviour only and are styled from DESIGN.md when it exists.
 
-**Spike items proven here:** item 1 in Story 1.10; item 2 in Stories 1.4 and 1.10; item 3 in Stories 1.3 and 1.20; item 4 in Story 1.22; item 7 in Story 1.19; items 5, 6 and 8 (a sample `ScreenV1` document, OpenSeadragon under touch in a web view, and a blurred translucent navigation bar, all in a minimal Expo app on a real mid-range Android phone) in Story 1.24. The Server-driven screens themselves, the Full saree view and the Android app are built by Epics 5, 2 and 6 on what Story 1.24 proves.
+**Spike items proven here:** item 1 in Story 1.10; item 2 in Stories 1.4 and 1.10; item 3 in Stories 1.3 and 1.24; item 4 in Story 1.26; item 7 in Story 1.23; items 5, 6 and 8 (a sample `ScreenV1` document, OpenSeadragon under touch in a web view, and a blurred translucent navigation bar, all in a minimal Expo app on a real mid-range Android phone) in Story 1.28. The Server-driven screens themselves, the Full saree view and the Android app are built by Epics 5, 2 and 6 on what Story 1.28 proves.
 
 ### Story 1.1: Create the repository from the starter and reshape it
 
@@ -96,7 +96,7 @@ So that I can be recognised at checkout, and every screen reads the backend the 
 **Notes for the developer:**
 - Touches `packages/contracts`, `packages/api-client`, `apps/web`.
 - Email-and-password sign-in is a deliberate stand-in for this slice; the one-time-code provider (FR-26, AD-15) replaces it in Epic 3 behind the same `api-client` functions.
-- Shopper-facing interface text goes in one English translation file in `apps/web` and stays in the clients' translation files (AD-28); Story 2.11 adds the other languages. Documents and message templates live in content from Epic 3.
+- Shopper-facing interface text goes in one English translation file in `apps/web`. That file is the website's built-in copy (AD-28): Story 2.13 adds the other languages, and Story 3.4 serves a translation bundle per language from content through commerce, with this file kept as the fallback. Documents and message templates live in content from Epic 3.
 - Screens are behaviour only; styled from DESIGN.md when it exists.
 - Add schemas to `packages/contracts` only as stories need them.
 
@@ -142,9 +142,9 @@ So that I develop against the same services and the same file that staging will 
 **Requirements:** AD-3, AD-8, AD-16; Stack; Consistency Conventions (Config and secrets, Logging and alerts); spike item 3 (local part)
 **Notes for the developer:**
 - Touches `infra/`, and start-up configuration in `apps/commerce` and `apps/web`.
-- Only the `catalog` bucket and the `commerce` database are created here; the `documents` bucket is created in Story 1.9, the `content` database in Story 1.19, and the `tiles` and `shopper-media` buckets by Epics 2 and 4.
+- Only the `catalog` bucket and the `commerce` database are created here; the `documents` bucket is created in Story 1.9, the `content` database in Story 1.23, the `tiles` bucket in Story 2.9 and the `shopper-media` bucket in Story 3.23.
 - Bucket, database and service names must not contain the product name (AD-20).
-- Container images must build for ARM64 and x86-64; the multi-architecture build itself is in Story 1.20.
+- Container images must build for ARM64 and x86-64; the multi-architecture build itself is in Story 1.24.
 
 ### Story 1.4: Route allow-list for the kernel
 
@@ -346,7 +346,7 @@ So that I can decide to buy it.
 
 **Given** a published Design with stock
 **When** a Shopper who is not signed in opens the website
-**Then** the home page shows a plain list of published Designs from `/store/shop/designs`, with no filters and no search
+**Then** the home page shows a plain list of published Designs from `/store/shop/designs`, each a `DesignCard` view model created in this story, with no filters and no search
 **And** an unpublished Design is not in that list and its page returns not found
 
 **Given** a published Design
@@ -379,7 +379,7 @@ So that I can decide to buy it.
 
 **Requirements:** FR-3 (first version), FR-16 (first version); AD-2, AD-5, AD-21, AD-28
 **Notes for the developer:**
-- Touches `apps/commerce/src/api/store/shop/designs`, `packages/contracts` and `packages/api-client` (`DesignView`, `CartView`), `apps/web`.
+- Touches `apps/commerce/src/api/store/shop/designs`, `packages/contracts` and `packages/api-client` (`DesignCard` for the list, `DesignView`, `CartView`), `apps/web`. Stories 1.28 and 2.15 extend `DesignCard`; they do not create it again.
 - Kernel cart routes used here are added to the allow-list; cart completion stays off it.
 - Left for Epic 2: Weaver, delivery estimate, maker's address and terms, the Full saree view and Try-on entry points, filters and search. Left for Epic 3: the same cart on a Shopper's other devices, and the shipping charge rule.
 - Screens are behaviour only; styled from DESIGN.md when it exists.
@@ -445,7 +445,7 @@ So that nobody else can buy them while I am paying.
 **Requirements:** FR-19 (Hold, last Piece, flagged changes), FR-16 (cart locked during a Hold), NFR-4, NFR-8; AD-4, AD-6, AD-13, AD-22, AD-30
 **Notes for the developer:**
 - Touches `apps/commerce/src/modules/hold` and `checkout`, `apps/commerce/src/workflows/begin-checkout` and `release-hold`, `apps/commerce/src/jobs`, `apps/commerce/src/api/store/shop/checkouts`, `infra/` (the `documents` bucket), and the checkout screen in `apps/web`.
-- The recovery file is what lets a restore rebuild an Order with its original numbers; Story 1.10 adds the Order id to it, Story 1.13 the invoice number, and Stories 1.12 and 1.21 read it.
+- The recovery file is what lets a restore rebuild an Order with its original numbers; Story 1.10 adds the Order id to it, Story 1.13 the invoice number, and Stories 1.12 and 1.25 read it.
 - No payment is started in this story; Story 1.10 adds the payment step to `begin-checkout`.
 - The delivery check by pincode (FR-17) is Epic 3; here the address is only recorded.
 - The time shown is the true end of the Hold; it must not be styled as pressure (NFR-13).
@@ -457,6 +457,11 @@ I want to pay by UPI, card or netbanking and have my Order confirmed by the shop
 So that I am charged exactly once and only for a saree that is mine.
 
 **Acceptance Criteria:**
+
+**Given** `packages/contracts`
+**When** this story is finished
+**Then** it holds the Order states Paid, Packed, Dispatched, Out for delivery, Delivered, Delivery failed, Returned to shop, Cancelled and Refunded as an enum, with a table of allowed transitions (AD-24)
+**And** the `order-state` module, created in this story, stores an Order's state, and no state is written that the enum does not hold
 
 **Given** the Razorpay payment provider is added to commerce and the starter's card-payment provider is removed
 **When** a Shopper begins checkout
@@ -504,9 +509,9 @@ So that I am charged exactly once and only for a saree that is mine.
 
 **Requirements:** FR-18, FR-19 (confirmed twice), NFR-4, NFR-11; AD-4, AD-6, AD-7, AD-24, AD-30; spike items 1 and 2
 **Notes for the developer:**
-- Touches `apps/commerce/src/providers/razorpay` (Razorpay Node SDK 2.9.8), `apps/commerce/src/workflows/confirm-payment`, `apps/commerce/src/subscribers`, `apps/commerce/src/modules/order-state`, and the checkout screens in `apps/web`.
+- Touches `apps/commerce/src/providers/razorpay` (Razorpay Node SDK 2.9.8), `apps/commerce/src/workflows/confirm-payment`, `apps/commerce/src/subscribers`, `apps/commerce/src/modules/order-state`, `packages/contracts` (the Order state enum and transition table), and the checkout screens in `apps/web`.
 - If spike item 1 or 2 fails (the Hold cannot be released and the cart completed in one lock without double-reserving, or the server-side completion stops working once the route is blocked), stop and report with the failing test; the spine names no fallback, and no workaround may leave two sets of reservations or open the route to clients.
-- Locally a webhook is a test-mode payload signed with the test secret; the round trip from the payment service itself is exercised on staging in Story 1.20.
+- Locally a webhook is a test-mode payload signed with the test secret; the round trip from the payment service itself is exercised on staging in Story 1.24.
 - Failed, pending and late payments are Story 1.11; the invoice is Story 1.13.
 - The payment screen is the payment service's own, the one direct vendor call AD-2 allows a client.
 
@@ -542,7 +547,7 @@ So that I never pay for a saree I do not get.
 
 **Given** an automatic refund that the payment service refuses or does not answer
 **When** the workflow finishes
-**Then** the Checkout is marked refund pending, the scheduled job retries it, and no second refund is ever created for the same payment
+**Then** the Checkout is marked refund pending, the kernel's scheduled job `retry-pending-refunds`, created in this story, retries it, and no second refund is ever created for the same payment
 
 **Given** a failed-payment event delivered twice
 **When** both are processed
@@ -550,9 +555,9 @@ So that I never pay for a saree I do not get.
 
 **Requirements:** FR-18 (failed and pending payments), FR-19 (payment after the Hold ended), NFR-4; AD-6, AD-7
 **Notes for the developer:**
-- Touches `apps/commerce/src/workflows/confirm-payment` and `release-hold`, `apps/commerce/src/jobs`, the Checkout status view model, and the status screen in `apps/web`.
+- Touches `apps/commerce/src/workflows/confirm-payment` and `release-hold`, `apps/commerce/src/jobs` (the new `retry-pending-refunds` job, which only starts a workflow), the Checkout status view model, and the status screen in `apps/web`.
 - The spine's Checkout and Hold state diagram is the specification; test every arrow.
-- The message to the Shopper for an automatic refund (FR-19 "messaged within 5 minutes", FR-54) is delivered from Epic 3 onward: Story 3.18 subscribes to `payment.auto-refunded`. In this epic the event is recorded and logged and the Shopper sees the refund on the Checkout status screen.
+- The message to the Shopper for an automatic refund (FR-19 "messaged within 5 minutes", FR-54) is delivered from Epic 3 onward: Story 3.20 subscribes to `payment.auto-refunded`. In this epic the event is recorded and logged and the Shopper sees the refund on the Checkout status screen.
 - Test with a controllable clock; do not wait 15 minutes in tests.
 
 ### Story 1.12: Daily reconciliation of payments and Orders
@@ -566,7 +571,7 @@ So that no payment is left without an Order or a refund, and no Order without a 
 **Given** the kernel's scheduled job for reconciliation
 **When** it runs after the end of a business day in the business time zone
 **Then** it fetches that day's captured payments and refunds from the payment service and compares them with Orders and automatic refunds
-**And** it writes one reconciliation record with the date, the counts and every difference
+**And** it writes one reconciliation record, an entity of the `checkout` module, with the date, the counts and every difference
 
 **Given** a day on which every captured payment has exactly one Order or one full automatic refund, and every Order has a captured payment equal to its snapshot total
 **When** the job runs
@@ -579,7 +584,7 @@ So that no payment is left without an Order or a refund, and no Order without a 
 
 **Given** a captured payment whose Checkout is not in the database, as after a restore
 **When** the job runs
-**Then** it rebuilds the Checkout from its recovery file in the `documents` bucket and starts `confirm-payment`, so the Order has the items, prices, tax and address of the snapshot, and the Order id and invoice number already written in the file are used again (AD-30)
+**Then** it rebuilds the Checkout from its recovery file in the `documents` bucket and starts `confirm-payment`, so the Order has the items, prices, tax and address of the snapshot, and the Order id already written in the file is used again (AD-30)
 **And** a captured payment with no recovery file is listed as an unexplained difference and nothing is created for it
 
 **Given** an Order with no captured payment, or with a payment of a different amount
@@ -600,8 +605,8 @@ So that no payment is left without an Order or a refund, and no Order without a 
 
 **Requirements:** NFR-4; AD-4, AD-7, AD-17 (rebuilding a missing Order), AD-30
 **Notes for the developer:**
-- Touches `apps/commerce/src/jobs` (reconciliation), the Razorpay adapter (listing payments and refunds), `apps/commerce/src/admin`.
-- Reusing an invoice number from a recovery file is tested in Story 1.13 and rehearsed in Story 1.21.
+- Touches `apps/commerce/src/jobs` (reconciliation), the `checkout` module (the reconciliation record), the Razorpay adapter (listing payments and refunds), `apps/commerce/src/admin`.
+- Invoices do not exist yet. Story 1.13 adds the invoice number to the recovery file and tests that a rebuilt Order takes that number again; Story 1.25 rehearses it.
 - The job only starts workflows; it does not write Orders itself (AD-4).
 - The alert to the Owner by message (NFR-9) is Epic 7; here a difference is on the Admin page and in the error log.
 - Add a contract test for listing payments against Razorpay test mode (NFR-11).
@@ -614,9 +619,9 @@ So that I know what I bought and what tax I paid.
 
 **Acceptance Criteria:**
 
-**Given** `packages/contracts`
-**When** this story is finished
-**Then** it holds the Order states Paid, Packed, Dispatched, Out for delivery, Delivered, Delivery failed, Returned to shop, Cancelled and Refunded as an enum, with a table of allowed transitions
+**Given** the Order state enum and transition table that Story 1.10 put in `packages/contracts`
+**When** an Order is returned to a client
+**Then** the `OrderView` view model carries the state from that enum, named as in the Glossary
 **And** the server stores and returns the state; no client derives it
 
 **Given** a signed-in Shopper with an Order
@@ -717,11 +722,11 @@ So that I have a record of my purchase.
 - Sending the invoice by message (FR-54) is Epic 3.
 - Other worker jobs (`message.send`, `tiles.build`, `tryon.generate`) are created by the epics that need them.
 
-### Story 1.15: Owner packs, labels and dispatches an Order, and tracking moves it
+### Story 1.15: Owner finds an Order, packs it and creates its shipping label
 
 As an Owner,
-I want to pack an Order, create its shipping label and hand it over, and have tracking update it,
-So that the saree reaches the Shopper and she can follow it.
+I want to find an Order, mark it Packed and create its shipping label,
+So that the parcel is ready to hand over and I never retype an address.
 
 **Acceptance Criteria:**
 
@@ -731,17 +736,67 @@ So that the saree reaches the Shopper and she can follow it.
 
 **Given** an Order in state Paid
 **When** the Owner marks it Packed and then creates a shipping label
-**Then** the shipping adapter creates a shipment in the shipping service's test mode from the Order's address, with nothing retyped
+**Then** the Order moves to Packed through that transition's workflow, and the shipping adapter creates a shipment in the shipping service's test mode from the Order's address, with nothing retyped
 **And** the label file and tracking number are stored against the Order and the Owner can print the label
 
 **Given** label creation fails at the shipping service
 **When** the Owner sees the error and tries again
 **Then** the Order is still Packed and at most one shipment exists for the Order
 
+**Given** an Order that is not in state Paid
+**When** the Owner tries to mark it Packed
+**Then** the request is refused by the transition table of Story 1.10 and the state does not change
+
+**Given** the shipping adapter
+**When** its contract test for creating a shipment runs against the shipping service's test mode
+**Then** it passes, and the test is part of the checks run before a release
+
+**Requirements:** FR-47 (first version), NFR-11; AD-4, AD-14, AD-24; Consistency Conventions (Vendors)
+**Notes for the developer:**
+- Touches `apps/commerce/src/providers/shipping` (the port and one adapter), the Paid→Packed transition workflow, `apps/commerce/src/admin` (Orders page).
+- The shipping service is undecided in the PRD (Open Question 2: the founder's existing provider first). Write the port first, with workflow tests against recorded test-mode responses. If the founder has not named the service or given test-mode credentials when this story starts, stop and report.
+- The label file goes in the `documents` bucket.
+- Dispatch and the stock change are Story 1.16; tracking events are Story 1.17.
+- Admin page is behaviour only; styled from DESIGN.md when it exists.
+
+### Story 1.16: Owner dispatches an Order and its Pieces leave stock
+
+As an Owner,
+I want to mark a packed and labelled Order as Dispatched,
+So that the saree is on its way and my stock count shows it has left the shop.
+
+**Acceptance Criteria:**
+
 **Given** an Order that is Packed and has a tracking number
 **When** the Owner marks it Dispatched
 **Then** the `fulfil-order` workflow, under the lock, reduces the stocked quantity, removes the Order's reservation, writes stock-movement rows with the cause "sale", and sets the state to Dispatched
 **And** an Order without a tracking number cannot be marked Dispatched
+
+**Given** the Owner presses Dispatched twice, or the request is sent twice
+**When** both are processed
+**Then** the stocked quantity is reduced once and the stock-movement rows are not duplicated
+
+**Given** the stock-movement row cannot be written
+**When** `fulfil-order` runs
+**Then** its compensation restores the stocked and reserved quantities and the Order stays Packed
+
+**Given** an Order that has been Dispatched
+**When** the Shopper opens her Order page
+**Then** she sees the state Dispatched and the tracking number
+
+**Requirements:** FR-21 (first version), FR-47 (first version), FR-36; AD-4, AD-6, AD-14, AD-24
+**Notes for the developer:**
+- Touches `apps/commerce/src/workflows/fulfil-order`, the Orders page in `apps/commerce/src/admin`, and the Order page in `apps/web`.
+- `fulfil-order` is one of the stock workflows AD-6 names; reuse the lock helper and row shape of Story 1.7 and test success, each failure and compensation.
+- Tracking events after dispatch are Story 1.17. Cancelling before dispatch (FR-22) is Epic 3.
+
+### Story 1.17: Tracking events from the shipping service move the Order
+
+As a Shopper,
+I want my Order's state to follow the parcel as the shipping service reports it,
+So that I can see where my saree is without asking anyone.
+
+**Acceptance Criteria:**
 
 **Given** a tracking event from the shipping service
 **When** it arrives at `/webhooks/shipping` and passes the adapter's verification
@@ -765,17 +820,16 @@ So that the saree reaches the Shopper and she can follow it.
 **Then** she is told what happens next, and when the shipping service reports it back at the shop the Order moves to Returned to shop
 
 **Given** the shipping adapter
-**When** its contract tests run against the shipping service's test mode
-**Then** creating a shipment and reading an event pass, and the tests are part of the checks run before a release
+**When** its contract test for reading an event runs against the shipping service's test mode
+**Then** it passes, and the test is part of the checks run before a release
 
-**Requirements:** FR-21 (first version), FR-47 (first version), NFR-11; AD-4, AD-6, AD-14, AD-24; Consistency Conventions (Vendors)
+**Requirements:** FR-21 (first version), NFR-11; AD-4, AD-24; Consistency Conventions (Vendors)
 **Notes for the developer:**
-- Touches `apps/commerce/src/providers/shipping` (the port and one adapter), `apps/commerce/src/workflows/fulfil-order` and the transition workflows, `apps/commerce/src/api/webhooks`, `apps/commerce/src/admin`.
-- The shipping service is undecided in the PRD (Open Question 2: the founder's existing provider first). Write the port first, with workflow tests against recorded test-mode responses. If the founder has not named the service or given test-mode credentials when this story starts, stop and report.
-- The full refund and the inspection for an Order in Returned to shop are Story 1.17. Cancelling before dispatch (FR-22) is Epic 3.
-- The label file goes in the `documents` bucket.
+- Touches `apps/commerce/src/providers/shipping` (event verification and the mapping table), the four transition workflows, `apps/commerce/src/api/webhooks`, and the Order page in `apps/web`.
+- The mapping table lives in the shipping adapter and nowhere else (AD-24).
+- The inspection of an Order in Returned to shop is Story 1.19 and its full refund is Story 1.21.
 
-### Story 1.16: Shopper requests a Return and books a pickup
+### Story 1.18: Shopper requests a Return and books a pickup
 
 As a Shopper,
 I want to ask to return a delivered saree, say why and book a pickup,
@@ -785,7 +839,7 @@ So that I can send back a saree that disappointed me.
 
 **Given** `packages/contracts`
 **When** this story is finished
-**Then** it holds the Return states Requested, Pickup booked, Picked up, Received, Accepted, Rejected and Refunded as an enum with a table of allowed transitions, and one workflow performs each transition
+**Then** it holds the Return states Requested, Pickup booked, Picked up, Received, Accepted, Rejected and Refunded as an enum with a table of allowed transitions, and one workflow performs each transition; the two the Shopper starts are named `request-return` and `book-return-pickup`, and Story 3.15 extends them
 
 **Given** an Order in state Delivered, within the return period of 7 days from delivery, the period coming from a setting seeded in this story
 **When** the Shopper requests a Return for an item and picks the reason "Not as shown" or "Defective or wrong item"
@@ -822,14 +876,14 @@ So that I can send back a saree that disappointed me.
 **Notes for the developer:**
 - Touches `apps/commerce/src/modules/order-state` (the Return record and state), the Return transition workflows, the shipping adapter (return pickup), `apps/commerce/src/api/store/shop/orders`, the Order page in `apps/web` and the Orders page in `apps/commerce/src/admin`.
 - Only the two always-accepted reasons are offered in this epic; other reasons, the conditions for worn items and showing the return period on the Design page and at checkout are Epic 3.
-- Inspection, refund and restock are Story 1.17.
+- Inspection and restock are Story 1.19; the refund is Stories 1.20 and 1.21.
 - Screens are behaviour only; styled from DESIGN.md when it exists.
 
-### Story 1.17: Owner inspects, refunds to source and restocks
+### Story 1.19: Owner inspects a returned saree and restocks a sound Piece
 
 As an Owner,
-I want to inspect a returned saree, refund the Shopper to the payment method she used, and put a sound Piece back in stock,
-So that she gets her money back and stock stays true.
+I want to record what I found when a returned saree arrives and put a sound Piece back in stock,
+So that stock stays true and nothing is sold again before I have looked at it.
 
 **Acceptance Criteria:**
 
@@ -838,12 +892,45 @@ So that she gets her money back and stock stays true.
 **Then** the Return moves to Accepted or Rejected and the inspection result, the Owner's email and the time are stored
 **And** a rejected Return shows the Shopper the reason
 
+**Given** an inspection result of sellable or damaged for a Piece
+**When** the `restock-return` workflow runs with that result
+**Then** for a sellable Piece it raises the stocked quantity by one under the lock and writes a stock-movement row with the cause "Return"
+**And** for a damaged Piece it leaves the stocked quantity unchanged and writes a stock-movement row with the cause "Return, damaged", so the Piece is not returned to stock and the count can still be explained (AD-6)
+**And** no Piece is sellable again before the Owner has recorded an inspection
+
+**Given** the same inspection is recorded twice, or `restock-return` is retried
+**When** both runs finish
+**Then** the stocked quantity has changed once and there is one stock-movement row
+
+**Given** the stock-movement row cannot be written
+**When** `restock-return` runs
+**Then** its compensation restores the earlier stocked quantity
+
+**Given** an Order in state Returned to shop
+**When** the Owner records the inspection of its Pieces
+**Then** `restock-return` runs with each result in the same way, so sound Pieces are restocked only after inspection and damaged ones are not
+
+**Requirements:** FR-25, FR-47 (inspection result), FR-36; AD-4, AD-6, AD-14
+**Notes for the developer:**
+- Touches `restock-return` in `apps/commerce/src/workflows`, the Return transition workflows for Accepted and Rejected, and the Orders page in `apps/commerce/src/admin`.
+- `restock-return` is the only workflow that writes a stock-movement row for a returned or undelivered Piece, sellable or damaged (AD-6); it takes the inspection result as input.
+- The refund for an Accepted Return is Story 1.20; the refund for an Order in Returned to shop is Story 1.21. Until those stories, an Accepted Return simply waits.
+- Inspection photos (files in the `documents` bucket linked to the Return) and sending a rejected item back are Epic 3 (FR-47, FR-23; AD-31).
+
+### Story 1.20: An accepted Return is refunded to the payment method used, with a credit note
+
+As a Shopper,
+I want my money returned to the payment method I used once my Return is accepted,
+So that I am not out of pocket for a saree I sent back.
+
+**Acceptance Criteria:**
+
 **Given** a Return becomes Accepted
-**When** the refund workflow runs
+**When** the refund workflow `refund-order` runs
 **Then** it starts a refund through the payment service to the payment method the Shopper used, for the amount she paid for that item including tax, with an idempotency key derived from the Return id
 **And** the `invoice` module issues a credit note linked to the original invoice, reversing the item's taxable value and tax to the paisa, with a gapless number from the credit-note counter row for that financial year, locked and incremented in the same transaction (AD-25)
 **And** once the payment service accepts the refund the Return moves to Refunded, and the Shopper sees the refund amount and when it was started
-**And** the Order moves to Refunded only if every item in it has now been refunded; otherwise the refund shows on the Return and the Order keeps its state (AD-31)
+**And** the Order moves to Refunded only when the total refunded for the Order equals the total paid; any smaller total is recorded against the Return and the Order keeps its state (AD-31)
 
 **Given** the Owner presses refund twice, or the workflow is retried
 **When** both runs finish
@@ -854,21 +941,6 @@ So that she gets her money back and stock stays true.
 **Then** the Return stays Accepted, and the Admin shows the date by which the refund must start, 2 working days after acceptance, and marks it overdue after that date; working days are Monday to Saturday in the business time zone, excluding the holidays listed in settings
 **And** a later retry does not create a second refund
 
-**Given** a Piece inspected as sellable
-**When** the `restock-return` workflow runs
-**Then** under the lock it raises the stocked quantity by one and writes a stock-movement row with the cause "Return"
-**And** a Piece inspected as damaged is not returned to stock
-**And** no Piece is sellable again before the Owner has recorded an inspection
-
-**Given** an Order in state Returned to shop
-**When** the Owner records its inspection
-**Then** the same refund workflow refunds the Order in full, the Order moves to Refunded, and sound Pieces are restocked by `restock-return` only after inspection
-
-**Given** any Order
-**When** the Owner refunds part of it from the Orders page
-**Then** the amount can be anything up to what was paid less what was already refunded, a reason is required, a credit note is issued, and a larger amount is refused with the code `refund.exceeds_paid`
-**And** a part refund never changes the Order's state; an Order is Refunded only when every item in it has been refunded (AD-31)
-
 **Given** the kernel's own refund and payment routes
 **When** they are called directly
 **Then** they are refused under Story 1.4
@@ -877,15 +949,51 @@ So that she gets her money back and stock stays true.
 **When** it is issued
 **Then** the worker renders its file through `invoice.render` into the `documents` bucket, and the Shopper can download it from her Order
 
-**Requirements:** FR-24, FR-25, FR-48 (first version), FR-47 (inspection result), NFR-4; AD-4, AD-6, AD-7, AD-21, AD-25, AD-31; Consistency Conventions (Working days)
+**Requirements:** FR-24, FR-48 (first version), NFR-4; AD-4, AD-7, AD-21, AD-25, AD-31; Consistency Conventions (Working days)
 **Notes for the developer:**
-- Touches the refund workflow `refund-order` and `restock-return` in `apps/commerce/src/workflows`, the `invoice` module (credit note), `apps/commerce/src/admin`; the worker change is limited to accepting the credit-note document type.
-- Seed two settings here: working days (Monday to Saturday) and the list of holidays (empty). The Admin page to edit them is Story 3.5.
-- Inspection photos (files in the `documents` bucket linked to the Return), sending a rejected item back, and payment disputes (records of the `checkout` module) are Epic 3 (FR-47, FR-23, FR-48; AD-31).
-- Story 3.10 later starts the refund for an Order in Returned to shop from the shipping event itself; the inspection recorded here then governs only restocking.
+- Touches the refund workflow `refund-order` in `apps/commerce/src/workflows`, the `invoice` module (credit note and its counter row), `apps/commerce/src/admin`, the Order page in `apps/web`; the worker change is limited to accepting the credit-note document type.
+- Seed two settings here: working days (Monday to Saturday) and the list of holidays (empty). The Admin page to edit them is Story 3.7.
+- "Refunded" for an Order is decided by amounts, not by items: the sum of the Order's refunds equals the amount paid (AD-31). Put that test in one function that every refund path calls.
 - Add the refund to the Razorpay contract tests if Story 1.10's test does not already cover a refund of part of a payment.
 
-### Story 1.18: Admin sign-in with an enforced second factor, and an audit trail
+### Story 1.21: Owner refunds part of an Order, and an undelivered Order in full
+
+As an Owner,
+I want to refund any amount up to what a Shopper paid, and the whole amount when her parcel came back undelivered,
+So that I can put things right whatever went wrong.
+
+**Acceptance Criteria:**
+
+**Given** an Order in state Returned to shop
+**When** the Owner records its inspection (Story 1.19)
+**Then** the same `refund-order` workflow refunds the whole amount paid, including any shipping charge, with a credit note, and the Order moves to Refunded because the total refunded equals the total paid
+
+**Given** any Order
+**When** the Owner refunds part of it from the Orders page
+**Then** the amount can be anything up to what was paid less what was already refunded, a reason is required, a credit note is issued, and a larger amount is refused with the code `refund.exceeds_paid`
+**And** the refund is recorded against the Order and the Order keeps its state while the total refunded is below the total paid (AD-31)
+
+**Given** an Order paid Rs 2,100 with one earlier part refund of Rs 1,000
+**When** the Owner refunds a further Rs 1,100
+**Then** the total refunded equals the total paid and the Order moves to Refunded (AD-31)
+**And** no further refund can be made for it
+
+**Given** the Owner submits the same part refund twice, or the workflow is retried
+**When** both runs finish
+**Then** there is one refund and one credit note
+
+**Given** the payment service refuses a part refund
+**When** the workflow ends
+**Then** no credit note is issued, the amount that can still be refunded is unchanged, and the Owner sees that the refund did not start
+
+**Requirements:** FR-48 (first version), FR-24, FR-21 (an undeliverable Order is refunded in full), NFR-4; AD-4, AD-7, AD-14, AD-25, AD-31
+**Notes for the developer:**
+- Touches `refund-order` in `apps/commerce/src/workflows` and the Orders page in `apps/commerce/src/admin`.
+- Reuses the refund-to-source step, the credit note and the "total refunded equals total paid" function of Story 1.20; do not write a second refund path.
+- Payment disputes (records of the `checkout` module) are Epic 3 (FR-48; AD-31).
+- Story 3.12 later starts the refund for an Order in Returned to shop from the shipping event itself; the inspection recorded in Story 1.19 then governs only restocking.
+
+### Story 1.22: Admin sign-in with an enforced second factor, and an audit trail
 
 As an Owner,
 I want the Admin to require my password and a second factor and to record every change I make,
@@ -931,11 +1039,11 @@ So that nobody else can run my shop and every change can be traced.
 **Requirements:** FR-60, FR-36 (who made each change); AD-14, AD-15
 **Notes for the developer:**
 - Touches `apps/commerce/src/api/middlewares`, `apps/commerce/src/modules/shop-audit`, `docs/` (recovery process).
-- The secrets that encrypt second factors are environment variables; list them in the secrets document that the restore script will use (Story 1.21).
+- The secrets that encrypt second factors are environment variables; list them in the secrets document that the restore script will use (Story 1.25).
 - Deleting access events after one year (NFR-5) and the Owner's view of the audit trail are Epic 3 and Epic 4.
-- The content admin is Story 1.19.
+- The content admin is Story 1.23.
 
-### Story 1.19: Content application behind the access gate
+### Story 1.23: Content application behind the access gate
 
 As an Owner,
 I want the content admin running beside the shop and locked behind an extra gate,
@@ -955,7 +1063,7 @@ So that the place where notices and screens will be edited is safe from its firs
 
 **Given** spike item 7
 **When** the developer tries to enforce a second factor on the content admin using only what Payload provides at the pinned version
-**Then** if it can be enforced, an account without an enrolled second factor is refused, as in Story 1.18
+**Then** if it can be enforced, an account without an enrolled second factor is refused, as in Story 1.22
 **And** if it cannot, the content admin stays reachable only through an extra access gate at Caddy that asks for a separate credential before any content admin page is served, which is the fallback AD-15 names
 **And** the outcome is recorded in `docs/`
 
@@ -982,7 +1090,7 @@ So that the place where notices and screens will be edited is safe from its firs
 - Do not add a dependency the spine does not name to obtain a second factor; if Payload alone cannot do it, take the gate.
 - If Payload does not run beside the kernel on Node.js 24, stop and report.
 
-### Story 1.20: Deploy the slice to the staging server
+### Story 1.24: Deploy the slice to the staging server
 
 As a builder,
 I want the slice deployed to the staging server from continuous integration,
@@ -1027,10 +1135,10 @@ So that it is proven on the real ARM server with the vendors' test modes.
 **Notes for the developer:**
 - Touches `infra/` (compose, Caddy, deploy script), continuous-integration configuration, and container files for the four applications.
 - Staging runs vendor test modes only; no live keys.
-- Backup and restore are Story 1.21; the size gate is Story 1.22.
+- Backup and restore are Story 1.25; the size gate is Story 1.26.
 - Record the server's CPU and memory allowance as found; the spine reports 2 CPUs and 12 GB for the whole account.
 
-### Story 1.21: Continuous database backup and one rehearsed restore
+### Story 1.25: Continuous database backup and one rehearsed restore
 
 As an Owner,
 I want the database backed up continuously to another location and a restore rehearsed once,
@@ -1075,7 +1183,7 @@ So that losing the server does not lose paid Orders, invoices or the catalogue.
 - The backup location and its credentials are environment variables; no cloud vendor's SDK is added.
 - If the free server cannot hold a second copy of the system for the rehearsal, restore onto the same server after destroying its volumes.
 
-### Story 1.22: The size gate
+### Story 1.26: The size gate
 
 As an Owner,
 I want to know whether the free server can carry the shop at launch,
@@ -1086,6 +1194,7 @@ So that I choose production hosting on evidence before real payments run.
 **Given** staging with every container running
 **When** the k6 load script in `infra/` is run
 **Then** it simulates the launch load of the spine's test profile against the shop routes that `packages/api-client` calls: 100 published Designs with 10 Pieces each, 50 Shoppers browsing at once, and 5 Checkouts a minute each confirmed by a signed test-mode webhook, for 30 minutes, with a nightly backup running during the test `[ASSUMPTION: the 30-minute length and the backup running; the load figures are the spine's]`
+**And** the 100 Designs are created by a seed script written in this story, which publishes each through `publish-design` and sets its stock through `adjust-stock`, and can be run again without creating duplicates
 **And** the profile's third part, 2 Try-on jobs at once, cannot run before Try-on exists; Story 7.11 runs the whole profile and confirms or revises this decision
 **And** the profile is a small number of named constants so the founder can change it and run the script again
 
@@ -1112,12 +1221,12 @@ So that I choose production hosting on evidence before real payments run.
 
 **Requirements:** NFR-8 (portable to a paid server); AD-16, AD-17; Deployment "Size gate"; spike item 4
 **Notes for the developer:**
-- Touches `infra/` (load script) and `docs/` (the decision); no application code should change.
+- Touches `infra/` (load script), a seed script in `apps/commerce` for the 100 Designs, and `docs/` (the decision); no other application code should change. Story 2.15 extends the same seed script with Weavers and the filterable attributes.
 - The launch load is the spine's (Consistency Conventions, "Test profiles") and is held as settings; the pass conditions above are an assumption for the founder to confirm. Record both with the result.
 - The load tool is k6 (spine Stack). The script calls the shop's HTTP routes directly; keep its paths in step with `packages/api-client`.
 - Keep the script: Story 7.11 runs it again with the Try-on part and the full catalogue.
 
-### Story 1.23: One end-to-end test buys, ships and returns a saree
+### Story 1.27: One end-to-end test buys, ships and returns a saree
 
 As a builder,
 I want one automated test that lists, buys, ships and returns a saree,
@@ -1157,7 +1266,7 @@ So that every later change is checked against the whole slice before it is deplo
 
 **Given** continuous integration
 **When** the end-to-end test or any workflow test fails
-**Then** the deploy of Story 1.20 does not run
+**Then** the deploy of Story 1.24 does not run
 
 **Given** staging after a deploy
 **When** the same test is run against it with the payment service and the shipping service in their real test modes
@@ -1170,8 +1279,9 @@ So that every later change is checked against the whole slice before it is deplo
 - In continuous integration the payment service and the shipping service are replaced at the HTTP edge by recorded test-mode responses; the adapters themselves are unchanged and still run.
 - The test runner is Playwright (`@playwright/test` 1.65.1, spine Stack); drive the Shopper's and the Owner's steps through the website and the Admin in a browser.
 - Use a controllable clock for the Hold; do not wait 15 minutes.
+- This test blocks every deploy, so any later story that changes sign-in, checkout, or the Order and Return states updates the test in that same story and leaves it passing; those stories say so in their acceptance criteria.
 
-### Story 1.24: Android proof on a real phone: screen, viewer and blurred bar
+### Story 1.28: Android proof on a real phone: screen, viewer and blurred bar
 
 As a builder,
 I want a minimal Android app run on a real mid-range phone that renders a sample screen, the saree viewer and a blurred navigation bar,
@@ -1179,7 +1289,7 @@ So that the choice of React Native, the web-view viewer and the design system's 
 
 **Acceptance Criteria:**
 
-**Given** the repository after Story 1.23
+**Given** the repository after Story 1.27
 **When** `apps/mobile` is created as a minimal Expo 58.1.0 application with expo-router
 **Then** a build installs and starts on a real Android phone with 4 GB of memory, the phone of the spine's test profile, whose model and Android version are written in `docs/`
 **And** its application id is the neutral one required by AD-20, with no product name in the id, the URL scheme or any package name, and the name check from Story 1.1 passes for `apps/mobile`
@@ -1187,10 +1297,10 @@ So that the choice of React Native, the web-view viewer and the design system's 
 
 **Given** `packages/blocks` is created with the properties of the sample Block types (banner, text and row of Designs), with no UI code
 **When** a sample `ScreenV1` document, defined by a first `ScreenV1` schema in `packages/contracts` and bundled with the app, is opened
-**Then** the app renders each Block in order with one native component per type, the row of Designs from sample `DesignCard` data embedded in the document (a first `DesignCard` schema is added to `packages/contracts` here if Story 1.8 did not create one)
+**Then** the app renders each Block in order with one native component per type, the row of Designs from sample `DesignCard` data embedded in the document, using the `DesignCard` schema that Story 1.8 created
 **And** a Block of a type the app does not know, placed in the sample, is skipped and the rest is shown, settling spike item 5
 
-**Given** a sample Deep Zoom tile set cut once with sharp from a full-length saree image at least 8,000 pixels long and served from staging object storage
+**Given** a sample Deep Zoom tile set cut once with sharp from a full-length saree image at least 8,000 pixels long and served from the public `catalog` bucket on staging, under a `spike/` prefix
 **When** the app opens a native screen holding a `react-native-webview` 14.0.1 web view with a page that shows the tile set in OpenSeadragon 6.1.1
 **Then** one finger pans and two fingers pinch to zoom the saree, to both ends and to full detail, and the native screen does not scroll, go back or zoom the whole page instead
 **And** the frame rate while panning and pinching is measured on the phone and recorded, settling spike item 6
@@ -1211,6 +1321,6 @@ So that the choice of React Native, the web-view viewer and the design system's 
 **Requirements:** NFR-12; AD-12, AD-18, AD-19, AD-20; Consistency Conventions (Test profiles); spike items 5, 6 and 8
 **Notes for the developer:**
 - Touches `apps/mobile` (new), `packages/blocks` (new), `packages/contracts` (a first `ScreenV1` schema and the sample), and `docs/` (the record).
-- This is a proof, not the app: no sign-in, no network data beyond the tiles, no styling from DESIGN.md. Story 6.1 builds the app shell on this application; Story 5.1 completes `ScreenV1` and `packages/blocks`; Story 2.9 builds the real viewer page.
+- This is a proof, not the app: no sign-in, no network data beyond the tiles, no styling from DESIGN.md. Story 6.1 builds the app shell on this application; Story 5.1 completes `ScreenV1` and `packages/blocks`; Story 2.10 builds the real viewer page and deletes the objects under `spike/`.
 - Use only the Expo SDK's own modules and the versions in the spine's Stack; the blur comes from the Expo SDK's blur module.
 - Measure on the phone itself, in a release build, not on an emulator.

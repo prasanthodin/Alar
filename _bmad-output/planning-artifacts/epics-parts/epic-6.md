@@ -9,10 +9,10 @@ A Shopper does in the Android app everything she can do on the website: she brow
 
 - "Same behaviour as the website" means the acceptance criteria of the website story for the same FR in Epics 1 to 5 apply unchanged; each story below lists only what differs on the app and what must be proven again on a phone.
 - UI code gets data only from `packages/api-client` (AD-2). Where the app needs a function that the website did not, it is added to `api-client` with its view model in `packages/contracts`, additively (AD-19, AD-27). No story adds a business rule, a total, a state or an availability calculation to `apps/mobile` (AD-5, AD-24, AD-28).
-- No Shopper-facing text is written in code (Conventions): interface text is in the app's translation files, Design and Weaver text comes from commerce, and documents come from content through commerce (AD-28). Every interactive element has a label and every layout holds at the largest system font size (NFR-15).
+- No Shopper-facing text is written in code (Conventions): interface text comes from the translation bundle that content holds and commerce serves (Story 3.4), with the app's bundled translation files as the built-in fallback, Design and Weaver text comes from commerce, and documents come from content through commerce (AD-28). Every interactive element has a label and every layout holds at the largest system font size (NFR-15).
 - Screens are described by behaviour only; they are styled from DESIGN.md when it exists.
 - iOS is out of scope. There is no push service at launch, so a ready Try-on result is found by polling (spine, Consistency Conventions: Payments in the app). No analytics or advertising SDK is added (AD-29).
-- The app is built on the minimal Expo application of Story 1.24, which settled spike items 5, 6 and 8 on a real phone; no story here creates `apps/mobile` again.
+- The app is built on the minimal Expo application of Story 1.28, which settled spike items 5, 6 and 8 on a real phone; no story here creates `apps/mobile` again.
 
 ---
 
@@ -24,7 +24,7 @@ So that everything else in the app has a dependable place to live.
 
 **Acceptance Criteria:**
 
-**Given** the minimal Expo application that Story 1.24 created in `apps/mobile`, with its neutral application id and `packages/contracts` and `packages/blocks` already wired in
+**Given** the minimal Expo application that Story 1.28 created in `apps/mobile`, with its neutral application id and `packages/contracts` and `packages/blocks` already wired in
 **When** the developer builds the app shell on it, with Expo 58 and expo-router, and adds `packages/api-client`
 **Then** a debug build installs and starts on an Android phone and on an emulator
 **And** the proof's sample screen, sample tile page and measurement screens are removed from the shell or kept only in a development build
@@ -56,7 +56,7 @@ So that everything else in the app has a dependable place to live.
 
 **Requirements:** NFR-12, AD-2, AD-16, AD-19, AD-20, AD-27, AD-29
 **Notes for the developer:**
-- Builds on Story 1.24: `apps/mobile` exists; this story turns the proof into the shell and does not create the application or change its application id. Touches `apps/mobile` and, only if needed, a storage and header hook in `packages/api-client` so it runs outside a browser; `packages/*` still import no UI framework.
+- Builds on Story 1.28: `apps/mobile` exists; this story turns the proof into the shell and does not create the application or change its application id. Touches `apps/mobile` and, only if needed, a storage and header hook in `packages/api-client` so it runs outside a browser; `packages/*` still import no UI framework.
 - Use the versions in the spine's Stack table. Add no library that is not part of the Expo SDK or named in the spine.
 - Placeholder texts here are temporary; Story 6.3 moves all interface text to the app's translation files.
 - Left for later stories: every real screen, sign-in, the forced-update screen.
@@ -120,8 +120,14 @@ So that I can shop without struggling to read or reach anything.
 
 **Given** the app's interface text
 **When** a screen shows it
-**Then** it comes from the translation files bundled with the app, one for English and one for Tamil, with the same keys as the website's where the wording is shared (AD-28)
+**Then** it comes from the translation bundle for her language, fetched with `getTranslations` in `packages/api-client` from `/store/shop/translations/{language}` (Story 3.4) and cached on the phone (AD-28)
+**And** the translation files bundled with the app, one for English and one for Tamil with the same keys as the website's where the wording is shared, are the built-in copy: the app uses them before its first fetch, for any key the bundle lacks, and whenever the fetch fails
 **And** Design and Weaver text arrives in view models from commerce in the Shopper's language, and documents and notices arrive from content through commerce, so a change the Owner makes to those appears the next time the screen is loaded, without a release (NFR-14)
+
+**Given** the Owner publishes a changed interface text in a translation bundle
+**When** the app is next opened or brought to the front with a connection
+**Then** it fetches the newer bundle version and shows the new wording, with no app release (NFR-14)
+**And** with no network it shows the last bundle it cached, or the built-in copy; no screen waits on the bundle, a bundle key the app does not know is ignored, and bundle text is shown as plain text and never run (AD-27, FR-33)
 
 **Given** the phone's language is one the shop has published (English at launch; Tamil is the first added language)
 **When** the Shopper first opens the app
@@ -149,8 +155,8 @@ So that I can shop without struggling to read or reach anything.
 
 **Requirements:** NFR-14, NFR-15, FR-5, AD-2, AD-5, AD-28
 **Notes for the developer:**
-- Touches `apps/mobile` (translation files, text lookup, language choice, the basic components). The language is sent on every request by `packages/api-client`, as on the website (Story 2.12). The app never calls `apps/content` directly (AD-2).
-- As on the website (Story 2.11), a change to interface text needs an app release because AD-28 puts it in the client; only Design, Weaver, document and message text changes without one. This difference from NFR-14 is reported to the founder.
+- Touches `apps/mobile` (translation files, text lookup, language choice, the basic components). The language is sent on every request by `packages/api-client`, as on the website (Story 2.14). The app never calls `apps/content` directly (AD-2).
+- AD-28: interface text is a translation bundle per language, held in content and served through commerce; the app caches it and carries a built-in copy as the fallback, so a wording change needs no app release (NFR-14). The route, the view model and `getTranslations` exist from Story 3.4; this story adds the app's cache, its built-in files and the lookup order. Add the app's own text keys to the bundles' seed so the Owner can edit them.
 - Every later story builds its screens from these basic components; Story 6.18 audits the finished app.
 - Styled from DESIGN.md when it exists.
 
@@ -248,7 +254,7 @@ So that I always see the current shop without updating the app.
 
 **Requirements:** FR-30, FR-31, FR-32, FR-33, FR-1, FR-5, AD-2, AD-12, AD-27
 **Notes for the developer:**
-- Touches `apps/mobile` only: a Block registry mapping each type in `packages/blocks` to one component, a screen renderer, and a saved-screen store on the phone. Start from the sample renderer of Story 1.24 and bring it up to these criteria.
+- Touches `apps/mobile` only: a Block registry mapping each type in `packages/blocks` to one component, a screen renderer, and a saved-screen store on the phone. Start from the sample renderer of Story 1.28 and bring it up to these criteria.
 - The app never reads content's own shape and never resolves a rule or a price itself (AD-12).
 - Add unit tests with recorded screens: one with an unknown Block type, one with an unknown action, one with extra fields.
 - The Design page's Server-driven region is in Story 6.7.
@@ -377,7 +383,7 @@ So that I can inspect the body, border and pallu as if it were laid out in front
 **Given** the viewer is open on an Android phone
 **When** she uses one finger to pan, two fingers to pinch, and a double tap
 **Then** the saree pans, zooms and steps in smoothly; the native screen does not scroll, swipe back or zoom the whole page instead (AD-18)
-**And** because Story 1.24 settled the touch-behaviour spike item with a sample tile set, this story re-runs the same checks and frame-rate measurement on the finished screen with a real Design, and records the result in `docs/` with the phone models and Android versions tested
+**And** because Story 1.28 settled the touch-behaviour spike item with a sample tile set, this story re-runs the same checks and frame-rate measurement on the finished screen with a real Design, and records the result in `docs/` with the phone models and Android versions tested
 
 **Given** the viewer is open
 **When** she presses the Android back button or the close action
@@ -777,9 +783,14 @@ So that I can use Try-on knowing exactly what happens to my photo.
 **When** she returns to the app
 **Then** nothing is uploaded and she is back at the photo step
 
+**Given** the honest-design tests and checklist of Story 3.26, which Story 4.3 extended for the website's consent screen
+**When** this story is finished
+**Then** the app's cases are added: automated tests on the app fail if a confirmation or the accept control is selected by default, if the notice is combined with other terms, or if declining is followed by a repeated prompt
+**And** `docs/honest-design-checklist.md` gains the app's cart, checkout, sign-in and consent screens as items for the Owner's yearly audit (NFR-13)
+
 **Requirements:** FR-8, FR-9, FR-10, FR-51, NFR-13, AD-2, AD-11, AD-22
 **Notes for the developer:**
-- Touches `apps/mobile` only, using the picker and camera modules that ship with the Expo SDK; configure them so no broad media permission is merged into the manifest.
+- Touches `apps/mobile` and `docs/honest-design-checklist.md`, using the picker and camera modules that ship with the Expo SDK; configure them so no broad media permission is merged into the manifest.
 - Consent, age confirmation, upload links and limits are all decided on the server (AD-11, AD-22); the app shows and sends.
 - Requesting a Try-on result is Story 6.16.
 - Styled from DESIGN.md when it exists.
@@ -908,7 +919,7 @@ So that I can shop comfortably whatever phone and eyesight I have.
 
 **Acceptance Criteria:**
 
-**Given** the reference phone and network of the spine's test profile, written down in `docs/` with the phone's model before measuring: an Android phone with 4 GB of memory on a throttled 4G connection of 10 Mbit/s down with 100 ms delay, the same phone as Story 1.24 where it is still available
+**Given** the reference phone and network of the spine's test profile, written down in `docs/` with the phone's model before measuring: an Android phone with 4 GB of memory on a throttled 4G connection of 10 Mbit/s down with 100 ms delay, the same phone as Story 1.28 where it is still available
 **When** a release build opens a Design page from a list, 10 times, with the app already running
 **Then** in at least 9 of the 10 runs the page is usable within 3 seconds, where usable means the name, price, first photo and stock status are shown and the add-to-cart, Full saree view and Try-on entry points respond (NFR-1)
 **And** the measurements and the build they were taken on are recorded in `docs/`
@@ -940,9 +951,10 @@ So that I can shop comfortably whatever phone and eyesight I have.
 **Requirements:** NFR-1, NFR-15, FR-2
 **Notes for the developer:**
 - Touches `apps/mobile` and `docs/`; measure release builds only, against staging.
+- The measurements and walks on the real phone need a person holding it. The developer agent prepares the release build, the measurement steps and the record sheet and closes the automated criteria; the on-phone criteria wait for the Owner, and the story is handed back saying which are outstanding.
 - The part of the journey inside the payment service's own screen is outside the app's control; note what was observed.
-- "Mid-range phone" and "4G" are defined by the spine's test profile (Consistency Conventions, "Test profiles"), held as settings; Story 2.20 used the same profile by emulation and Story 7.11 uses this phone.
-- Repeat here the blurred-bar frame-rate measurement of Story 1.24 on the styled app, if DESIGN.md uses that bar.
+- "Mid-range phone" and "4G" are defined by the spine's test profile (Consistency Conventions, "Test profiles"), held as settings; Story 2.22 used the same profile by emulation and Story 7.11 uses this phone.
+- Repeat here the blurred-bar frame-rate measurement of Story 1.28 on the styled app, if DESIGN.md uses that bar.
 - Styled from DESIGN.md when it exists.
 
 ---

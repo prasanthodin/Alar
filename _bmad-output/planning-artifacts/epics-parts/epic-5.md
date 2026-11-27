@@ -11,7 +11,7 @@ The Owner builds the home, category and campaign screens, and one region of the 
 - Every create, save, publish, schedule and restore in the content admin writes an audit event to content's append-only collection with the Owner's email, the time, the action and the before and after values (AD-14). Stories do not repeat this in each criterion.
 - The content admin is reached through the access gate and the Owner's content sign-in (AD-15).
 - Items tagged `[ASSUMPTION]` are choices made while writing the stories where the PRD and spine are still silent; each says what is assumed.
-- This epic builds on the content application of Stories 1.19 and 3.1 (gate, audit rule, versioning helper, content reader in commerce) and on the first `ScreenV1` schema and `packages/blocks` of Story 1.24.
+- This epic builds on the content application of Stories 1.23 and 3.1 (gate, audit rule, versioning helper, content reader in commerce) and on the first `ScreenV1` schema and `packages/blocks` of Story 1.28.
 
 ---
 
@@ -49,7 +49,7 @@ So that I can prepare the home screen or a campaign without it going live.
 
 **Given** a text, banner or image Block
 **When** she enters its wording
-**Then** she can enter it for English and for each configured language, and a missing translation falls back to English (NFR-14)
+**Then** she can enter it for English and for each configured language, the list read from the `/internal/settings/languages` lookup of Story 3.2, and a missing translation falls back to English (NFR-14)
 
 **Given** a draft screen
 **When** she saves it
@@ -62,7 +62,7 @@ So that I can prepare the home screen or a campaign without it going live.
 
 **Requirements:** FR-30, FR-31 (draft), FR-33; AD-3, AD-12, AD-14, AD-15, AD-19
 **Notes for the developer:**
-- Completes the `ScreenV1` schema that Story 1.24 began in `packages/contracts` and adds the fixed action list of AD-12 to it; completes `packages/blocks`, which Story 1.24 created for its sample, with the full properties of banner, text and image (no UI code); creates the screens collection with drafts in `apps/content`, using the versioning helper and audit rule of Story 3.1.
+- Completes the `ScreenV1` schema that Story 1.28 began in `packages/contracts` and adds the fixed action list of AD-12 to it; completes `packages/blocks`, which Story 1.28 created for its sample, with the full properties of banner, text and image (no UI code); creates the screens collection with drafts in `apps/content`, using the versioning helper and audit rule of Story 3.1.
 - `ScreenV1` and Block properties may only ever gain optional fields (AD-12); write the schema so that unknown fields are ignored by readers.
 - Blocks that show Designs or Weavers are Story 5.2. Publishing is Story 5.3. The Design-page region is Story 5.5.
 
@@ -432,6 +432,7 @@ So that I never meet an error or a blank page because the Owner changed somethin
 **Given** a last copy is being shown
 **When** a Shopper opens a Design from it
 **Then** the Design page shows the current price and availability from the server, so an out-of-date card cannot lead to a wrong charge
+**And** while a last copy is shown, the screen carries a plain notice that prices and availability on it may be out of date, because price and availability are never served as current from a stored copy (AD-12)
 
 **Given** the continuous-integration checks
 **When** they run
