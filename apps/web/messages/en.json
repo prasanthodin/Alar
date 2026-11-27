@@ -38,5 +38,6 @@
   "error.rate.limited": "Too many attempts. Wait a few minutes, then try again.",
   "error.client.update_required": "This page is out of date. Reload it and try again.",
   "error.route.not_allowed": "That is not available. Please go back and try again.",
+  "error.design.not_found": "We could not find that design. It may no longer be available.",
   "error.internal": "Something went wrong on our side. Please try again in a moment."
 }

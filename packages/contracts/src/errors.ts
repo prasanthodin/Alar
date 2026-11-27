@@ -14,6 +14,7 @@ export const ErrorCode = z.enum([
   "rate.limited",
   "client.update_required",
   "route.not_allowed",
+  "design.not_found",
   "internal",
 ])
 export type ErrorCode = z.infer<typeof ErrorCode>

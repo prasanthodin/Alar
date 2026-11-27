@@ -2,7 +2,7 @@
 title: 'Early mobile app shell on mocked catalogue data'
 type: 'feature'
 created: '2026-11-27'
-status: 'in-progress'
+status: 'in-review'
 baseline_commit: '19581d77bbdbadce98ec71a25df82b2eb4844107'
 route: 'dispatch'
 review_loop_iteration: 0

@@ -23,6 +23,10 @@ export type ApiClientConfig = {
   tokenStore: TokenStore
   /** Per-request time limit in ms. Defaults to REQUEST_TIMEOUT_MS. */
   timeoutMs?: number
+  /** Source of catalogue and Bag data. Only `mock` exists for now; the kernel source arrives with Epic 2. */
+  catalogueSource?: "mock"
+  /** Base URL of the mock pictures, e.g. `/mock` or `http://192.168.1.5:8081/mock`. Defaults to `/mock`. */
+  mockAssetBaseUrl?: string
 }
 
 /** A kernel that accepts the connection but never answers must not hang the caller. */

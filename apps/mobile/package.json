@@ -1,0 +1,49 @@
+{
+  "name": "@shop/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Android app (Expo) on the api-client seam; early shell on mocked catalogue data",
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "expo start",
+    "web": "expo start --web",
+    "export:web": "expo export --platform web --output-dir dist",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
+    "@expo/metro-runtime": "~58.0.17",
+    "@shop/api-client": "workspace:*",
+    "@shop/contracts": "workspace:*",
+    "@shop/tokens": "workspace:*",
+    "expo": "58.1.0",
+    "expo-blur": "~58.0.6",
+    "expo-constants": "~58.0.16",
+    "expo-font": "~58.0.12",
+    "expo-linking": "~58.0.17",
+    "expo-router": "~58.0.33",
+    "expo-splash-screen": "~58.0.15",
+    "expo-status-bar": "~58.0.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-safe-area-context": "~5.11.1",
+    "react-native-screens": "~4.30.1",
+    "react-native-svg": "15.16.0",
+    "react-native-web": "~0.21.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "@types/react": "~19.3.0",
+    "eslint": "^9.39.4",
+    "eslint-config-expo": "~58.0.4",
+    "typescript": "^6.0.3",
+    "vitest": "^5.1.2"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  }
+}
