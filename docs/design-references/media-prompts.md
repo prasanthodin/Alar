@@ -1,10 +1,20 @@
 # Image and video prompts for the design mockups
 
-Prompts for the founder to run in Higgsfield. The Higgsfield connection in this
-project can read the account and model list but cannot start a generation, so
-these have to be run by hand and the results sent back.
+Prompts used to generate the placeholder media through Higgsfield.
 
-Model settings below were read from the Higgsfield model list on 2026-11-27.
+**Status, 2026-11-27:** all of sections 1, 3, 4, 5 and 6, one close-up from
+section 2 and video 1 from section 7 were generated from this session and are
+in the design canvas. Web-sized copies are in
+`_bmad-output/planning-artifacts/ux-designs/ux-saree-commerce-2026-11-27/.working/design-canvas/assets/`,
+named by section and number. The originals (2k and 4k PNG) stay in the
+founder's Higgsfield account.
+
+Cost note: the unlimited Nano Banana Pro allowance does not apply when
+Higgsfield is called from Claude Code; it applies in Claude chat, Cowork and
+ChatGPT. From Claude Code each image costs 2 credits and a 5-second 1080p
+Seedance 2.5 video costs 80. This run used 24 images and 1 video, 128 credits.
+The model list reports Nano Banana Pro jobs under the internal name
+`nano_banana_2`.
 
 ## Rule for using these images
 
@@ -162,8 +172,8 @@ from section 5, then use mode `omni_reference` with that image as the
    > their sarees and the leaves behind them; the camera pushes in very
    > slowly. Natural, calm motion. No new objects, no text, no cuts.
 
-## After generating
+## Not yet generated
 
-Send the images back in this conversation, named by section and number (for
-example `1-3-emerald.png`, `5-1-pongal.png`). They go into the design canvas in
-place of the drawn placeholders.
+Back view and folded view for each saree (section 2), close-ups for the other
+seven sarees, and video 2 (Pongal banner with a start image). Run them when a
+screen needs them.
