@@ -139,3 +139,12 @@ read in full; verify before the architecture relies on them):
 - Where sarees are sourced; which languages at launch.
 - Which shipping provider.
 - Budget and team size.
+
+## Sign-in (said on 2026-11-27)
+
+- Shoppers: mobile number with OTP, or Google followed by a mobile OTP.
+- Admin and staff: also sign in with a one-time code (drawn as password or
+  Google first, then the code, on every sign-in).
+- Admin needs web-page designs for everything it manages; drawn on the design
+  canvas (dashboard, products, variants and stock, orders, AI try-on controls,
+  app content, customers and staff).

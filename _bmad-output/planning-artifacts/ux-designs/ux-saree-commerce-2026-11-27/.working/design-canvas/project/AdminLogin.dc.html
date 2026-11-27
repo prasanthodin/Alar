@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Alar admin login</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
+<style>
+body{margin:0}
+a{color:#6F52F0}a:hover{color:#5B3FD6}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; overflow: hidden; background: #FBFAFF; color: #1B1530; font-family: Inter, system-ui, sans-serif; display: flex">
+  <div style="width: 480px; flex-shrink: 0; position: relative; background: #1B1530"><img src="/_blob/1b033773fe51d86b400c678d4b0b2f74" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 82% center; display: block">
+    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(27, 21, 48, 0.2) 0%, rgba(27, 21, 48, 0.86) 100%)"></div>
+    <div style="position: absolute; left: 40px; right: 40px; bottom: 40px; display: flex; flex-direction: column; gap: 8px; color: #FFFFFF"><span style="font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -0.03em">alar <span style="font-size: 12px; letter-spacing: 0.08em; font-weight: 700; padding: 3px 7px; border-radius: 5px; background: #FFFFFF; color: #1B1530; vertical-align: middle">ADMIN</span></span><span style="font-size: 14px; line-height: 22px; color: rgba(255, 255, 255, 0.82)">Catalogue, stock, orders, app content and AI try-on controls in one place.</span></div>
+  </div>
+  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px">
+    <div style="display: flex; gap: 24px; align-items: stretch">
+      <div style="width: 400px; background: #FFFFFF; border: 1px solid #E7E3F5; border-radius: 20px; padding: 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px"><span style="font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: #5B3FD6">STEP 1 · PASSWORD</span><h1 style="margin: 0; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 20px; line-height: 26px; font-weight: 800">Sign in to admin</h1>
+        <label style="display: flex; flex-direction: column; gap: 4px; width: 100%; min-width: 0"><span style="font-size: 12px; line-height: 16px; font-weight: 600">Work email</span><span style="display: flex; align-items: center; min-height: 40px; box-sizing: border-box; padding-left: 10px; padding-right: 10px; border-radius: 8px; border: 1px solid #DCD3FF; background: #FFFFFF; font-size: 13px; line-height: 20px">owner@alar.example</span></label><label style="display: flex; flex-direction: column; gap: 4px; width: 100%; min-width: 0"><span style="font-size: 12px; line-height: 16px; font-weight: 600">Password</span><span style="display: flex; align-items: center; min-height: 40px; box-sizing: border-box; padding-left: 10px; padding-right: 10px; border-radius: 8px; border: 1px solid #DCD3FF; background: #FFFFFF; font-size: 13px; line-height: 20px">••••••••••••</span></label>
+        <div style="display: flex; justify-content: space-between; font-size: 13px"><label style="display: flex; align-items: center; gap: 8px"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #6F52F0; margin: 0">Trust this device for 30 days</label><a href="#reset" style="font-weight: 600; text-decoration: none">Forgot password?</a></div>
+        <a href="#" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px; box-sizing: border-box; border-radius: 8px; background: #6F52F0; color: #FFFFFF; border: 0; font-size: 14px; font-weight: 700; text-decoration: none; ">Continue</a>
+        <div style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: #6B6680"><span style="flex: 1; height: 1px; background: #E7E3F5"></span>or<span style="flex: 1; height: 1px; background: #E7E3F5"></span></div>
+        <a href="#google" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 40px; border-radius: 8px; border: 1px solid #DCD3FF; color: #1B1530; font-size: 14px; font-weight: 600; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22 12.200c0-.700-.100-1.400-.200-2H12v3.900h5.600a4.800 4.800 0 01-2.100 3.100v2.600h3.400c2-1.800 3.100-4.500 3.100-7.600z"/><path fill="#34A853" d="M12 22c2.800 0 5.200-.900 6.900-2.500l-3.400-2.600c-.900.600-2.100 1-3.500 1a6.100 6.100 0 01-5.700-4.200H2.800v2.700A10.400 10.400 0 0012 22z"/><path fill="#FBBC05" d="M6.300 13.700a6.200 6.200 0 010-3.900V7.100H2.800a10.400 10.400 0 000 9.300z"/><path fill="#EA4335" d="M12 5.700c1.500 0 2.900.500 4 1.600l3-3A10.400 10.400 0 002.800 7.100l3.500 2.700A6.100 6.100 0 0112 5.700z"/></svg>Continue with Google</a></div>
+      <div style="width: 400px; background: #FFFFFF; border: 1px solid #E7E3F5; border-radius: 20px; padding: 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px"><span style="font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: #5B3FD6">STEP 2 · ONE-TIME CODE</span><h1 style="margin: 0; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 20px; line-height: 26px; font-weight: 800">Enter the code</h1>
+        <p style="margin: 0; font-size: 13px; line-height: 20px; color: #6B6680">Sent to <strong style="color: #1B1530; font-weight: 600">ow•••@alar.example</strong> and by SMS to the number ending 345. Needed on every sign-in, with password or Google.</p>
+        <div style="display: flex; gap: 8px"><span style="flex: 1; height: 48px; border-radius: 10px; border: 1px solid #DCD3FF; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 20px; font-weight: 700">7</span><span style="flex: 1; height: 48px; border-radius: 10px; border: 1px solid #DCD3FF; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 20px; font-weight: 700">2</span><span style="flex: 1; height: 48px; border-radius: 10px; border: 1px solid #DCD3FF; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 20px; font-weight: 700">9</span><span style="flex: 1; height: 48px; border-radius: 10px; border: 1px solid #DCD3FF; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 20px; font-weight: 700">0</span><span style="flex: 1; height: 48px; border-radius: 10px; border: 2px solid #6F52F0; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 20px; font-weight: 700"></span><span style="flex: 1; height: 48px; border-radius: 10px; border: 1px solid #DCD3FF; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 20px; font-weight: 700"></span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #6B6680"><span>Works for 5 minutes</span><span style="font-weight: 600">Send again in 0:41</span></div>
+        <a href="AdminDashboard.dc.html" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px; box-sizing: border-box; border-radius: 8px; background: #6F52F0; color: #FFFFFF; border: 0; font-size: 14px; font-weight: 700; text-decoration: none; ">Verify and sign in</a>
+        <div style="display: flex; gap: 10px; padding: 12px; border-radius: 10px; background: #F6F3FF; font-size: 12px; line-height: 18px; color: #6B6680"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6F52F0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M12 3l7 3v5c0 5-3.500 8-7 10-3.500-2-7-5-7-10V6z"/></svg><span>Only invited staff can sign in. Five wrong codes lock the account for 15 minutes and the owner is told.</span></div></div>
+    </div>
+    <span style="font-size: 12px; color: #6B6680">Every sign-in and change is written to the audit log.</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
