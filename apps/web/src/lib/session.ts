@@ -29,7 +29,7 @@ function cookieTokenStore(): TokenStore {
 }
 
 /** An api-client for the current request. Server only. */
-export function api() {
+export function api(options: { timeoutMs?: number } = {}) {
   return createApiClient({
     baseUrl: commerceBaseUrl(),
     publishableKey: publishableKey(),
@@ -37,5 +37,6 @@ export function api() {
     version: pkg.version,
     getLanguage: () => "en",
     tokenStore: cookieTokenStore(),
+    ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
   })
 }

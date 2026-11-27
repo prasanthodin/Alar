@@ -8,21 +8,22 @@ import "@/styles/globals.css"
 import type { Metadata } from "next"
 import { connection } from "next/server"
 import { storeName, t } from "@/lib/i18n"
-import { configuredStoreName, publicBaseUrl } from "@/lib/server-env"
+import { publicBaseUrl } from "@/lib/server-env"
+import { shopName } from "@/lib/shop"
 
-// The base URL and store name are read at request time (not inlined at build),
-// so one built image serves each environment with its own values.
+// The base URL and the shop name (from shop settings) are read at request time,
+// not inlined at build, so one built image serves each environment with its own values.
 export async function generateMetadata(): Promise<Metadata> {
   await connection()
   return {
     metadataBase: new URL(publicBaseUrl()),
-    title: storeName(configuredStoreName()),
+    title: storeName(await shopName()),
     description: t("meta.description"),
   }
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // Renders on request, so the wordmark reads the store name of the running environment.
+  // Renders on request, so the wordmark reads the shop name in effect now.
   await connection()
   return (
     <html lang="en">

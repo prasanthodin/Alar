@@ -2,7 +2,7 @@
 title: 'Story 1.5: Shop settings with dates, and one tax calculation'
 type: 'feature'
 created: '2026-11-27'
-status: 'in-progress'
+status: 'in-review'
 baseline_commit: '24dc4153f91abaeef283057d13ae1107b7dfaa64'
 route: 'dispatch'
 review_loop_iteration: 0
@@ -39,6 +39,11 @@ context:
 | Invalid value | write that fails the key's schema | refused, nothing stored | `settings.invalid_value` |
 | Kernel totals | cart with one line in the India region | kernel tax lines equal the money functions for that price | if the kernel's own arithmetic cannot match to the paisa, stop and report with examples |
 | Website header | any page | name from settings via api-client | falls back to translation text if the call fails |
+
+
+## Decisions
+
+- 2026-11-27 (orchestrator, under the founder's standing delegation "whatever you suggest, I will prefer"): the kernel derives line tax from a rate with unrounded decimals and misses the money functions by a paisa for about half of all prices at the nominal rate. Accepted approach: the shop provider returns, per line, the rate tax ÷ taxable × 100 computed from the money functions (stored with the kernel's precision), so the kernel's own arithmetic reproduces the money functions' split to the paisa; the exact paise and the nominal `rateBp` travel in the tax line's `data`, and invoices (Story 1.13) take tax from the money functions, never from the kernel rate. A line whose split the kernel cannot reproduce exactly is refused with the stable error `tax.kernel_mismatch` instead of proceeding with a warning.
 
 </frozen-after-approval>
 

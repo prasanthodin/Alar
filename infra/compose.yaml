@@ -107,6 +107,8 @@ services:
       S3_BUCKET: catalog
       S3_FILE_URL: ${S3_FILE_URL:-${PUBLIC_URL:-http://localhost:${CADDY_PORT:-8080}}/catalog}
       PUBLISHABLE_KEY_FILE: /var/lib/shop/publishable-key
+      # Seeded into the shop.name setting on the first migration (Story 1.5).
+      STORE_NAME: ${STORE_NAME:-}
     volumes:
       - shared-config:/var/lib/shop
     depends_on:

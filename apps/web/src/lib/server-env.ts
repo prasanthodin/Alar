@@ -27,7 +27,7 @@ export function publicBaseUrl(): string {
   return read("NEXT_PUBLIC_BASE_URL") ?? "http://localhost:8000"
 }
 
-/** The store name from the environment, if set (shop settings replace it later). */
+/** The store name from the environment, if set: only the fallback when shop settings cannot be read. */
 export function configuredStoreName(): string | undefined {
   return read("NEXT_PUBLIC_STORE_NAME")
 }

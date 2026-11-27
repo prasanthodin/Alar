@@ -1,11 +1,13 @@
 import Link from "next/link"
 import { storeName } from "@/lib/i18n"
-import { configuredStoreName } from "@/lib/server-env"
+import { shopName } from "@/lib/shop"
 
-export function Wordmark({ size = "text-h2" }: { size?: "text-h2" | "text-display-web" }) {
+/** The shop name from settings (through api-client), as the wordmark. Server component. */
+export async function Wordmark({ size = "text-h2" }: { size?: "text-h2" | "text-display-web" }) {
+  const name = await shopName()
   return (
-    <Link href="/" className={`font-heading ${size} tracking-[-0.02em] text-primary lowercase`}>
-      {storeName(configuredStoreName())}
+    <Link href="/" data-testid="wordmark" className={`font-heading ${size} tracking-[-0.02em] text-primary lowercase`}>
+      {storeName(name)}
     </Link>
   )
 }

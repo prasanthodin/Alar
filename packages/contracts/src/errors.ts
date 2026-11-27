@@ -16,6 +16,10 @@ export const ErrorCode = z.enum([
   "route.not_allowed",
   "design.not_found",
   "bag.stock_exceeded",
+  "money.invalid_shelf_price",
+  "tax.no_band",
+  "settings.invalid_value",
+  "settings.not_found",
   "internal",
 ])
 export type ErrorCode = z.infer<typeof ErrorCode>

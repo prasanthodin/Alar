@@ -40,5 +40,9 @@
   "error.route.not_allowed": "That is not available. Please go back and try again.",
   "error.design.not_found": "We could not find that design. It may no longer be available.",
   "error.bag.stock_exceeded": "You already have every piece of this colour in your bag.",
+  "error.money.invalid_shelf_price": "This price cannot be used. Please try again later.",
+  "error.tax.no_band": "We cannot work out the tax for this item right now, so it cannot be bought yet. Please try again later.",
+  "error.settings.invalid_value": "That setting was not saved because its value is not allowed. Check it and try again.",
+  "error.settings.not_found": "Something is missing on our side. Please try again in a moment.",
   "error.internal": "Something went wrong on our side. Please try again in a moment."
 }

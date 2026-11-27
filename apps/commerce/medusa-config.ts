@@ -30,6 +30,26 @@ module.exports = defineConfig({
   // Redis carries the event bus, the workflow engine and locking only. It is never a
   // cache: the kernel keeps its default in-memory cache module (AD-8).
   modules: [
+    // Dated shop settings (Story 1.5): shop name, time zone, tax bands. Module
+    // key `shopSettings`; the kernel's own `settings` module (admin layouts) stays.
+    {
+      resolve: './src/modules/settings',
+    },
+    // The shop's own tax provider is the only tax code (AD-5). `dependencies`
+    // lets the provider, which lives in the tax module's container, read the
+    // settings module. The India tax region uses provider `tp_shop_shop`.
+    {
+      resolve: '@medusajs/medusa/tax',
+      dependencies: ['shopSettings'],
+      options: {
+        providers: [
+          {
+            resolve: './src/providers/tax',
+            id: 'shop',
+          },
+        ],
+      },
+    },
     {
       resolve: '@medusajs/medusa/event-bus-redis',
       options: {
