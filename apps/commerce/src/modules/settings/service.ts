@@ -1,5 +1,7 @@
+import type { Logger } from "@medusajs/framework/types"
 import { MedusaError, MedusaService } from "@medusajs/framework/utils"
 import {
+  IsoDateTime,
   parseSettingValue,
   startOfBusinessDay,
   type BusinessDate,
@@ -28,10 +30,23 @@ function invalid(message: string, details?: Record<string, unknown>): MedusaErro
   return error
 }
 
-function toDate(value: Date | string, what: string): Date {
+/** A `Date` or a full UTC ISO 8601 time (`...Z`); a date-only or offset string is refused. */
+function toInstant(value: Date | string, what: string): Date {
+  if (typeof value === "string" && !IsoDateTime.safeParse(value).success) {
+    throw invalid(`${what} must be a UTC ISO 8601 time such as 2026-11-28T18:30:00.000Z`)
+  }
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) throw invalid(`${what} is not a valid time`)
   return date
+}
+
+export type SetValueOptions = {
+  /**
+   * Allows an `effectiveFrom` in the past. Only the initial seed uses it, for
+   * its fixed seed instant; every other change takes effect now or later, so a
+   * value that already applied is never rewritten (AD-13).
+   */
+  allowPast?: boolean
 }
 
 /**
@@ -39,13 +54,22 @@ function toDate(value: Date | string, what: string): Date {
  * else reads through `getValue`.
  */
 export default class SettingsModuleService extends MedusaService({ SettingValue }) {
+  protected readonly logger_: Logger
+
+  // A mixin's constructor takes `any[]` (TypeScript rule for extending MedusaService).
+  constructor(...args: any[]) {
+    super(...args)
+    this.logger_ = args[0].logger
+  }
+
   /**
    * The value of `key` in effect at `at` (default now): the one whose effective
-   * time is the latest not after `at`. Throws `settings.not_found` when none is,
-   * and `settings.invalid_value` when the stored value fails the key's schema.
+   * time is the latest not after `at`. Throws `settings.not_found` when none is.
+   * A stored value that fails the key's schema is a fault on the shop's side:
+   * it is logged with its key and thrown as an unexpected state (`internal`, 500).
    */
   async getValue<K extends SettingKey>(key: K, at: Date | string = new Date()): Promise<SettingValueOf<K>> {
-    const when = toDate(at, "at")
+    const when = toInstant(at, "at")
     const [row] = await this.listSettingValues(
       { key, effective_from: { $lte: when } },
       { order: { effective_from: "DESC" }, take: 1 }
@@ -58,30 +82,54 @@ export default class SettingsModuleService extends MedusaService({ SettingValue 
       )
     }
     const parsed = parseSettingValue(key, unwrap(row.value))
-    if (!parsed.ok) throw invalid(`Stored value of ${key} (${row.id}) fails its schema`, parsed.error.details)
+    if (!parsed.ok) {
+      this.logger_.error(`settings: stored value ${row.id} of ${key} fails its schema`)
+      throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, `A stored setting is not valid (${key})`, "internal")
+    }
     return parsed.data
   }
 
   /**
    * Records `value` for `key` from `effectiveFrom` on. The value is checked
    * against the key's schema first; a refused value stores nothing
-   * (`settings.invalid_value`). A second write for the same key and time
-   * replaces that row's value.
+   * (`settings.invalid_value`). `effectiveFrom` earlier than now is refused
+   * (`settings.past_effective_from`) unless `allowPast` is set. A second write
+   * for the same key and instant replaces that (future) row's value, also when
+   * two writes race.
    */
   async setValue<K extends SettingKey>(
     key: K,
-    value: SettingValueOf<K> | unknown,
-    effectiveFrom: Date | string
+    value: SettingValueOf<K>,
+    effectiveFrom: Date | string,
+    options: SetValueOptions = {}
   ): Promise<{ id: string; key: K; value: SettingValueOf<K>; effectiveFrom: string }> {
-    const from = toDate(effectiveFrom, "effectiveFrom")
+    const from = toInstant(effectiveFrom, "effectiveFrom")
+    if (!options.allowPast && from.getTime() < Date.now()) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        `A value of ${key} cannot take effect in the past (${from.toISOString()})`,
+        "settings.past_effective_from"
+      )
+    }
     const parsed = parseSettingValue(key, value)
     if (!parsed.ok) throw invalid(parsed.error.message, parsed.error.details)
+    const stored = wrap(parsed.data)
 
-    const [existing] = await this.listSettingValues({ key, effective_from: from }, { take: 1 })
-    const row = existing
-      ? await this.updateSettingValues({ id: existing.id, value: wrap(parsed.data) })
-      : await this.createSettingValues({ key, value: wrap(parsed.data), effective_from: from })
-    return { id: row.id, key, value: parsed.data as SettingValueOf<K>, effectiveFrom: from.toISOString() }
+    const replace = async () => {
+      const [existing] = await this.listSettingValues({ key, effective_from: from }, { take: 1 })
+      return existing ? this.updateSettingValues({ id: existing.id, value: stored }) : null
+    }
+    let row = await replace()
+    if (!row) {
+      try {
+        row = await this.createSettingValues({ key, value: stored, effective_from: from })
+      } catch (e) {
+        // Another write created the row for this instant meanwhile (unique index): replace its value.
+        row = await replace()
+        if (!row) throw e
+      }
+    }
+    return { id: row.id, key, value: parsed.data, effectiveFrom: from.toISOString() }
   }
 
   /** True when `key` has any value, at any time. */

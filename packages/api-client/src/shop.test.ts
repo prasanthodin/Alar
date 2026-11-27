@@ -62,10 +62,20 @@ describe("getShopPublic", () => {
     expect(!res.ok && res.error.code).toBe("response.invalid")
   })
 
-  it("returns settings.not_found when the shop has no name yet", async () => {
+  it("returns settings.not_found only when the kernel's error code says so", async () => {
     respond = () => json(404, { code: "settings.not_found", type: "not_found", message: "No value of shop.name" })
     const res = await client().getShopPublic()
     expect(!res.ok && res.error.code).toBe("settings.not_found")
+  })
+
+  it("returns internal for any other 404 (a missing route, a proxy page)", async () => {
+    respond = () => json(404, { message: "Cannot GET /store/shop/settings" })
+    const res = await client().getShopPublic()
+    expect(!res.ok && res.error.code).toBe("internal")
+
+    respond = () => new Response("<html>not found</html>", { status: 404, headers: { "content-type": "text/html" } })
+    const html = await client().getShopPublic()
+    expect(!html.ok && html.error.code).toBe("internal")
   })
 
   it("returns internal for a server error and network.unavailable when the kernel cannot be reached", async () => {

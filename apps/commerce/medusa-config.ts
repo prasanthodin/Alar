@@ -37,10 +37,11 @@ module.exports = defineConfig({
     },
     // The shop's own tax provider is the only tax code (AD-5). `dependencies`
     // lets the provider, which lives in the tax module's container, read the
-    // settings module. The India tax region uses provider `tp_shop_shop`.
+    // settings module and the cart and order line adjustments. The India tax
+    // region uses provider `tp_shop_shop`.
     {
       resolve: '@medusajs/medusa/tax',
-      dependencies: ['shopSettings'],
+      dependencies: ['shopSettings', 'cart', 'order'],
       options: {
         providers: [
           {

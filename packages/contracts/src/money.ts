@@ -55,6 +55,13 @@ export type RateBp = z.infer<typeof RateBp>
  * One tax band: a range of per-piece taxable value (after discount, before
  * tax), both ends inclusive, with the rate that applies in it.
  * `maxTaxablePaise: null` means no upper limit.
+ *
+ * The shape can hold value-threshold bands (stitched items, Epic 2), but a
+ * threshold pair leaves a gap in tax-inclusive prices: with 5% up to Rs 2,500
+ * taxable and 18% above, shelf prices from Rs 2,626 to Rs 2,950 fit neither
+ * band (taxable above Rs 2,500 at 5%, at or below Rs 2,500 at 18%), so
+ * `taxForShelfPrice` returns `tax.no_band` for them. Under AD-5,
+ * `publish-design` refuses such prices (Epic 2).
  */
 export const TaxBand = z
   .object({

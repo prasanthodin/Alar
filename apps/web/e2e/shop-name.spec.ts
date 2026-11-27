@@ -11,7 +11,9 @@ function websiteEnv(name: string): string | undefined {
     // Playwright runs from apps/web (where playwright.config.ts is).
     const file = readFileSync(join(process.cwd(), ".env.local"), "utf8")
     const line = file.split("\n").find((l) => l.startsWith(`${name}=`))
-    return line?.slice(name.length + 1).trim() || undefined
+    const value = line?.slice(name.length + 1).trim()
+    // A quoted value (NAME="..." or NAME='...') means what is inside the quotes.
+    return value?.replace(/^(["'])(.*)\1$/, "$2") || undefined
   } catch {
     return undefined
   }

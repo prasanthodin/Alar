@@ -161,10 +161,22 @@ describe("taxForShelfPrice", () => {
     // Rs 2,900: 276190 at 5% is above the first band, 245762 at 18% is below the second: no band.
     const between = taxForShelfPrice(290000, threshold)
     expect(!between.ok && between.error.code).toBe("tax.no_band")
+    // The whole gap: Rs 2,626 to Rs 2,950 have no band; Rs 2,625 and Rs 2,951 do.
+    const fits = (rupees: number) => taxForShelfPrice(rupees * 100, threshold).ok
+    expect([fits(2625), fits(2626), fits(2950), fits(2951)]).toEqual([true, false, false, true])
   })
 
   it("its error codes are stable contract codes", () => {
-    for (const code of ["money.invalid_shelf_price", "tax.no_band", "settings.invalid_value", "settings.not_found"]) {
+    for (const code of [
+      "money.invalid_shelf_price",
+      "tax.no_band",
+      "tax.kernel_mismatch",
+      "tax.discount_unsupported",
+      "tax.shipping_unsupported",
+      "settings.invalid_value",
+      "settings.not_found",
+      "settings.past_effective_from",
+    ]) {
       expect(ErrorCode.safeParse(code).success).toBe(true)
     }
   })

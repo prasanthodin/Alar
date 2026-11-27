@@ -6,7 +6,6 @@ import {
   isSettingKey,
   isTimeZone,
   parseSettingValue,
-  pickEffective,
   settingSchema,
   startOfBusinessDay,
   startOfNextBusinessDay,
@@ -62,24 +61,6 @@ describe("parseSettingValue", () => {
   })
 })
 
-describe("pickEffective", () => {
-  const d1 = { effectiveFrom: "2026-01-01T00:00:00.000Z", value: "D1" }
-  const d2 = { effectiveFrom: "2026-06-01T00:00:00.000Z", value: "D2" }
-  const d3 = { effectiveFrom: "2026-12-01T00:00:00.000Z", value: "D3" }
-
-  it("returns the value with the latest effective time not after the time asked (D1 < D2 <= now < D3)", () => {
-    const now = new Date("2026-11-27T10:00:00.000Z")
-    expect(pickEffective([d3, d1, d2], now)?.value).toBe("D2")
-    expect(pickEffective([d1, d2, d3], new Date(d2.effectiveFrom))?.value).toBe("D2")
-    expect(pickEffective([d1, d2, d3], new Date(d3.effectiveFrom))?.value).toBe("D3")
-  })
-
-  it("returns null before the first value", () => {
-    expect(pickEffective([d1, d2], new Date("2025-12-31T23:59:59.999Z"))).toBeNull()
-    expect(pickEffective([], new Date())).toBeNull()
-  })
-})
-
 describe("business days", () => {
   it("knows time zones", () => {
     expect(isTimeZone("Asia/Kolkata")).toBe(true)
@@ -107,6 +88,13 @@ describe("business days", () => {
   it("adds days across months and years", () => {
     expect(addDays("2026-12-31", 1)).toBe("2027-01-01")
     expect(addDays("2026-03-01", -1)).toBe("2026-02-28")
+  })
+
+  it("refuses a bad date or a non-integer number of days", () => {
+    expect(() => addDays("2026-02-30", 1)).toThrow(RangeError)
+    expect(() => addDays("not-a-date", 1)).toThrow(RangeError)
+    expect(() => addDays("2026-11-27", 1.5)).toThrow(RangeError)
+    expect(() => addDays("2026-11-27", Number.NaN)).toThrow(RangeError)
   })
 
   it("tomorrow starts at the next Asia/Kolkata midnight", () => {

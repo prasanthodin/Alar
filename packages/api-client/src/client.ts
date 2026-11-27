@@ -1,4 +1,3 @@
-import Medusa from "@medusajs/js-sdk"
 import { fail, ok, type ErrorCode, type Result } from "@shop/contracts"
 import type { z } from "zod"
 
@@ -34,7 +33,8 @@ export const REQUEST_TIMEOUT_MS = 15_000
 
 /** Kernel failure as seen by the transport, before mapping to a contract code. */
 export type KernelFailure =
-  | { kind: "http"; status: number; message: string }
+  /** `code` is the error envelope's code from the response body, when it has one. */
+  | { kind: "http"; status: number; message: string; code?: string }
   | { kind: "network"; message: string }
   | { kind: "invalid"; message: string }
 
@@ -55,23 +55,63 @@ export type Transport = {
 
 const STATE_CHANGING = new Set(["POST", "PUT", "PATCH", "DELETE"])
 
-function isHttpError(e: unknown): e is { status: number; message: string } {
-  return (
-    typeof e === "object" &&
-    e !== null &&
-    typeof (e as { status?: unknown }).status === "number"
-  )
+/** An HTTP error status with what the error body said. */
+class HttpFailure extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+    readonly code?: string
+  ) {
+    super(message)
+  }
 }
 
-/** Builds the transport over the kernel SDK. Every request carries the AD-19 headers. */
-export function createTransport(config: ApiClientConfig): Transport {
-  const sdk = new Medusa({
-    baseUrl: config.baseUrl,
-    publishableKey: config.publishableKey,
-    // The token is handed in per request from the caller's TokenStore; the SDK never stores it.
-    auth: { type: "jwt", jwtTokenStorageMethod: "nostore" },
-  })
+/** The kernel's URL for a path, joined the way the kernel SDK joins it (the base URL may have a path). */
+function kernelUrl(baseUrl: string, path: string): URL {
+  const base = new URL(baseUrl)
+  return new URL(`${base.pathname.replace(/\/$/, "")}/${path.replace(/^\//, "")}`, base.origin)
+}
 
+/**
+ * One kernel request: JSON in and out, with the publishable key. A non-2xx
+ * status throws `HttpFailure` carrying the error envelope's `message` and
+ * `code` (the kernel SDK's own fetch keeps only the message); a body that is
+ * not JSON throws SyntaxError.
+ */
+async function kernelFetch(
+  config: ApiClientConfig,
+  path: string,
+  init: { method: string; headers: Record<string, string>; signal: AbortSignal; body?: unknown }
+): Promise<unknown> {
+  const res = await fetch(kernelUrl(config.baseUrl, path), {
+    method: init.method,
+    signal: init.signal,
+    // Bearer tokens only, never cookies (where the runtime supports the option, as the kernel SDK does).
+    ...(typeof Request !== "undefined" && "credentials" in Request.prototype ? { credentials: "omit" as const } : {}),
+    headers: {
+      "content-type": "application/json",
+      accept: "application/json",
+      "x-publishable-api-key": config.publishableKey,
+      ...init.headers,
+    },
+    ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
+  })
+  if (res.status >= 300) {
+    const body = (await res.json().catch(() => ({}))) as { message?: unknown; code?: unknown }
+    throw new HttpFailure(
+      res.status,
+      typeof body.message === "string" ? body.message : res.statusText,
+      typeof body.code === "string" ? body.code : undefined
+    )
+  }
+  return res.json()
+}
+
+/**
+ * Builds the transport. Every request carries the AD-19 headers. The token is
+ * handed in per request from the caller's TokenStore and never stored here.
+ */
+export function createTransport(config: ApiClientConfig): Transport {
   return {
     async request(opts) {
       const headers: Record<string, string> = {
@@ -95,19 +135,19 @@ export function createTransport(config: ApiClientConfig): Transport {
       let raw: unknown
       try {
         raw = await Promise.race([
-          sdk.client.fetch<unknown>(opts.path, {
+          kernelFetch(config, opts.path, {
             method: opts.method,
             headers,
             signal,
-            ...(opts.body === undefined ? {} : { body: opts.body as Record<string, unknown> }),
+            ...(opts.body === undefined ? {} : { body: opts.body }),
           }),
           aborted,
         ])
       } catch (e) {
-        if (isHttpError(e)) {
+        if (e instanceof HttpFailure) {
           return {
             ok: false,
-            failure: { kind: "http", status: e.status, message: String(e.message ?? "") },
+            failure: { kind: "http", status: e.status, message: e.message, ...(e.code ? { code: e.code } : {}) },
           }
         }
         if (e instanceof SyntaxError) {

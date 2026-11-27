@@ -11,5 +11,7 @@ import type SettingsModuleService from "../../../../modules/settings/service"
 export async function GET(req: MedusaRequest, res: MedusaResponse<ShopPublicView>) {
   const settings = req.scope.resolve<SettingsModuleService>(SETTINGS_MODULE)
   const view = ShopPublicView.parse({ name: await settings.getValue("shop.name") })
+  // Public and the same for everyone; a rename shows within a minute.
+  res.set("Cache-Control", "public, max-age=60")
   res.json(view)
 }

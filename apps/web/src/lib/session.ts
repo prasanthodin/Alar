@@ -28,15 +28,33 @@ function cookieTokenStore(): TokenStore {
   }
 }
 
-/** An api-client for the current request. Server only. */
-export function api(options: { timeoutMs?: number } = {}) {
+type ClientOptions = { timeoutMs?: number }
+
+function client(tokenStore: TokenStore, options: ClientOptions) {
   return createApiClient({
     baseUrl: commerceBaseUrl(),
     publishableKey: publishableKey(),
     platform: "web",
     version: pkg.version,
     getLanguage: () => "en",
-    tokenStore: cookieTokenStore(),
-    ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
+    tokenStore,
+    ...(options.timeoutMs !== undefined ? { timeoutMs: options.timeoutMs } : {}),
   })
+}
+
+/** An api-client for the current request, with the Shopper's session cookie. Server only. */
+export function api(options: ClientOptions = {}) {
+  return client(cookieTokenStore(), options)
+}
+
+/** No session: for public, Shopper-independent reads that may be cached across requests. */
+const noSession: TokenStore = {
+  get: () => null,
+  set: () => {},
+  clear: () => {},
+}
+
+/** An anonymous api-client that never reads or writes cookies. Server only. */
+export function publicApi(options: ClientOptions = {}) {
+  return client(noSession, options)
 }

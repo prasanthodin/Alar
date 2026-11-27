@@ -2,7 +2,7 @@
 title: 'Story 1.5: Shop settings with dates, and one tax calculation'
 type: 'feature'
 created: '2026-11-27'
-status: 'in-review'
+status: 'done'
 baseline_commit: '24dc4153f91abaeef283057d13ae1107b7dfaa64'
 route: 'dispatch'
 review_loop_iteration: 0

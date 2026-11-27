@@ -96,28 +96,6 @@ export const SettingValue = z.object({
 })
 export type SettingValue = z.infer<typeof SettingValue>
 
-/**
- * The value in effect at `at`: the one whose effective time is the latest not
- * after `at`, or null when none is. Values may come in any order.
- */
-export function pickEffective<T extends { effectiveFrom: string | Date }>(
-  values: readonly T[],
-  at: Date
-): T | null {
-  const atMs = at.getTime()
-  let best: T | null = null
-  let bestMs = -Infinity
-  for (const v of values) {
-    const ms = new Date(v.effectiveFrom).getTime()
-    if (Number.isNaN(ms) || ms > atMs) continue
-    if (ms > bestMs) {
-      best = v
-      bestMs = ms
-    }
-  }
-  return best
-}
-
 /** What the website and app may know about the shop. Served by `GET /store/shop/settings`. */
 export const ShopPublicView = z.object({
   name: ShopName,
@@ -163,6 +141,8 @@ export function businessDate(at: Date, timeZone: string): BusinessDate {
 
 /** The date `days` calendar days after `date` (negative goes back). */
 export function addDays(date: BusinessDate, days: number): BusinessDate {
+  if (!BusinessDate.safeParse(date).success) throw new RangeError(`Not a calendar date: ${date}`)
+  if (!Number.isSafeInteger(days)) throw new RangeError(`days must be an integer, got ${days}`)
   const [y, m, d] = date.split("-").map(Number) as [number, number, number]
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10)
 }
