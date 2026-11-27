@@ -1,14 +1,14 @@
+import { ALL_CATEGORY_ID } from "@shop/api-client"
 import { ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { CategoryThumb, openCategory } from "../../src/components/category-rail"
-import { Skeleton } from "../../src/components/empty-state"
+import { ErrorState, Skeleton } from "../../src/components/empty-state"
+import { TextLink } from "../../src/components/text-link"
 import { Icon } from "../../src/components/icon"
 import { TopBar } from "../../src/components/top-bar"
 import { t } from "../../src/lib/i18n"
 import { useResult } from "../../src/lib/shop"
 import { colors, FLOATING_NAV_CLEARANCE, spacing, font } from "../../src/lib/theme"
-
-const ALL = "sarees"
 
 export default function Categories() {
   const insets = useSafeAreaInsets()
@@ -33,20 +33,20 @@ export default function Categories() {
             <Text style={font("h4")} accessibilityRole="header">
               {t("categories.department")}
             </Text>
-            <Text style={[font("body-sm", 600), { color: colors.primary }]} accessibilityRole="link" onPress={() => openCategory(ALL)}>
-              {t("common.viewAll")}
-            </Text>
+            <TextLink label={t("common.viewAll")} onPress={() => openCategory(ALL_CATEGORY_ID)} />
           </View>
           {categories.status === "ok" ? (
             <View style={styles.grid}>
               {categories.data
-                .filter((c) => c.id !== ALL)
+                .filter((c) => c.id !== ALL_CATEGORY_ID)
                 .map((c) => (
                   <View key={c.id} style={styles.cell}>
                     <CategoryThumb large tile={{ key: c.id, label: c.name, image: c.thumbnail, onPress: () => openCategory(c.id) }} />
                   </View>
                 ))}
             </View>
+          ) : categories.status === "error" ? (
+            <ErrorState code={categories.error.code} onRetry={categories.reload} />
           ) : (
             <Skeleton height={220} />
           )}

@@ -59,6 +59,8 @@ The script serves `apps/mobile/dist` and drives Chrome with Playwright at 390 ×
 
 The mock pictures are served by the dev server from `apps/mobile/public/mock`, at `http://<computer address>:8081/mock`. If they do not load (for example behind a tunnel), set `EXPO_PUBLIC_MOCK_ASSET_BASE_URL` to an address the phone can reach.
 
+A native build that runs without the dev server (a standalone APK, for example) has no address to load the pictures from, so `EXPO_PUBLIC_MOCK_ASSET_BASE_URL` is required there: set it to a URL that serves the files in `apps/mobile/public/mock`. Without it the app logs a warning and the pictures stay blank.
+
 The glass bars blur only on Android 12 and later. On older Android, when the system asks for reduced transparency, and on the floating bottom navigation (which has no blur target yet), they are solid white. Story 1.28 measures the cost of blur on a real mid-range phone.
 
 ## Checks

@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   tab: {
-    minHeight: spacing["touch-min"] - 8,
+    minHeight: spacing["touch-min"],
     justifyContent: "center",
     borderBottomWidth: 2,
     borderBottomColor: "transparent",

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { resolveMockAssetBaseUrl, resolveStoreName } from "./settings"
 
 describe("resolveStoreName", () => {
@@ -21,6 +21,13 @@ describe("resolveMockAssetBaseUrl", () => {
 
   it("uses /mock on the web", () => {
     expect(resolveMockAssetBaseUrl({ envValue: undefined, platform: "web", hostUri: "x:8081" })).toBe("/mock")
+  })
+
+  it("warns on a phone with no dev server and no env value", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    expect(resolveMockAssetBaseUrl({ envValue: undefined, platform: "android", hostUri: undefined })).toBe("/mock")
+    expect(warn).toHaveBeenCalledOnce()
+    warn.mockRestore()
   })
 
   it("uses the dev server on a phone", () => {

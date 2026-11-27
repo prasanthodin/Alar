@@ -18,15 +18,16 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { ActionBar } from "../../src/components/action-bar"
 import { Button } from "../../src/components/button"
-import { EmptyState, Skeleton } from "../../src/components/empty-state"
+import { EmptyState, ErrorState, Skeleton } from "../../src/components/empty-state"
 import { Icon, type IconName } from "../../src/components/icon"
 import { Photo, PhotoLabel, RatingChip } from "../../src/components/photo"
 import { PriceRow } from "../../src/components/price"
 import { PressableScale } from "../../src/components/pressable-scale"
+import { TextLink } from "../../src/components/text-link"
 import { TopBar } from "../../src/components/top-bar"
-import { errorText, t } from "../../src/lib/i18n"
+import { badgeCount, bagLabel, errorText, t } from "../../src/lib/i18n"
 import { useResult, useShop } from "../../src/lib/shop"
-import { colors, radii, sizes, spacing, font } from "../../src/lib/theme"
+import { colors, fontFamilies, radii, sizes, spacing, font } from "../../src/lib/theme"
 
 const GALLERY_MAX_HEIGHT = 400
 
@@ -36,14 +37,14 @@ function BagButton() {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={count > 0 ? t("nav.bagCount", { n: count }) : t("nav.bag")}
+      accessibilityLabel={bagLabel(count)}
       onPress={() => router.navigate("/bag")}
       style={styles.iconBtn}
     >
       <Icon name="bag" size={22} />
       {count > 0 ? (
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>{count}</Text>
+          <Text style={styles.badgeText}>{badgeCount(count)}</Text>
         </View>
       ) : null}
     </Pressable>
@@ -74,7 +75,9 @@ function Gallery({
 }) {
   const [index, setIndex] = useState(0)
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const next = Math.round(e.nativeEvent.contentOffset.x / width)
+    if (width <= 0) return
+    const raw = Math.round(e.nativeEvent.contentOffset.x / width)
+    const next = Math.min(Math.max(Number.isFinite(raw) ? raw : 0, 0), pages.length - 1)
     if (next !== index) setIndex(next)
   }
   // Photos are 4:5; the frame is capped so price and colours stay in view on a phone. Each photo is
@@ -84,6 +87,7 @@ function Gallery({
     <View>
       <ScrollView
         ref={scrollRef}
+        style={{ width }}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -128,22 +132,38 @@ function DesignPage({ design }: { design: DesignView }) {
   const variant = design.variants.find((v) => v.id === variantId) ?? design.variants[0]!
   const low = lowStockCount(variant.stock)
 
-  const pages = [
-    ...design.images.map((image) => ({ image, full: false })),
-    ...(design.fullView ? [{ image: design.fullView, full: true }] : []),
-  ]
+  // The gallery follows the chosen colour. The extra photos and the full view show the Design's
+  // main colour, so they appear only when that colour is chosen.
+  const mainColour = variant.swatch.url === design.images[0]!.url
+  const pages = mainColour
+    ? [
+        ...design.images.map((image) => ({ image, full: false })),
+        ...(design.fullView ? [{ image: design.fullView, full: true }] : []),
+      ]
+    : [{ image: variant.swatch, full: false }]
+  const hasFullView = pages.some((p) => p.full)
+  const [pending, setPending] = useState(false)
+  // The ref stops a second tap in the same frame, before the disabled state has rendered.
+  const inFlight = useRef(false)
 
   const add = async (then?: () => void) => {
-    const res = await addToBag(variant.id)
-    if (res.ok) {
-      setMessage({ tone: "ok", text: t("product.added") })
-      AccessibilityInfo.announceForAccessibility(t("product.added"))
-      then?.()
-    } else if (res.error.code === "input.invalid") {
-      setMessage({ tone: "error", text: t("product.stockLimit", { n: variant.stock }) })
-      then?.()
-    } else {
-      setMessage({ tone: "error", text: errorText(res.error.code) })
+    if (inFlight.current) return
+    inFlight.current = true
+    setPending(true)
+    try {
+      const res = await addToBag(variant.id)
+      if (res.ok) {
+        setMessage({ tone: "ok", text: t("product.added") })
+        AccessibilityInfo.announceForAccessibility(t("product.added"))
+        then?.()
+      } else if (res.error.code === "bag.stock_exceeded") {
+        setMessage({ tone: "error", text: t("product.stockLimit", { n: variant.stock }) })
+      } else {
+        setMessage({ tone: "error", text: errorText(res.error.code) })
+      }
+    } finally {
+      inFlight.current = false
+      setPending(false)
     }
   }
 
@@ -160,10 +180,10 @@ function DesignPage({ design }: { design: DesignView }) {
       <TopBar back trailing={<BagButton />} />
       <BlurTargetView ref={blurTarget} style={styles.flex}>
         <ScrollView contentContainerStyle={{ paddingBottom: 132 + insets.bottom }}>
-          <Gallery design={design} pages={pages} width={width} scrollRef={galleryRef} />
+          <Gallery key={variant.id} design={design} pages={pages} width={width} scrollRef={galleryRef} />
 
           <View style={styles.tiles}>
-            {design.fullView ? (
+            {hasFullView ? (
               <Tile
                 icon="expand"
                 label={t("product.fullSaree")}
@@ -254,9 +274,7 @@ function DesignPage({ design }: { design: DesignView }) {
               {message.text}
             </Text>
             {message.tone === "ok" ? (
-              <Text style={[font("caption", 700), { color: colors.primary }]} accessibilityRole="link" onPress={() => router.navigate("/bag")}>
-                {t("product.viewBag")}
-              </Text>
+              <TextLink size="caption" label={t("product.viewBag")} onPress={() => router.navigate("/bag")} />
             ) : null}
           </View>
         ) : null}
@@ -266,8 +284,14 @@ function DesignPage({ design }: { design: DesignView }) {
           </View>
         ) : (
           <View style={styles.buttons}>
-            <Button flex kind="outline" label={t("product.buyNow")} onPress={() => void add(() => router.navigate("/bag"))} />
-            <Button flex icon="bag" label={t("product.addToBag")} onPress={() => void add()} />
+            <Button
+              flex
+              kind="outline"
+              disabled={pending}
+              label={t("product.buyNow")}
+              onPress={() => void add(() => router.navigate("/bag"))}
+            />
+            <Button flex icon="bag" disabled={pending} label={t("product.addToBag")} onPress={() => void add()} />
           </View>
         )}
       </ActionBar>
@@ -300,7 +324,7 @@ export default function DesignScreen() {
           action={{ label: t("common.goHome"), onPress: () => router.navigate("/") }}
         />
       ) : (
-        <EmptyState icon="info" title={errorText(design.error.code)} body="" />
+        <ErrorState code={design.error.code} onRetry={design.reload} />
       )}
     </View>
   )
@@ -324,7 +348,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  badgeText: { fontFamily: "Inter_700Bold", fontSize: 10, lineHeight: 12, color: colors["on-primary"] },
+  badgeText: { fontFamily: fontFamilies.body700, fontSize: 10, lineHeight: 12, color: colors["on-primary"] },
   counter: {
     position: "absolute",
     right: spacing["3"],

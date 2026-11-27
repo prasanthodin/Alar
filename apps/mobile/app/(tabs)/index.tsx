@@ -1,21 +1,22 @@
-import { router } from "expo-router"
+import { ALL_CATEGORY_ID } from "@shop/api-client"
 import { useState } from "react"
 import { ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Banner } from "../../src/components/banner"
 import { CategoryRail, openCategory } from "../../src/components/category-rail"
-import { EmptyState, Skeleton } from "../../src/components/empty-state"
+import { ErrorState, Skeleton } from "../../src/components/empty-state"
 import { AddressBar, DepartmentTabs, ServiceStrip, type HomeTab } from "../../src/components/home-strips"
 import { ProductGrid } from "../../src/components/product-card"
 import { SearchBar } from "../../src/components/search-bar"
+import { TextLink } from "../../src/components/text-link"
 import { mockAssetBaseUrl } from "../../src/lib/config"
-import { errorText, t } from "../../src/lib/i18n"
+import { t } from "../../src/lib/i18n"
 import { useResult } from "../../src/lib/shop"
 import { colors, FLOATING_NAV_CLEARANCE, spacing, font } from "../../src/lib/theme"
 
 // While one department is live, the Home tabs show its top categories (EXPERIENCE.md).
 const TABS: HomeTab[] = [
-  { id: "sarees", label: "home.tab.all" },
+  { id: ALL_CATEGORY_ID, label: "home.tab.all" },
   { id: "silk", label: "home.tab.silk" },
   { id: "cotton", label: "home.tab.cotton" },
   { id: "wedding", label: "home.tab.wedding" },
@@ -42,6 +43,8 @@ export default function Home() {
       <View style={styles.section}>
         {categories.status === "ok" ? (
           <CategoryRail categories={categories.data} />
+        ) : categories.status === "error" ? (
+          <ErrorState code={categories.error.code} onRetry={categories.reload} />
         ) : (
           <View style={styles.gutter}>
             <Skeleton height={176} />
@@ -59,17 +62,15 @@ export default function Home() {
 
       <View style={[styles.gutter, styles.section, styles.head]}>
         <Text style={font("h3")} accessibilityRole="header">
-          {tab === "sarees" ? t("home.grid.all") : t("home.grid.category", { name: tabLabel })}
+          {tab === ALL_CATEGORY_ID ? t("home.grid.all") : t("home.grid.category", { name: tabLabel })}
         </Text>
-        <Text style={[font("body-sm", 600), { color: colors.primary }]} accessibilityRole="link" onPress={() => openCategory(tab)}>
-          {t("common.viewAll")}
-        </Text>
+        <TextLink label={t("common.viewAll")} onPress={() => openCategory(tab)} />
       </View>
       <View style={[styles.gutter, styles.gridWrap]}>
         {designs.status === "ok" ? (
           <ProductGrid designs={designs.data} />
         ) : designs.status === "error" ? (
-          <EmptyState icon="info" title={errorText(designs.error.code)} body="" action={{ label: t("common.retry"), onPress: () => router.replace("/") }} />
+          <ErrorState code={designs.error.code} onRetry={designs.reload} />
         ) : (
           <View style={styles.skeletonRow}>
             <View style={styles.flex}>

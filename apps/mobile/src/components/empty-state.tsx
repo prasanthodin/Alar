@@ -1,5 +1,7 @@
 import { StyleSheet, Text, View } from "react-native"
 import { colors, radii, spacing, font } from "../lib/theme"
+import type { ErrorCode } from "@shop/contracts"
+import { errorText, t } from "../lib/i18n"
 import { Button } from "./button"
 import { Icon, type IconName } from "./icon"
 
@@ -12,7 +14,7 @@ export function EmptyState({
 }: {
   icon: IconName
   title: string
-  body: string
+  body?: string
   action?: { label: string; onPress: () => void }
 }) {
   return (
@@ -23,13 +25,25 @@ export function EmptyState({
       <Text style={[font("h2"), styles.center]} accessibilityRole="header">
         {title}
       </Text>
-      <Text style={[font("body"), styles.body]}>{body}</Text>
+      {body ? <Text style={[font("body"), styles.body]}>{body}</Text> : null}
       {action ? (
         <View style={styles.action}>
           <Button label={action.label} onPress={action.onPress} />
         </View>
       ) : null}
     </View>
+  )
+}
+
+/** A failed call: what happened, and a button to try again. */
+export function ErrorState({ code, onRetry, title }: { code: ErrorCode; onRetry: () => void; title?: string }) {
+  return (
+    <EmptyState
+      icon="info"
+      title={title ?? errorText(code)}
+      body={title ? errorText(code) : undefined}
+      action={{ label: t("common.retry"), onPress: onRetry }}
+    />
   )
 }
 

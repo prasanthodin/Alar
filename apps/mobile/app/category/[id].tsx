@@ -3,13 +3,13 @@ import { router, useLocalSearchParams } from "expo-router"
 import { useState } from "react"
 import { ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { EmptyState, Skeleton } from "../../src/components/empty-state"
+import { EmptyState, ErrorState, Skeleton } from "../../src/components/empty-state"
 import { Glass } from "../../src/components/glass"
 import { Icon } from "../../src/components/icon"
 import { ProductGrid } from "../../src/components/product-card"
 import { PressableScale } from "../../src/components/pressable-scale"
 import { TopBar } from "../../src/components/top-bar"
-import { errorText, itemCount, t, type MessageKey } from "../../src/lib/i18n"
+import { itemCount, t, type MessageKey } from "../../src/lib/i18n"
 import { useResult } from "../../src/lib/shop"
 import { colors, radii, sizes, spacing, font } from "../../src/lib/theme"
 
@@ -28,6 +28,21 @@ export default function Listing() {
   const designs = useResult(`designs:${id}`, (api) => api.listDesigns({ categoryId: id }))
   const category = categories.status === "ok" ? categories.data.find((c) => c.id === id) : undefined
   const sorted = designs.status === "ok" ? [...designs.data].sort(SORTS[sort]!.order) : []
+  const unknown = categories.status === "ok" && !category
+
+  if (unknown) {
+    return (
+      <View style={styles.screen}>
+        <TopBar back />
+        <EmptyState
+          icon="search"
+          title={t("listing.notFound.title")}
+          body={t("listing.notFound.body")}
+          action={{ label: t("common.goHome"), onPress: () => router.navigate("/") }}
+        />
+      </View>
+    )
+  }
 
   return (
     <View style={styles.screen}>
@@ -50,7 +65,7 @@ export default function Listing() {
             />
           )
         ) : designs.status === "error" ? (
-          <EmptyState icon="info" title={errorText(designs.error.code)} body="" />
+          <ErrorState code={designs.error.code} onRetry={designs.reload} />
         ) : (
           <Skeleton height={260} />
         )}
@@ -64,8 +79,9 @@ export default function Listing() {
               accessibilityRole="button"
               accessibilityLabel={t(SORTS[sort]!.key)}
               onPress={() => {
-                setSort((s) => (s + 1) % SORTS.length)
-                setNote(t(SORTS[(sort + 1) % SORTS.length]!.key))
+                const next = (sort + 1) % SORTS.length
+                setSort(next)
+                setNote(t(SORTS[next]!.key))
               }}
               style={styles.barItem}
             >

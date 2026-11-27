@@ -21,3 +21,14 @@ describe("translation file", () => {
     }
   })
 })
+
+describe("bag labels", () => {
+  it("uses the singular for one item and caps the badge", async () => {
+    const { bagLabel, badgeCount } = await import("./i18n")
+    expect(bagLabel(0)).toBe("Bag")
+    expect(bagLabel(1)).toBe("Bag, 1 item")
+    expect(bagLabel(2)).toBe("Bag, 2 items")
+    expect(badgeCount(99)).toBe("99")
+    expect(badgeCount(100)).toBe("99+")
+  })
+})

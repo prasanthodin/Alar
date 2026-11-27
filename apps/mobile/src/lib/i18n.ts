@@ -21,3 +21,14 @@ export function errorText(code: ErrorCode): string {
 export function itemCount(n: number): string {
   return n === 1 ? t("common.item") : t("common.items", { n })
 }
+
+/** The accessible name of the Bag control: "Bag", "Bag, 1 item" or "Bag, N items". */
+export function bagLabel(n: number): string {
+  if (n <= 0) return t("nav.bag")
+  return n === 1 ? t("nav.bagCountOne") : t("nav.bagCount", { n })
+}
+
+/** The number inside a count badge, capped at "99+". */
+export function badgeCount(n: number): string {
+  return n > 99 ? "99+" : String(n)
+}

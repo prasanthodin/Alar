@@ -3,7 +3,7 @@ import { formatRupees, lowStockCount } from "@shop/contracts"
 import { router } from "expo-router"
 import { ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { EmptyState } from "../../src/components/empty-state"
+import { EmptyState, ErrorState, Skeleton } from "../../src/components/empty-state"
 import { Icon } from "../../src/components/icon"
 import { Photo } from "../../src/components/photo"
 import { PriceRow } from "../../src/components/price"
@@ -53,11 +53,34 @@ function Row({ label, value, tone, strong = false }: { label: string; value: str
 
 export default function Bag() {
   const insets = useSafeAreaInsets()
-  const { bag } = useShop()
+  const { bagState, reloadBag } = useShop()
+  const bottom = { paddingBottom: FLOATING_NAV_CLEARANCE + insets.bottom }
 
-  if (!bag || bag.count === 0) {
+  if (bagState.status === "loading") {
     return (
-      <View style={[styles.screen, { paddingBottom: FLOATING_NAV_CLEARANCE }]}>
+      <View style={[styles.screen, bottom]}>
+        <TopBar title={t("bag.title")} />
+        <View style={styles.summary}>
+          <Skeleton height={105} />
+          <Skeleton height={180} radius={radii.xl} />
+        </View>
+      </View>
+    )
+  }
+
+  if (bagState.status === "error") {
+    return (
+      <View style={[styles.screen, bottom]}>
+        <TopBar title={t("bag.title")} />
+        <ErrorState title={t("bag.error")} code={bagState.error.code} onRetry={reloadBag} />
+      </View>
+    )
+  }
+
+  const bag = bagState.data
+  if (bag.count === 0) {
+    return (
+      <View style={[styles.screen, bottom]}>
         <TopBar title={t("bag.title")} />
         <EmptyState
           icon="bag"

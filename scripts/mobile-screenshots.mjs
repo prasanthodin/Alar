@@ -31,12 +31,23 @@ const TYPES = {
   ".ico": "image/x-icon",
 }
 
-/** A static server with a single-page-app fallback to index.html. */
+/**
+ * A static server. Route paths (no file extension) fall back to index.html; a missing file
+ * is a 404, so a broken picture or font fails the run instead of hiding behind the page.
+ */
 function serve(dir) {
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost")
-    let file = path.join(dir, decodeURIComponent(url.pathname))
-    if (!file.startsWith(dir) || !existsSync(file) || statSync(file).isDirectory()) {
+    const pathname = decodeURIComponent(url.pathname)
+    let file = path.resolve(dir, `.${pathname}`)
+    const inside = file === dir || file.startsWith(dir + path.sep)
+    const isFile = inside && existsSync(file) && statSync(file).isFile()
+    if (!isFile) {
+      if (!inside || path.extname(pathname)) {
+        res.writeHead(404, { "content-type": "text/plain" })
+        res.end("Not found")
+        return
+      }
       file = path.join(dir, "index.html")
     }
     res.writeHead(200, { "content-type": TYPES[path.extname(file)] ?? "application/octet-stream" })
@@ -72,6 +83,12 @@ async function main() {
     })
     const page = await context.newPage()
     page.on("pageerror", (e) => errors.push(e.message))
+    page.on("response", (r) => {
+      if (["image", "font"].includes(r.request().resourceType()) && r.status() >= 400) errors.push(`${r.request().resourceType()} ${r.status()}: ${r.url()}`)
+    })
+    page.on("requestfailed", (r) => {
+      if (["image", "font"].includes(r.resourceType())) errors.push(`${r.resourceType()} failed: ${r.url()}`)
+    })
     // Tab and stack screens stay mounted when hidden (inert), so every lookup takes the live match.
     const visible = (locator) =>
       locator.and(page.locator(":not([inert], [inert] *)")).filter({ visible: true }).first()
@@ -92,7 +109,7 @@ async function main() {
     await shot("categories")
 
     await silk.click()
-    await visible(page.getByText("8 items").or(page.getByText(/^\d+ items$/))).waitFor()
+    await visible(page.getByText(/^\d+ items$/)).waitFor()
     await shot("listing-silk")
 
     await visible(page.getByRole("link", { name: /^Arani silk saree/ })).click()
@@ -110,7 +127,7 @@ async function main() {
     server.close()
   }
   if (errors.length > 0) {
-    console.error(`mobile-screenshots: the page threw:\n${errors.join("\n")}`)
+    console.error(`mobile-screenshots: the page threw or a picture failed:\n${errors.join("\n")}`)
     return 1
   }
   return 0

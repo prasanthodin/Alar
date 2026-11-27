@@ -1,9 +1,9 @@
 import type { BottomTabBarProps } from "expo-router/tabs"
 import { StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { t, type MessageKey } from "../lib/i18n"
+import { badgeCount, bagLabel, t, type MessageKey } from "../lib/i18n"
 import { useShop } from "../lib/shop"
-import { colors, radii, sizes, spacing, font } from "../lib/theme"
+import { colors, fontFamilies, radii, sizes, spacing, font } from "../lib/theme"
 import { Glass } from "./glass"
 import { Icon, type IconName } from "./icon"
 import { PressableScale } from "./pressable-scale"
@@ -30,7 +30,7 @@ export function GlassNav({ state, emitter, navigateToTab }: BottomTabBarProps) {
             if (!item) return null
             const active = state.index === index
             const label = t(item.label)
-            const a11y = route.name === "bag" && count > 0 ? t("nav.bagCount", { n: count }) : label
+            const a11y = route.name === "bag" ? bagLabel(count) : label
             return (
               <PressableScale
                 key={route.key}
@@ -58,7 +58,7 @@ export function GlassNav({ state, emitter, navigateToTab }: BottomTabBarProps) {
                 )}
                 {route.name === "bag" && count > 0 ? (
                   <View style={[styles.badge, active ? styles.badgeActive : null]}>
-                    <Text style={styles.badgeText}>{count}</Text>
+                    <Text style={styles.badgeText}>{badgeCount(count)}</Text>
                   </View>
                 ) : null}
               </PressableScale>
@@ -100,5 +100,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   badgeActive: { top: 2, marginLeft: 22 },
-  badgeText: { fontFamily: "Inter_700Bold", fontSize: 10, lineHeight: 12, color: colors["on-primary"] },
+  badgeText: { fontFamily: fontFamilies.body700, fontSize: 10, lineHeight: 12, color: colors["on-primary"] },
 })

@@ -28,7 +28,7 @@ export function Button({
       disabled={disabled}
       onPress={onPress}
       outerStyle={flex ? styles.flex : undefined}
-      hitSlop={(spacing["touch-min"] - sizes.button) / 2}
+      hitSlop={Math.max(0, (spacing["touch-min"] - sizes.button) / 2)}
       style={[styles.base, disabled ? styles.disabled : styles[kind]]}
     >
       <View style={styles.inner}>

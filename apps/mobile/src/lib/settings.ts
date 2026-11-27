@@ -17,6 +17,13 @@ export function resolveMockAssetBaseUrl(opts: {
 }): string {
   const fromEnv = opts.envValue?.trim()
   if (fromEnv) return fromEnv.replace(/\/+$/, "")
-  if (opts.platform === "web" || !opts.hostUri) return "/mock"
+  if (opts.platform === "web") return "/mock"
+  if (!opts.hostUri) {
+    // A native build without a dev server has nothing to resolve a relative URL against.
+    console.warn(
+      "EXPO_PUBLIC_MOCK_ASSET_BASE_URL is not set and there is no dev server: mock pictures will not load."
+    )
+    return "/mock"
+  }
   return `http://${opts.hostUri.replace(/\/+$/, "")}/mock`
 }
