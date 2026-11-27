@@ -55,6 +55,11 @@ clothing later.
   photo is processed by AI models, and must accept the terms and conditions.
   (The founder's dictated words were "process emails"; read here as the
   shopper's images. To confirm.)
+- Sarees come directly from weaver families. The founder names this as the
+  main difference from other apps.
+- The founder builds the product alone using cloud AI agents; a team comes
+  later.
+- App name: Alar. It may change, so the product must make renaming easy.
 
 ## AI controls the admin must have (founder, 2026-11-27)
 - Image-model routing is admin-managed: which model serves try-on, with the
