@@ -2,7 +2,8 @@
 title: 'Story 1.4: Route allow-list for the kernel'
 type: 'feature'
 created: '2026-11-27'
-status: 'ready-for-dev'
+status: 'in-progress'
+baseline_commit: 'b30f8a884d443b504b01e77f21649f73c843082f'
 route: 'dispatch'
 review_loop_iteration: 0
 context:
