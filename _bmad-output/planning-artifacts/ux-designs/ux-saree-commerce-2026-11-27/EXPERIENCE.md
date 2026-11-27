@@ -31,7 +31,7 @@ sources:
 
 ### Navigation
 
-- **App and mobile web:** a floating bottom navigation with four items: **Home, Categories, Try-on, Bag**. Profile, Wishlist and Notifications are reached from the Home top bar. Screens with a purchase or confirm action hide the navigation and show a bottom action bar.
+- **App and mobile web:** a floating bottom navigation with four items: **Home, Categories, Try-on, Bag**. The current item is a tinted pill with its icon and name; the others are icons with accessible names. Profile, Wishlist and Notifications are reached from the Home top bar. Screens with a purchase or confirm action hide the navigation and show a bottom action bar.
 - **Website from 1024px:** a top bar with the wordmark, departments (Women, Men, Kids, Offers, Try-on), search, and Profile, Wishlist, Bag. No bottom navigation.
 - **Admin:** a left sidebar: Dashboard, Products, Categories, Stock, Orders, Returns, Customers, App content, AI try-on, Offers, Settings.
 
@@ -79,7 +79,7 @@ Surfaces not drawn and built from this file alone: the full-screen photo gallery
 
 ### Admin surfaces
 
-The architecture has two Admins (commerce, and content). The boards show one console in the Alar look. `[ASSUMPTION: both are themed to match and linked from one sidebar; whether to build a single shell is decided before the Admin epic.]`
+The architecture has two Admins (commerce, and content). The boards show one console in the Alar look. **Decided (founder, 2026-11-27):** build two Admins, both themed in the Alar colours and linked to each other from the sidebar. The boards are the target for content, wording and layout of each page; a pixel match to one shared shell is not required at launch.
 
 | Surface | Board | Purpose |
 |---|---|---|
@@ -321,11 +321,10 @@ The boards were first drawn with 14 things the PRD did not contain. The founder 
 | 13 | Birthday and marketing choices | **Marketing choice in, unticked. Birthday out** | The marketing choice is needed by law before any offer message; a birthday is data with no use yet | FR-54 |
 | 14 | Men and Kids tabs on Home | **Hidden until a second department is live** | An empty tab is a dead end; the tabs appear by themselves when menswear is published | FR-65 |
 
-Known difference: the `Main` and `Categories` boards still show Women, Men and Kids. Build per item 14.
+While only one department is live, the Home tabs show its top categories (All, Silk, Cotton, Wedding) and the website bar shows Sarees, Silk, Cotton, Wedding, Offers, Try-on. When a second department is published, the tabs become departments.
 
 ## Open items
 
-- One Admin shell or two themed Admins (see Admin surfaces).
 - Dark theme: not designed.
 - Numbers shown on the boards are examples and become Owner settings: try-ons per day, AI spend limits, photo retention, code lifetime, return window.
 - The wording of the try-on notice, the legal pages and the dated legal values are drafts for a lawyer and an accountant (see `docs/legal/`).

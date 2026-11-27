@@ -225,7 +225,8 @@ components:
     height: 56px
   bottom-nav:
     height: 56px
-    radius: '{rounded.2xl}'
+    radius: '{rounded.full}'
+    active-pill-height: 40px
     inset: 16px
     bottom: 12px
   action-bar:
@@ -416,7 +417,7 @@ Visual specification only. Behaviour is in `EXPERIENCE.md`.
 | **Note** | `{rounded.md}`, 10 × 12px padding, a 16px icon and `caption` text. Lavender for information, green for reassurance, amber for a warning, red for a problem. |
 | **Offer and coupon** | Coupon code in a dashed `tint-4` box on `tint-1`, `price` text with wide tracking. |
 | **Top bar** | 56px, white, hairline beneath; a 44px back target, `h3` title with an optional `caption` line, one trailing item. |
-| **Bottom navigation** | Floating, 56px, `{rounded.2xl}`, glass. Four items: Home, Categories, Try-on, Bag. 20px icon over a `label`; the active item is `primary`. |
+| **Bottom navigation** | Floating, 56px, fully rounded, glass. Four items: Home, Categories, Try-on, Bag. The current item is a 40px `tint-2` pill holding a 20px icon and its name in `primary-text` (13px, 600); the others are 22px icons in `text-muted`. |
 | **Bottom action bar** | Full width, glass, 8px top and 12px bottom padding, one or two 40px buttons; a total and a saving line may sit at the left. |
 | **Step indicator** | 20px numbered dots joined by a 1px line; done is `primary` with a tick, current is `text`, to come is outlined. |
 | **Order timeline** | 18px dots joined by a 2px line; done filled `primary`, current ringed, to come grey. |

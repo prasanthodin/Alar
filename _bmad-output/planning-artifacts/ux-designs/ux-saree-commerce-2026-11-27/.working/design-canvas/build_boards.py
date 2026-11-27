@@ -156,6 +156,19 @@ def toggle(on=True):
     return f'<span style="width: 36px; height: 20px; border-radius: 999px; background: {bg}; display: inline-flex; align-items: center; justify-content: {j}; padding: 2px; box-sizing: border-box; flex-shrink: 0"><span style="width: 16px; height: 16px; border-radius: 999px; background: #FFFFFF"></span></span>'
 
 
+ICON['grid'] = '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>'
+
+
+def nav(active):
+    out = f'<nav aria-label="Main" style="position: absolute; left: 16px; right: 16px; bottom: 12px; height: 56px; box-sizing: border-box; padding: 0 8px; display: flex; justify-content: space-around; align-items: center; border-radius: 999px; background: rgba(255, 255, 255, 0.74); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); border: 1px solid rgba(220, 211, 255, 0.95)">'
+    for i, t, f in [('home', 'Home', 'Main'), ('grid', 'Categories', 'Categories'), ('spark', 'Try-on', 'TryOnHub'), ('bag', 'Bag', 'Bag')]:
+        if t == active:
+            out += f'<a href="{f}.dc.html" style="display: flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 16px; border-radius: 999px; background: {T1}; color: {PD}; font-size: 13px; font-weight: 600; text-decoration: none">{ic(i, 20, 2)}{t}</a>'
+        else:
+            out += f'<a href="{f}.dc.html" aria-label="{t}" style="display: flex; align-items: center; justify-content: center; width: 48px; height: 40px; color: {MUTE}; text-decoration: none">{ic(i, 22, 2)}</a>'
+    return out + '</nav>'
+
+
 boards = {}
 
 # ------------------------------------------------------------------ Onboarding
@@ -367,7 +380,7 @@ boards['Orders'] = ('Alar orders', 390, 1010, phone(1010, hdr('My orders', 'Main
     {order('emerald', 'DELIVERED', 'green', 'Delivered on 12 Nov', 'Kanchipuram silk saree', 'AL-2611-00287', sbtn('Rate') + sbtn('Return or exchange') + sbtn('Invoice'))}
     {order('peacock', 'REFUNDED', 'grey', 'Refund of ₹2,400 sent on 2 Nov', 'Soft silk saree', 'AL-2610-00193', sbtn('View details') + sbtn('Buy again'))}
     {order('mustard', 'DELIVERED', 'green', 'Delivered on 18 Oct', 'Chettinad cotton saree', 'AL-2610-00102', sbtn('Rate') + sbtn('Invoice'))}
-  </div>''' + NAV, PAGE))
+  </div>''' + nav(''), PAGE))
 
 # ------------------------------------------------------------------ Order detail
 def tl(t, s, state, last=False):
@@ -697,6 +710,7 @@ B.update(c_silk='ffb3625dfed5ea5fc5c7788b667bf42e', c_cotton='9a328687a71646d20a
          c_festive='cb04510b38a85031edc1ead5f9db4631', c_newin='c9689231ca6b9fbf6e7dce69f5e6e74a', c_under='2f4bea15f6858c6a5d7f1d69490b5729',
          c_shirts='85d092fb33eeae4b036a7fbdeb8da23d', c_dhotis='cfc24db4dcc295e18f7bcf81cfa9429c')
 ICON.update(
+    grid='<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>',
     clock='<circle cx="12" cy="12" r="8.500"/><path d="M12 7.500V12l3 2"/>',
     star='<path d="M12 3l2.700 5.800 6.300.800-4.600 4.300 1.200 6.200L12 17l-5.600 3.100 1.200-6.200L3 9.600l6.300-.800z"/>',
     user='<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>',
@@ -707,14 +721,6 @@ ICON.update(
     alert='<path d="M12 4l9 16H3z"/><path d="M12 10v4.500M12 17.500v.100"/>', edit='<path d="M4 20h4L19 9l-4-4L4 16z"/>',
 )
 SEP = f'<span style="height: 1px; background: {LINE}"></span>'
-
-
-def nav(active):
-    out = f'<nav style="position: absolute; left: 16px; right: 16px; bottom: 12px; height: 56px; border-radius: 20px; {GLASS}; border: 1px solid rgba(231, 227, 245, 0.95); display: grid; grid-template-columns: repeat(4, 1fr); align-items: center">'
-    for i, t in [('home', 'Home'), ('layout', 'Categories'), ('spark', 'Try-on'), ('bag', 'Bag')]:
-        on = t == active
-        out += f'<span style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; font-weight: {700 if on else 600}; color: {P if on else MUTE}">{ic(i, 20, 2.200 if on else 1.800)}{t}</span>'
-    return out + '</nav>'
 
 
 def check(t, on=False, count=''):
@@ -761,12 +767,12 @@ def ctile(k, t, soon=False):
 
 boards['Categories'] = ('Alar categories', 390, 844, phone(844, hdr('Categories', 'Main.dc.html', ic('search', 20, 2, INK)) + f'''
   <div style="flex: 1; min-height: 0; display: flex">
-    <div style="width: 84px; flex-shrink: 0; background: {T4}; display: flex; flex-direction: column">{rail('Women', 'user', True)}{rail('Men', 'user')}{rail('Kids', 'user')}{rail('Offers', 'tag')}{rail('Try-on', 'spark')}</div>
+    <div style="width: 84px; flex-shrink: 0; background: {T4}; display: flex; flex-direction: column">{rail('Sarees', 'grid', True)}{rail('New in', 'star')}{rail('Offers', 'tag')}{rail('Try-on', 'spark')}</div>
     <div style="flex: 1; min-width: 0; padding: 16px 12px; display: flex; flex-direction: column; gap: 14px">
       <div style="display: flex; align-items: center; justify-content: space-between">{h2('Sarees', 14)}<a href="Listing.dc.html" style="font-size: 13px; font-weight: 600; text-decoration: none">View all</a></div>
       <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 8px">{ctile('c_silk', 'Silk')}{ctile('c_cotton', 'Cotton')}{ctile('c_wedding', 'Wedding')}{ctile('c_festive', 'Festive')}{ctile('c_newin', 'New in')}{ctile('c_under', 'Under ₹2,500')}</div>
-      {SEP}{h2('More for women', 14)}
-      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 8px">{ctile('c_sarees', 'Blouses', True)}{ctile('c_under', 'Kurtas', True)}{ctile('c_newin', 'Dupattas', True)}</div>
+      {SEP}{h2('Shop by occasion', 14)}
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 8px">{ctile('c_wedding', 'Wedding')}{ctile('c_festive', 'Festive')}{ctile('c_cotton', 'Daily wear')}</div>
     </div>
   </div>''' + nav('Categories')))
 
@@ -1008,7 +1014,7 @@ boards['Review'] = ('Alar rate and review', 390, 844, phone(844, hdr('Rate this 
 def webnav():
     return f'''<div style="height: 32px; background: {T1}; color: {PD}; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 24px"><span>Free delivery across South India</span><span>7 days easy return</span><span>Try any saree on your own photo</span></div>
   <div style="height: 64px; padding: 0 48px; display: flex; align-items: center; gap: 32px; border-bottom: 1px solid {LINE}; background: #FFFFFF">{logo(26)}
-    <span style="display: flex; gap: 24px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em"><span style="color: {P}">WOMEN</span><span>MEN</span><span>KIDS</span><span>OFFERS</span><span style="display: inline-flex; align-items: center; gap: 4px; color: {PD}">{ic('spark', 14, 2.400)}TRY-ON</span></span>
+    <span style="display: flex; gap: 24px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em"><span style="color: {P}">SAREES</span><span>SILK</span><span>COTTON</span><span>WEDDING</span><span>OFFERS</span><span style="display: inline-flex; align-items: center; gap: 4px; color: {PD}">{ic('spark', 14, 2.400)}TRY-ON</span></span>
     <span style="flex: 1; max-width: 480px; margin-left: auto; display: flex; align-items: center; gap: 8px; height: 40px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; border: 1px solid {T2}; font-size: 14px; color: #9B97AD">{ic('search', 18, 2, MUTE)}Search for sarees, shirts and more</span>
     <span style="display: flex; gap: 24px; font-size: 12px; font-weight: 600">''' + ''.join(f'<span style="display: flex; flex-direction: column; align-items: center; gap: 2px">{ic(i, 20, 1.800)}{t}</span>' for i, t in [('user', 'Profile'), ('heart', 'Wishlist'), ('bag', 'Bag')]) + '</span></div>'
 
@@ -1044,7 +1050,7 @@ def gal(k, pos='center top', blob=''):
 boards['WebProduct'] = ('Alar website product', 1440, 1020, f'''<div style="width: 1440px; height: 1020px; box-sizing: border-box; overflow: hidden; background: #FFFFFF; color: {INK}; {BODY}; display: flex; flex-direction: column">
   {webnav()}
   <div style="padding: 16px 48px 0; display: flex; flex-direction: column; gap: 16px">
-    <span style="font-size: 13px; color: {MUTE}">Home › Women › Sarees › Silk › <strong style="color: {INK}; font-weight: 600">Arani silk saree</strong></span>
+    <span style="font-size: 13px; color: {MUTE}">Home › Sarees › Silk › <strong style="color: {INK}; font-weight: 600">Arani silk saree</strong></span>
     <div style="display: grid; grid-template-columns: minmax(0, 1.350fr) minmax(0, 1fr); gap: 40px">
       <div style="display: flex; flex-direction: column; gap: 12px"><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">{gal('maroon')}{gal('maroon', 'center 85%')}</div>
         <a href="FullSaree.dc.html" style="height: 320px; border-radius: 10px; overflow: hidden; position: relative; background: {GROUND}; display: block"><img src="/_blob/5ad786513b9724fe51ec5dfd3729c532" alt="Mockup image of the whole saree laid flat" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block"><span style="position: absolute; left: 12px; top: 12px; height: 32px; padding: 0 12px; border-radius: 8px; background: #FFFFFF; border: 1px solid {LINE}; color: {INK}; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px">{ic('search', 16, 2, P)}Full saree · scroll to zoom, drag to move</span></a></div>
@@ -1162,7 +1168,7 @@ boards['AdminCategories'] = ('Alar admin categories', 1440, 900, admin('Categori
         attr('Blouse piece', 'Yes or no', 'Attached, colour', True, False)], ['1fr', '0.900fr', '2.400fr', '0.600fr', '0.500fr']), gap=10)}
       {acard(h2('How this category sells', 14) + f'<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 24px">{tog("Has sizes", False, "Sarees: colour only. Shirts: colour and size.")}{tog("Full-length zoom view", True, "Needs a 21:9 flat photo")}{tog("AI try-on allowed", True, "Uses the saree prompt")}{tog("Size chart on the page", False)}</div>', gap=6)}
     </div>
-    {acard(h2('Category page', 14) + afield('Name shown', 'Sarees') + afield('Web address', '/women/sarees') + f'<span style="font-size: 12px; font-weight: 600">Thumbnail</span><span style="width: 96px; height: 116px; border-radius: 16px; overflow: hidden; position: relative; background: {T1}; display: block">{img("c_sarees", "center")}</span>' + afield('Tax band', 'Saree (fabric) 5%', sel=True) + afield('Sort by default', 'Newest first', sel=True) + afield('Return window', 'Store default (7 days)', sel=True) + tog('Show in the app', True), gap=10)}
+    {acard(h2('Category page', 14) + afield('Name shown', 'Sarees') + afield('Web address', '/sarees') + f'<span style="font-size: 12px; font-weight: 600">Thumbnail</span><span style="width: 96px; height: 116px; border-radius: 16px; overflow: hidden; position: relative; background: {T1}; display: block">{img("c_sarees", "center")}</span>' + afield('Tax band', 'Saree (fabric) 5%', sel=True) + afield('Sort by default', 'Newest first', sel=True) + afield('Return window', 'Store default (7 days)', sel=True) + tog('Show in the app', True), gap=10)}
   </div>'''))
 
 boards['AdminAIReports'] = ('Alar admin AI reports', 1440, 900, admin('AI try-on', 'AI try-on controls', abtn('Save changes', 'primary'), f'''
@@ -1344,7 +1350,7 @@ def wc(t, on=False, n=''):
 
 boards['WebListing'] = webpage('Alar website listing', 1060, f'''
   <div style="padding: 16px 48px 0; display: flex; flex-direction: column; gap: 12px">
-    <span style="font-size: 13px; color: {MUTE}">Home › Women › <strong style="color: {INK}; font-weight: 600">Silk sarees</strong></span>
+    <span style="font-size: 13px; color: {MUTE}">Home › Sarees › <strong style="color: {INK}; font-weight: 600">Silk sarees</strong></span>
     <div style="display: flex; align-items: center; gap: 12px"><h1 style="margin: 0; {HF}; font-size: 22px; line-height: 28px; font-weight: 800">Silk sarees</h1><span style="font-size: 13px; color: {MUTE}">73 items</span><span style="margin-left: auto; display: flex; gap: 8px; align-items: center">{chip('Pure silk ×')}{chip('Soft silk ×')}{chip('Maroon ×')}<span style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid {T2}; font-size: 13px">Sort by: <strong style="font-weight: 700">Newest first</strong><span style="transform: rotate(90deg); display: inline-flex; color: {MUTE}">{ic("right", 14, 2.400)}</span></span></span></div>
     <div style="display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 32px">
       <div style="display: flex; flex-direction: column; gap: 4px">
