@@ -7577,3 +7577,10 @@ The PRD was updated on 2026-11-27 after the founder's design decisions. The stor
 | New Shopper features: Buy now, similar products, public star rating, offer card. | FR-61, FR-62, FR-63, FR-64 | New stories needed in Epic 2 (similar products, offer card), Epic 3 (Buy now, public rating); Epic 6 mirrors them |
 | Compact sizing and the reference layout. | NFR-18, PRD §7a | Every Shopper-facing story, through DESIGN.md |
 | Blocks at launch now include banner carousel, category tabs, category thumbnail row and service strip. | FR-30 | Epic 5: the draft and Blocks stories; Epic 6: server-driven screens |
+| Sign-in also by email code (not Google); a Shopper who signed in by email proves a mobile number before her first Order. Admin second factor is a code by email and SMS. | FR-26, FR-60 | Epic 3: sign-in stories; Epic 1 or 7: Admin sign-in; Epic 6 mirrors them. Needs an email-code adapter alongside the SMS one |
+| Wishlist. | FR-66 (new) | New stories: Epic 3 (wishlist data and screens), Epic 6 (app) |
+| Shopper-visible coupon list in the Cart; one code per Order. | FR-58 | Epic 3: discount and Cart stories |
+| Push notifications for Order events and Try-on ready, with a Notifications screen; permission asked after the first Order or Try-on. | FR-54, section 6.2 | Epic 6: new push story; Epic 3 and 4: message jobs gain a push channel |
+| True low-stock count at or below the Owner's level; free delivery as the launch shipping rule. | FR-3, FR-56 | Epic 2: Design page; Epic 3: Cart and shop settings |
+| Rating may carry ready-made tags and a private note to the Owner. | FR-63 | Epic 3: rating story |
+| Stated as out of the first version: exchange, WhatsApp, marketing push, tell-me-when-back, onboarding slides, third-party sign-in, staff roles, written public reviews. | section 6.2 | None; the boards for these are kept in the "later version" row of the canvas |

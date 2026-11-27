@@ -148,3 +148,15 @@ read in full; verify before the architecture relies on them):
 - Admin needs web-page designs for everything it manages; drawn on the design
   canvas (dashboard, products, variants and stock, orders, AI try-on controls,
   app content, customers and staff).
+
+## Sign-in clarified and first-release scope (2026-11-27)
+
+- "Gmail with OTP" meant: the shopper gives an email address and gets a
+  one-time code there. Not Google single sign-on.
+- The founder asked for recommendations on everything undecided. Chosen:
+  mobile code first with email code as the second way; wishlist, coupon list,
+  order and try-on push notifications, true low-stock count and free delivery
+  are in; written reviews, exchange, WhatsApp, "tell me when it is back" and
+  staff roles are for later; onboarding slides are dropped. Full table in
+  EXPERIENCE.md, "First-release scope decisions".
+- Aim restated: the app should look solid and modern and be easy to use.

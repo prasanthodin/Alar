@@ -102,6 +102,7 @@ A Shopper can open a Design and see its photos, price, description, attributes, 
 - At least one photo is a close-up of the fabric, and the page says colours can look slightly different on different screens.
 - The page shows the maker's name and address, a consumer-care contact, and the return, refund, delivery and payment terms.
 - Entry points to the Full saree view and Try-on are visible without scrolling on a phone. `[ASSUMPTION]`
+- When the Pieces in stock of the chosen Variant are at or below a level the Owner sets (3 at launch), the page and the Cart say how many are left. The number is always the true count; no other stock or viewer count is shown (NFR-13).
 
 #### FR-4: Weaver records, Admin only
 Every Design is linked to the Weaver who made it, for the Owner's own records. Shoppers are not shown who wove a Design.
@@ -274,7 +275,9 @@ After delivery, a Shopper is asked to rate from 1 to 5 whether the saree matched
 **Description:** Minimal accounts, and the rights the app stores and Indian law give Shoppers.
 
 #### FR-26: Sign in
-A Shopper can sign in with her mobile number and a one-time code. `[ASSUMPTION]`
+A Shopper can sign in with her mobile number and a one-time code sent by SMS, or with her email address and a one-time code sent by email.
+- Email sign-in is offered beside mobile sign-in, for when an SMS does not arrive. It is not sign-in through a third party such as Google. (Founder, 2026-11-27.)
+- A Shopper who signed in by email gives and proves a mobile number before her first Order, because delivery needs it.
 - Sign-in is required only for Try-on, checkout and order history; browsing never requires it.
 - A code expires after 5 minutes; no more than 3 codes are sent to a number in 10 minutes. `[ASSUMPTION]`
 - At first sign-in the Shopper accepts the terms of use and privacy policy; the version and time are recorded. This is separate from Try-on consent (FR-8).
@@ -297,7 +300,9 @@ The website and app show Alar's legal name, address, contact details and grievan
 #### FR-54: Messages
 A Shopper is told about each event that concerns her, and the Owner about each event that needs action.
 - Shopper events: sign-in code, Order confirmed (with invoice), dispatched, out for delivery, delivered, delivery failed, Return state changes, refund started, payment refunded automatically, Try-on result ready, complaint acknowledged and resolved.
-- Shopper messages go by SMS, and by email when she has given one; the invoice can also be downloaded from her order history. A Try-on result ready is shown in the app. `[ASSUMPTION: channels]`
+- Shopper messages go by SMS, and by email when she has given one; the invoice can also be downloaded from her order history.
+- In the app, Order events and "Try-on result ready" are also sent as a push notification when the Shopper has allowed notifications, and are listed on a Notifications screen. The app asks for that permission only after her first Order or first Try-on, never at launch. `[ASSUMPTION]`
+- WhatsApp messages, price-drop and reminder messages are not in the first version.
 - Owner alerts (NFR-9) go by email and SMS. `[ASSUMPTION]`
 - No marketing message is sent without the Shopper's separate agreement.
 
@@ -360,7 +365,8 @@ The Owner can describe a Design as silk, handloom or by a protected regional nam
 - Such a claim cannot be published while its evidence field is empty.
 
 #### FR-56: Shop settings
-The Owner can set the delivery region, the shipping charge rule, the return period and conditions, and the Try-on limits.
+The Owner can set the delivery region, the shipping charge rule, the return period and conditions, the low-stock level (FR-3) and the Try-on limits.
+- At launch the shipping charge rule is "free on every Order"; the rule can later be changed to a charge below an Order value. `[ASSUMPTION]`
 - The delivery region is a list of states or pincodes. At launch: Tamil Nadu, Kerala, Karnataka, Andhra Pradesh, Telangana and Puducherry. `[ASSUMPTION]`
 - A change takes effect without a release and is recorded with who made it and when.
 
@@ -379,7 +385,7 @@ A Design page shows other Designs like the one being viewed.
 #### FR-63: Public rating
 A Design shows the average of its "did it match" ratings (FR-53) and how many there are.
 - The rating appears only once a Design has at least 5 ratings. `[ASSUMPTION]`
-- Only Shoppers who received the Design can rate it; there are no written public reviews in the first version.
+- Only Shoppers who received the Design can rate it; there are no written public reviews in the first version. With her rating a Shopper may pick ready-made tags (such as "colour as shown") and write a note that only the Owner reads.
 
 #### FR-64: Offer card
 A Design page can show one current offer, such as a first-order code, with the price after the offer.
@@ -389,11 +395,19 @@ A Design page can show one current offer, such as a first-order code, with the p
 The Owner can organise Designs into departments (such as Women, Men, Kids) and categories within them, each with a name and thumbnail, and choose which appear to Shoppers.
 - A department or category with no published Designs is not shown.
 - At launch only saree categories are shown; adding menswear later needs no release.
+- Department tabs appear on Home only when more than one department is shown.
+
+#### FR-66: Wishlist
+A signed-in Shopper can save a Design to a wishlist and see her saved Designs in one place.
+- Saving and removing take one tap from a Design card or a Design page; a Shopper who is not signed in is asked to sign in and the save then completes.
+- From the wishlist she can move a Design to the Cart. A sold-out Design stays in the list, marked Sold out.
+- The wishlist is the same on her other devices and is erased with her account (FR-27).
 
 #### FR-58: Discounts
 The Owner can create a discount as a percentage or an amount, for chosen Designs, between two dates, applied automatically or by a code.
 - A discounted price is still a whole rupee, and tax is worked out again from it.
 - The discount is shown as FR-5 requires.
+- In the Cart a Shopper can see the codes she can use and, for one she cannot use yet, what is missing. One code applies to an Order.
 
 #### FR-59: Notices, policies and translations
 The Owner can edit the Try-on consent notice, the terms, the policies, the disclosures and their translations, each as a numbered version.
@@ -471,7 +485,7 @@ The Owner can look up a Shopper by mobile number or Order number and see her Ord
 The Owner can add another person to the Admin and limit what that person can do.
 
 #### FR-60: Admin sign-in
-The Owner signs in to the Admin with a password and a second factor.
+The Owner signs in to the Admin with a password and a second factor. At launch the second factor is a one-time code sent to the Owner's email and mobile number, asked for at every sign-in.
 - Five wrong attempts lock the account for 15 minutes. `[ASSUMPTION]`
 - A lost second factor is recovered only through a documented process that the Owner has rehearsed.
 - Every Admin action is recorded against a named account, so that staff accounts can be added later without redesign.
@@ -498,9 +512,12 @@ The Owner signs in to the Admin with a password and a second factor.
 
 - Cash on delivery. Designed for, switched off.
 - iOS app. `[ASSUMPTION: follows once Android is stable; see Open Question 9]`
-- A notifications inbox in the app. Order updates go by SMS and email (FR-54).
 - Written public reviews; only the star rating of FR-63 is shown.
 - Staff accounts (FR-50). One Owner at launch; FR-60 keeps the door open.
+- Exchange for another colour or size; a Shopper returns and orders again.
+- WhatsApp messages; marketing push messages; "tell me when it is back".
+- Onboarding slides; the app opens on Home.
+- Sign-in through Google or another third party.
 - Other clothing categories. The Variant model is ready for them.
 - Try-on for under-18s.
 - Regions beyond South India.

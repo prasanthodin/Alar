@@ -185,8 +185,8 @@ boards['Login'] = ('Alar login', 390, 844, phone(844, f'''
     {field('Mobile number', '98400 12345', pre='+91', hint='We will send a 6-digit code by SMS to check it is you.')}
     {btn('Get OTP', href='Otp.dc.html')}
     <div style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: {MUTE}"><span style="flex: 1; height: 1px; background: {LINE}"></span>or<span style="flex: 1; height: 1px; background: {LINE}"></span></div>
-    <a href="Otp.dc.html" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 40px; border-radius: 8px; background: #FFFFFF; border: 1px solid {T2}; color: {INK}; font-size: 14px; font-weight: 600; text-decoration: none">{GOOGLE}Continue with Google</a>
-    <div style="display: flex; gap: 10px; padding: 12px; border-radius: 10px; background: {T4}; color: {MUTE}; font-size: 12px; line-height: 18px">{ic('shield', 18, 2, P)}<span>With Google we take your name and email, then confirm your mobile number with an OTP. Orders and delivery updates need a mobile number.</span></div>
+    <a href="Otp.dc.html" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 40px; border-radius: 8px; background: #FFFFFF; border: 1px solid {T2}; color: {INK}; font-size: 14px; font-weight: 600; text-decoration: none">{ic('mail', 18, 1.800, P)}Use my email instead</a>
+    <div style="display: flex; gap: 10px; padding: 12px; border-radius: 10px; background: {T4}; color: {MUTE}; font-size: 12px; line-height: 18px">{ic('shield', 18, 2, P)}<span>SMS not arriving? Enter your email address and we send the 6-digit code there. We ask for your mobile number at your first order, for delivery updates.</span></div>
   </div>
   <p style="margin: auto 16px 20px; font-size: 12px; line-height: 18px; color: {MUTE}; text-align: center">By continuing you agree to the <a href="#terms" style="font-weight: 600; text-decoration: none">Terms of Use</a> and <a href="#privacy" style="font-weight: 600; text-decoration: none">Privacy Policy</a>.</p>'''))
 
@@ -223,7 +223,6 @@ boards['SignUp'] = ('Alar sign up', 390, 844, phone(844, f'''
     {field('Email (optional)', ph='name@example.com', hint='For invoices and order emails.')}
     {field('Delivery PIN code (optional)', '600028', hint='Shows delivery dates while you browse.')}
     <div style="display: flex; flex-direction: column; gap: 4px">
-      <label style="display: flex; align-items: center; gap: 12px; min-height: 40px; font-size: 14px; line-height: 20px"><input type="checkbox" checked style="width: 20px; height: 20px; accent-color: {P}; margin: 0; flex-shrink: 0">Send order updates on WhatsApp</label>
       <label style="display: flex; align-items: center; gap: 12px; min-height: 40px; font-size: 14px; line-height: 20px"><input type="checkbox" style="width: 20px; height: 20px; accent-color: {P}; margin: 0; flex-shrink: 0">Tell me about new arrivals and offers</label>
     </div>
   </div>
@@ -342,7 +341,7 @@ boards['OrderPlaced'] = ('Alar order confirmed', 390, 844, phone(844, f'''
   </div>
   <div style="padding: 24px 16px 0; display: flex; flex-direction: column; gap: 12px">
     {card(row('Order number', '<strong style="font-weight: 700">AL-2611-00418</strong>') + row('Paid by', 'UPI') + row('Arrives by', '<strong style="font-weight: 700">Tue, 1 Dec</strong>') + f'<span style="height: 1px; background: {LINE}"></span><div style="display: flex; align-items: center; gap: 8px">{pic("maroon", 48, 60, 8)}{pic("ivory", 48, 60, 8)}<span style="flex: 1; font-size: 13px; line-height: 18px; color: {MUTE}; padding-left: 4px">Arani silk saree, Kasavu cotton saree</span></div>', 16, 10)}
-    <div style="display: flex; gap: 10px; padding: 12px; border-radius: 10px; background: {T4}; font-size: 12px; line-height: 18px; color: {MUTE}">{ic('receipt', 16, 2, P)}<span>Your tax invoice will be in Orders once the parcel ships. Updates come by SMS and WhatsApp.</span></div>
+    <div style="display: flex; gap: 10px; padding: 12px; border-radius: 10px; background: {T4}; font-size: 12px; line-height: 18px; color: {MUTE}">{ic('receipt', 16, 2, P)}<span>Your tax invoice will be in Orders once the parcel ships. Updates come by SMS and in the app.</span></div>
   </div>
   <div style="margin-top: auto; padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 8px">{btn('Track order', href='OrderDetail.dc.html', icon='truck')}{btn('Continue shopping', 'ghost', href='Main.dc.html')}</div>'''))
 
@@ -490,11 +489,9 @@ boards['AdminLogin'] = ('Alar admin login', 1440, 900, f'''<div style="width: 14
       {loginpanel('STEP 1 · PASSWORD', f"""<h1 style="margin: 0; {HF}; font-size: 20px; line-height: 26px; font-weight: 800">Sign in to admin</h1>
         {afield('Work email', 'owner@alar.example', 40)}{afield('Password', '••••••••••••', 40)}
         <div style="display: flex; justify-content: space-between; font-size: 13px"><label style="display: flex; align-items: center; gap: 8px"><input type="checkbox" style="width: 16px; height: 16px; accent-color: {P}; margin: 0">Trust this device for 30 days</label><a href="#reset" style="font-weight: 600; text-decoration: none">Forgot password?</a></div>
-        {btn('Continue')}
-        <div style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: {MUTE}"><span style="flex: 1; height: 1px; background: {LINE}"></span>or<span style="flex: 1; height: 1px; background: {LINE}"></span></div>
-        <a href="#google" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 40px; border-radius: 8px; border: 1px solid {T2}; color: {INK}; font-size: 14px; font-weight: 600; text-decoration: none">{GOOGLE}Continue with Google</a>""")}
+        {btn('Continue')}""")}
       {loginpanel('STEP 2 · ONE-TIME CODE', f"""<h1 style="margin: 0; {HF}; font-size: 20px; line-height: 26px; font-weight: 800">Enter the code</h1>
-        <p style="margin: 0; font-size: 13px; line-height: 20px; color: {MUTE}">Sent to <strong style="color: {INK}; font-weight: 600">ow•••@alar.example</strong> and by SMS to the number ending 345. Needed on every sign-in, with password or Google.</p>
+        <p style="margin: 0; font-size: 13px; line-height: 20px; color: {MUTE}">Sent to <strong style="color: {INK}; font-weight: 600">ow•••@alar.example</strong> and by SMS to the number ending 345. Needed on every sign-in.</p>
         <div style="display: flex; gap: 8px">{otpa('7')}{otpa('2')}{otpa('9')}{otpa('0')}{otpa('', True)}{otpa('')}</div>
         <div style="display: flex; justify-content: space-between; font-size: 13px; color: {MUTE}"><span>Works for 5 minutes</span><span style="font-weight: 600">Send again in 0:41</span></div>
         {btn('Verify and sign in', href='AdminDashboard.dc.html')}
@@ -681,16 +678,16 @@ boards['AdminCustomers'] = ('Alar admin customers', 1440, 900, admin('Customers'
       <div style="display: flex; align-items: center; gap: 8px"><span style="display: flex; align-items: center; gap: 8px; width: 280px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 8px; border: 1px solid {T2}; background: #FFFFFF; font-size: 13px; color: #9B97AD">{ic('search', 16, 2, MUTE)}Search name, mobile or email</span>{chip('All', True)}{chip('Bought')}{chip('Tried on, not bought')}{chip('Blocked')}</div>
       {table(['Customer', 'Mobile', 'Signed in with', 'Orders', 'Spent', 'Try-ons', 'Try-on consent', 'Status'], [
         crow('Lakshmi Narayanan', '+91 98400 12345', 'Mobile OTP', '3', '₹11,250', '14', 'V3 AGREED', 'green', 'ACTIVE', 'green'),
-        crow('Divya Raman', '+91 99620 44110', 'Google + OTP', '1', '₹3,400', '6', 'V3 AGREED', 'green', 'ACTIVE', 'green'),
+        crow('Divya Raman', '+91 99620 44110', 'Email code', '1', '₹3,400', '6', 'V3 AGREED', 'green', 'ACTIVE', 'green'),
         crow('Meena Krishnan', '+91 94440 78021', 'Mobile OTP', '2', '₹5,500', '0', 'NOT ASKED', 'grey', 'ACTIVE', 'green'),
-        crow('Sangeetha Vel', '+91 90030 65512', 'Google + OTP', '0', '₹0', '9', 'V2 · ASK AGAIN', 'amber', 'ACTIVE', 'green'),
+        crow('Sangeetha Vel', '+91 90030 65512', 'Email code', '0', '₹0', '9', 'V2 · ASK AGAIN', 'amber', 'ACTIVE', 'green'),
         crow('Kavitha Suresh', '+91 98840 20934', 'Mobile OTP', '4', '₹14,900', '22', 'WITHDRAWN', 'grey', 'ACTIVE', 'green'),
         crow('Revathi Mohan', '+91 97910 33487', 'Mobile OTP', '1', '₹6,300', '3', 'V3 AGREED', 'green', 'BLOCKED', 'red')],
         ['1.800fr', '1.300fr', '1.100fr', '0.600fr', '0.800fr', '0.600fr', '1.200fr', '0.800fr'])}
       <span style="font-size: 12px; color: {MUTE}">Try-on photos are never shown here. Staff see only counts and the consent record.</span>
     </div>
     <div style="display: flex; flex-direction: column; gap: 16px">
-      {acard(h2('Staff and roles', 14) + ''.join(f'<div style="display: flex; align-items: center; gap: 10px"><span style="width: 32px; height: 32px; border-radius: 999px; background: {T1}; color: {PD}; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">{i}</span><span style="flex: 1; display: flex; flex-direction: column; font-size: 13px; line-height: 18px">{bold(n)}<span style="font-size: 12px; color: {MUTE}">{d}</span></span>{chip(r, tone=t)}</div>' for i, n, d, r, t in [('AR', 'Arun', 'Everything', 'OWNER', 'lav'), ('SK', 'Saranya K.', 'Products, stock, content', 'CATALOGUE', 'grey'), ('MV', 'Murugan V.', 'Orders, returns, labels', 'PACKING', 'grey')]) + f'<span style="font-size: 12px; line-height: 18px; color: {MUTE}">Staff sign in with password or Google, then a one-time code. Only the owner can change AI settings, prices and roles.</span>', gap=10)}
+      {acard(h2('Staff and roles', 14) + ''.join(f'<div style="display: flex; align-items: center; gap: 10px"><span style="width: 32px; height: 32px; border-radius: 999px; background: {T1}; color: {PD}; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">{i}</span><span style="flex: 1; display: flex; flex-direction: column; font-size: 13px; line-height: 18px">{bold(n)}<span style="font-size: 12px; color: {MUTE}">{d}</span></span>{chip(r, tone=t)}</div>' for i, n, d, r, t in [('AR', 'Arun', 'Everything', 'OWNER', 'lav'), ('SK', 'Saranya K.', 'Products, stock, content', 'CATALOGUE', 'grey'), ('MV', 'Murugan V.', 'Orders, returns, labels', 'PACKING', 'grey')]) + f'<span style="font-size: 12px; line-height: 18px; color: {MUTE}">Staff sign in with a password, then a one-time code. Only the owner can change AI settings, prices and roles.</span>', gap=10)}
       {acard(f'<div style="display: flex; align-items: center; justify-content: space-between">{h2("Deletion request", 14)}{chip("DUE IN 5 DAYS", tone="amber")}</div><span style="font-size: 13px; line-height: 20px">Sangeetha Vel asked to delete her account and try-on photos on 25 Nov.</span><span style="font-size: 12px; line-height: 18px; color: {MUTE}">Invoices are kept as the tax law requires; everything else is erased.</span><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">{abtn("View record")}{abtn("Erase now", "primary")}</div>', gap=10)}
     </div>
   </div>'''))
@@ -821,10 +818,10 @@ def move(t='Move to bag', off=False):
 
 boards['Wishlist'] = ('Alar wishlist', 390, 1010, phone(1010, hdr('Wishlist', 'Main.dc.html', f'<span style="font-size: 13px; color: {MUTE}">4 items</span>') + f'''
   <div style="padding: 12px 16px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px">
-    {pcard('violet', 'Kanchipuram silk saree', 'Violet', '₹4,800', '₹5,400', '11% OFF', 210, move(), 'Price dropped')}
+    {pcard('violet', 'Kanchipuram silk saree', 'Violet', '₹4,800', '₹5,400', '11% OFF', 210, move())}
     {pcard('emerald', 'Kanchipuram silk saree', 'Emerald', '₹4,950', '₹5,500', '10% OFF', 210, move())}
     {pcard('mustard', 'Chettinad cotton saree', 'Mustard', '₹1,650', '₹1,900', '13% OFF', 210, move())}
-    {pcard('navy', 'Banarasi silk saree', 'Navy', '₹4,950', '₹5,600', '11% OFF', 210, move('Sold out · Tell me', True))}
+    {pcard('navy', 'Banarasi silk saree', 'Navy', '₹4,950', '₹5,600', '11% OFF', 210, move('Sold out', True))}
   </div>''' + nav('')))
 
 # ------------------------------------------------------------------ Try-on waiting / problem / hub
@@ -951,7 +948,6 @@ boards['Notifications'] = ('Alar notifications', 390, 844, phone(844, hdr('Notif
   <div style="display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid {LINE}">{chip('All', True)}{chip('Orders')}{chip('Try-on')}{chip('Offers')}</div>
   {nrow('truck', 'Your order has shipped', 'AL-2611-00418 is on the way. Arrives by Tue, 1 Dec.', '2 hours ago', True)}
   {nrow('spark', 'Your try-on is ready', 'See the Arani silk saree on you.', 'Yesterday, 6:31 pm', True)}
-  {nrow('tag', 'Price dropped on your wishlist', 'Kanchipuram silk saree, violet is now ₹4,800.', 'Yesterday, 10:05 am')}
   {nrow('undo', 'Refund sent', '₹2,400 for AL-2610-00193 has gone back to your UPI account.', '2 Nov')}
   {nrow('shield', 'We updated the try-on notice', 'Please read and agree again before your next try-on.', '20 Nov')}'''))
 
@@ -960,7 +956,7 @@ boards['Privacy'] = ('Alar privacy and consent', 390, 1100, phone(1100, hdr('Pri
   <div style="padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px">
     {card(f'<div style="display: flex; align-items: center; justify-content: space-between">{h2("Try-on consent", 14)}{chip("AGREED · VERSION 3", tone="green")}</div><span style="font-size: 13px; line-height: 20px; color: {MUTE}">You agreed on 26 Nov 2026 that your photo may be sent to the AI services named in the notice to make try-on pictures.</span><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">{sbtn("Read the notice")}{sbtn("Withdraw consent")}</div><span style="font-size: 12px; line-height: 18px; color: {MUTE}">Withdrawing deletes your photo and try-on pictures at once. Shopping works as before.</span>', 12, 10)}
     {card(h2('My try-on data', 14) + row('Photo stored', '1') + row('Try-on pictures saved', '6') + row('Deleted by itself', 'After 30 days without use') + f'<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">{sbtn("Delete pictures")}{sbtn("Delete everything")}</div>', 12, 8)}
-    {card(h2('Messages from Alar', 14) + tog('Order updates on WhatsApp', True) + SEP + tog('Order updates by SMS', True, 'Needed for delivery; cannot be turned off') + SEP + tog('Offers and new arrivals', False), 12, 0)}
+    {card(h2('Messages from Alar', 14) + tog('Order updates in the app', True) + SEP + tog('Order updates by SMS', True, 'Needed for delivery; cannot be turned off') + SEP + tog('Offers and new arrivals', False), 12, 0)}
     {card(lrow('download', 'Get a copy of my data', sub='Sent to your email within 7 days') + SEP + lrow('edit', 'Correct my details') + SEP + lrow('chat', 'Complain to the grievance officer', sub='Reply within 48 hours'), 16, 0, 'padding-top: 4px; padding-bottom: 4px')}
     <div style="border: 1px solid #F3C7C3; border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #FFFFFF"><strong style="font-size: 14px; font-weight: 700; color: {RED}">Delete my account</strong><span style="font-size: 12px; line-height: 18px; color: {MUTE}">Removes your profile, addresses, wishlist and try-on data. Invoices are kept for the time tax law requires.</span><span style="height: 36px; border-radius: 8px; border: 1.500px solid {RED}; color: {RED}; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">Start account deletion</span></div>
   </div>''', PAGE))
@@ -971,7 +967,7 @@ boards['Help'] = ('Alar help', 390, 844, phone(844, hdr('Help', 'Profile.dc.html
     {card(f'<span style="font-size: 12px; color: {MUTE}">Is it about this order?</span><div style="display: flex; gap: 12px; align-items: center">{pic("maroon", 44, 55, 8)}<span style="flex: 1; display: flex; flex-direction: column; font-size: 13px; line-height: 18px"><strong style="font-weight: 700">AL-2611-00418 · On the way</strong><span style="color: {MUTE}">Arrives by Tue, 1 Dec</span></span>{ic("right", 16, 2.200, MUTE)}</div>', 12, 8)}
     {card(lrow('truck', 'Where is my order?') + SEP + lrow('undo', 'Return, exchange or refund') + SEP + lrow('card', 'Payment problem') + SEP + lrow('spark', 'Try-on and my photo') + SEP + lrow('user', 'Account and login'), 16, 0, 'padding-top: 4px; padding-bottom: 4px')}
     {h2('Talk to us', 14)}
-    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">{qtile('chat', 'WhatsApp', '#wa')}{qtile('call', 'Call', '#call')}{qtile('mail', 'Email', '#mail')}</div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">{qtile('chat', 'Chat', '#chat')}{qtile('call', 'Call', '#call')}{qtile('mail', 'Email', '#mail')}</div>
     <span style="font-size: 12px; line-height: 18px; color: {MUTE}">Monday to Saturday, 10 am to 6 pm. We answer in English, Tamil, Telugu, Kannada and Malayalam.</span>
   </div>''', PAGE))
 
@@ -984,7 +980,7 @@ ITEM = f'<div style="display: flex; gap: 12px">{pic("emerald", 60, 75, 8)}<div s
 boards['ReturnReason'] = ('Alar return reason', 390, 1010, phone(1010, hdr('Return or exchange', 'OrderDetail.dc.html', f'<span style="font-size: 13px; font-weight: 600; color: {MUTE}">Step 1 of 2</span>') + f'''
   <div style="padding: 12px 16px 0; display: flex; flex-direction: column; gap: 12px">
     {card(ITEM, 12)}
-    {seg('Return for refund', 'Exchange colour')}
+    
     {card(h2('Why are you returning it?', 14) + f'<div style="display: flex; flex-direction: column">{radiorow("Colour looks different from the photos", True)}{radiorow("Fabric or quality not as expected")}{radiorow("Damaged or has a defect", sub="Photos needed")}{radiorow("Wrong item received", sub="Photos needed")}{radiorow("Changed my mind")}</div>', 12, 4)}
     <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 600">Add photos (optional for this reason)</span><div style="display: flex; gap: 8px">{pic('emerald', 64, 64, 10, 'center 60%')}<span style="width: 64px; height: 64px; border-radius: 10px; border: 1px dashed {T3}; background: {T4}; color: {PD}; display: inline-flex; align-items: center; justify-content: center">{ic('camera', 20, 1.800)}</span></div></div>
     {field('Tell us more (optional)', ph='What looked different?')}
@@ -1004,9 +1000,8 @@ boards['Review'] = ('Alar rate and review', 390, 844, phone(844, hdr('Rate this 
     <div style="display: flex; gap: 12px; align-items: center">{pic('emerald', 48, 60, 8)}<span style="display: flex; flex-direction: column; font-size: 13px; line-height: 18px"><strong style="font-size: 14px; font-weight: 700">Kanchipuram silk saree</strong><span style="color: {MUTE}">Emerald · Delivered on 12 Nov</span></span></div>
     <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px; border-radius: 16px; background: {T4}">{stars(4, 36)}<span style="font-size: 14px; font-weight: 600">Good</span></div>
     <div style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 600">What did you like?</span><div style="display: flex; flex-wrap: wrap; gap: 8px">{chip('Colour as shown', True)}{chip('Soft fabric', True)}{chip('Rich border')}{chip('Good value')}{chip('Neat packing')}{chip('Fast delivery')}</div></div>
-    <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 600">Your review (optional)</span><span style="min-height: 96px; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid {T2}; font-size: 14px; line-height: 20px">The green is exactly like the photo and the border is beautiful.</span></label>
-    <div style="display: flex; gap: 8px">{pic('emerald', 64, 64, 10, 'center 60%')}<span style="width: 64px; height: 64px; border-radius: 10px; border: 1px dashed {T3}; background: {T4}; color: {PD}; display: inline-flex; align-items: center; justify-content: center">{ic('camera', 20, 1.800)}</span></div>
-    <span style="font-size: 12px; line-height: 18px; color: {MUTE}">Shown with your first name. The overall rating appears on a saree once it has 5 ratings.</span>
+    <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 600">Anything else? Only Alar reads this (optional)</span><span style="min-height: 96px; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid {T2}; font-size: 14px; line-height: 20px">The green is exactly like the photo and the border is beautiful.</span></label>
+    <span style="font-size: 12px; line-height: 18px; color: {MUTE}">Your stars count towards the rating shown on this saree once it has 5 ratings. Your note is not shown to other shoppers.</span>
   </div>''' + bar(btn('Send rating', href='Orders.dc.html'), '1fr')))
 
 # ================================================================== WEBSITE (1440 wide)
@@ -1271,8 +1266,6 @@ boards['EditProfile'] = ('Alar edit profile', 390, 844, phone(844, hdr('Edit pro
     {field('Full name', 'Lakshmi Narayanan')}
     <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 600">Mobile number</span><span style="display: flex; align-items: center; height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 8px; border: 1px solid {T2}; background: #F6F5FA; font-size: 14px"><span style="flex: 1">+91 98400 12345</span><a href="Otp.dc.html" style="font-size: 13px; font-weight: 600; text-decoration: none">Change</a></span><span style="font-size: 12px; color: {MUTE}">Changing it needs an OTP on the new number.</span></label>
     {field('Email (optional)', 'lakshmi@example.com')}
-    {field('Birthday (optional)', ph='DD / MM', hint='Only the day and month, for a birthday offer.')}
-    <div style="display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 10px; border: 1px solid {LINE}">{GOOGLE}<span style="flex: 1; font-size: 13px; line-height: 18px"><strong style="font-weight: 600">Google connected</strong><br><span style="color: {MUTE}">lakshmi@example.com</span></span><span style="font-size: 13px; font-weight: 600; color: {P}">Disconnect</span></div>
   </div>''' + sticky_agree(btn('Save', href='Profile.dc.html'))))
 
 boards['Language'] = ('Alar language', 390, 844, phone(844, hdr('Language', 'Profile.dc.html') + f'''
@@ -1418,8 +1411,8 @@ boards['WebLogin'] = webpage('Alar website login', 700, f'''
         {field('Mobile number', '98400 12345', pre='+91', hint='We will send a 6-digit code by SMS.')}
         {btn('Get OTP')}
         <div style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: {MUTE}"><span style="flex: 1; height: 1px; background: {LINE}"></span>or<span style="flex: 1; height: 1px; background: {LINE}"></span></div>
-        <span style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 40px; border-radius: 8px; border: 1px solid {T2}; font-size: 14px; font-weight: 600">{GOOGLE}Continue with Google</span>
-        <span style="margin-top: auto; font-size: 12px; line-height: 18px; color: {MUTE}">With Google we still confirm your mobile number by OTP. By continuing you agree to the Terms of Use and Privacy Policy.</span>
+        <span style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 40px; border-radius: 8px; border: 1px solid {T2}; font-size: 14px; font-weight: 600">{ic('mail', 18, 1.800, P)}Use my email instead</span>
+        <span style="margin-top: auto; font-size: 12px; line-height: 18px; color: {MUTE}">By continuing you agree to the Terms of Use and Privacy Policy.</span>
       </div>
     </div>
   </div>''')
@@ -1486,17 +1479,15 @@ boards['AdminMessages'] = ('Alar admin messages', 1440, 900, admin('Settings', '
     <div style="display: flex; flex-direction: column; gap: 12px; min-width: 0">
       {table(['Message', 'Sent when', 'Channels', 'Languages', 'On'], [
         [bold('Sign-in code'), 'Shopper asks for an OTP', ch('SMS'), '5', toggle(True)],
-        [bold('Order confirmed'), 'Payment confirmed by Razorpay', ch('SMS') + ch('WHATSAPP') + ch('EMAIL'), '5', toggle(True)],
-        [bold('Order shipped'), 'Courier picks up the parcel', ch('SMS') + ch('WHATSAPP') + ch('PUSH'), '5', toggle(True)],
-        [bold('Out for delivery'), 'Courier marks it', ch('WHATSAPP') + ch('PUSH'), '5', toggle(True)],
+        [bold('Order confirmed'), 'Payment confirmed by Razorpay', ch('SMS') + ch('PUSH') + ch('EMAIL'), '5', toggle(True)],
+        [bold('Order shipped'), 'Courier picks up the parcel', ch('SMS') + ch('PUSH'), '5', toggle(True)],
+        [bold('Out for delivery'), 'Courier marks it', ch('PUSH'), '5', toggle(True)],
         [bold('Refund sent'), 'Refund leaves Razorpay', ch('SMS') + ch('EMAIL'), '5', toggle(True)],
-        [bold('Try-on ready'), 'Result passes the check', ch('PUSH'), '5', toggle(True)],
-        [bold('Bag reminder'), '24 hours after leaving the bag', ch('PUSH'), '2', toggle(False)],
-        [bold('Price drop on wishlist'), 'Price goes down', ch('PUSH'), '5', toggle(True)]],
+        [bold('Try-on ready'), 'Result passes the check', ch('PUSH'), '5', toggle(True)]],
         ['1.200fr', '1.300fr', '2.300fr', '0.600fr', '0.400fr'])}
       <span style="font-size: 12px; color: {MUTE}">Offer messages go only to shoppers who said yes. SMS wording must match the template registered with the telecom operator.</span>
     </div>
-    {acard(h2('Order shipped', 16) + f'<div style="display: flex; gap: 6px">{chip("English", True)}{chip("தமிழ்")}{chip("తెలుగు")}{chip("ಕನ್ನಡ")}{chip("മലയാളം")}</div>' + afield('WhatsApp text', f'<span>Hi {V("customer.first_name")}, your Alar order {V("order.number")} is on the way. It should reach you by {V("order.eta")}. Track it here: {V("order.track_link")}</span>', 96) + f'<span style="font-size: 12px; font-weight: 600">Preview</span><div style="background: #E9F7EF; border-radius: 12px 12px 12px 4px; padding: 10px 12px; font-size: 13px; line-height: 20px; max-width: 290px">Hi Lakshmi, your Alar order AL-2611-00418 is on the way. It should reach you by Tue, 1 Dec. Track it here: alar.example/t/00418</div>' + row('Sent last 7 days', bold('61')) + row('Delivered', bold('98%')) + note('shield', 'The store name in messages comes from Settings, Store and brand.'), gap=10)}
+    {acard(h2('Order shipped', 16) + f'<div style="display: flex; gap: 6px">{chip("English", True)}{chip("தமிழ்")}{chip("తెలుగు")}{chip("ಕನ್ನಡ")}{chip("മലയാളം")}</div>' + afield('SMS text', f'<span>Hi {V("customer.first_name")}, your Alar order {V("order.number")} is on the way. It should reach you by {V("order.eta")}. Track it here: {V("order.track_link")}</span>', 96) + f'<span style="font-size: 12px; font-weight: 600">Preview</span><div style="background: #E9F7EF; border-radius: 12px 12px 12px 4px; padding: 10px 12px; font-size: 13px; line-height: 20px; max-width: 290px">Hi Lakshmi, your Alar order AL-2611-00418 is on the way. It should reach you by Tue, 1 Dec. Track it here: alar.example/t/00418</div>' + row('Sent last 7 days', bold('61')) + row('Delivered', bold('98%')) + note('shield', 'The store name in messages comes from Settings, Store and brand.'), gap=10)}
   </div>'''))
 
 boards['AdminLegal'] = ('Alar admin legal', 1440, 900, admin('Settings', 'Settings', abtn('Save changes', 'primary'), f'''
@@ -1543,8 +1534,8 @@ EXTRA_T = dict(ExchangeColour='Exchange for another colour', Reviews='Ratings an
                ConsentNotice='Try-on notice, full text', DeleteAccount='Delete account', SizeChart='Size chart (shirts)',
                WebListing='Website: listing with filters', WebBag='Website: bag', WebCheckout='Website: checkout', WebLogin='Website: login',
                AdminPrompts='Admin: AI prompts', AdminRoles='Admin: roles', AdminMessages='Admin: messages', AdminLegal='Admin: legal pages and dated values', AdminConsent='Admin: consent notice versions')
-EXTRA_ROWS = {'1': ['NoInternet'], '2': ['Reviews', 'SizeChart'], '3': ['ConsentNotice'], '4': ['Coupons', 'ExchangeColour'], '5': ['EditProfile', 'Language', 'DeleteAccount'],
-              '6': ['WebListing', 'WebBag', 'WebCheckout', 'WebLogin'], '7': ['AdminPrompts', 'AdminConsent', 'AdminRoles', 'AdminMessages', 'AdminLegal']}
+EXTRA_ROWS = {'1': ['NoInternet'], '2': ['SizeChart'], '3': ['ConsentNotice'], '4': ['Coupons'], '5': ['EditProfile', 'Language', 'DeleteAccount'],
+              '6': ['WebListing', 'WebBag', 'WebCheckout', 'WebLogin'], '7': ['AdminPrompts', 'AdminConsent', 'AdminMessages', 'AdminLegal']}
 
 # ------------------------------------------------------------------ write files + canvas
 for name, (title, w, h, inner) in boards.items():
@@ -1565,7 +1556,7 @@ T = dict(Onboarding='Onboarding', Login='Log in or sign up', Otp='OTP check', Si
          AdminOffers='Admin: offers and coupons', AdminContent='Admin: app content', AdminAI='Admin: AI try-on controls', AdminAIReports='Admin: AI reports and cost',
          AdminCustomers='Admin: customers and staff', AdminAudit='Admin: audit log', AdminSettings='Admin: settings', Media='Generated media')
 ROWS = [
-    ('1. Getting in: onboarding, login (mobile OTP or Google + OTP), sign up', ['Onboarding', 'Login', 'Otp', 'SignUp']),
+    ('1. Getting in: login (mobile code, or email code), sign up', ['Login', 'Otp', 'SignUp']),
     ('2. Browsing: home, categories, search, listing, filters, product pages, wishlist', ['Main', 'Categories', 'Search', 'Listing', 'Filters', 'Product', 'Shirt', 'Wishlist']),
     ('3. Try-on', ['Consent', 'TryOnPhoto', 'TryOnWait', 'TryOnResult', 'TryOnProblem', 'TryOnHub', 'FullSaree']),
     ('4. Bag, checkout and orders', ['Bag', 'EmptyBag', 'Checkout', 'PaymentFailed', 'OrderPlaced', 'Orders', 'OrderDetail', 'ReturnReason', 'ReturnConfirm', 'Review']),
@@ -1574,6 +1565,7 @@ ROWS = [
     ('7. Admin (web, 1440 wide)', ['AdminLogin', 'AdminDashboard', 'AdminProducts', 'AdminProductEdit', 'AdminInventory', 'AdminCategories', 'AdminOrders', 'AdminReturns',
                                     'AdminOffers', 'AdminContent', 'AdminAI', 'AdminAIReports', 'AdminCustomers', 'AdminAudit', 'AdminSettings']),
     ('8. Theme and generated media', ['Theme', 'Media']),
+    ('9. Designed for a later version, not in the first release', ['Onboarding', 'Reviews', 'ExchangeColour', 'AdminRoles']),
 ]
 T.update(EXTRA_T)
 ROWS = [(l, n + EXTRA_ROWS.get(l[0], [])) for l, n in ROWS]

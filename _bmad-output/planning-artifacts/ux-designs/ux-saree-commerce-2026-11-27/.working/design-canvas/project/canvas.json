@@ -10,16 +10,8 @@
   },
   "pages": [],
   "boards": {
-    "Onboarding.dc.html": {
-      "x": 0,
-      "y": 0,
-      "w": 390,
-      "h": 844,
-      "title": "Onboarding",
-      "radius": 32
-    },
     "Login.dc.html": {
-      "x": 470,
+      "x": 0,
       "y": 0,
       "w": 390,
       "h": 844,
@@ -27,7 +19,7 @@
       "radius": 32
     },
     "Otp.dc.html": {
-      "x": 940,
+      "x": 470,
       "y": 0,
       "w": 390,
       "h": 844,
@@ -35,7 +27,7 @@
       "radius": 32
     },
     "SignUp.dc.html": {
-      "x": 1410,
+      "x": 940,
       "y": 0,
       "w": 390,
       "h": 844,
@@ -43,7 +35,7 @@
       "radius": 32
     },
     "NoInternet.dc.html": {
-      "x": 1880,
+      "x": 1410,
       "y": 0,
       "w": 390,
       "h": 844,
@@ -114,16 +106,8 @@
       "title": "Wishlist",
       "radius": 32
     },
-    "Reviews.dc.html": {
-      "x": 3760,
-      "y": 1144,
-      "w": 390,
-      "h": 1010,
-      "title": "Ratings and reviews",
-      "radius": 32
-    },
     "SizeChart.dc.html": {
-      "x": 4230,
+      "x": 3760,
       "y": 1144,
       "w": 390,
       "h": 844,
@@ -280,14 +264,6 @@
       "w": 390,
       "h": 844,
       "title": "Coupons",
-      "radius": 32
-    },
-    "ExchangeColour.dc.html": {
-      "x": 5170,
-      "y": 5044,
-      "w": 390,
-      "h": 1010,
-      "title": "Exchange for another colour",
       "radius": 32
     },
     "Profile.dc.html": {
@@ -546,16 +522,8 @@
       "title": "Admin: consent notice versions",
       "radius": 16
     },
-    "AdminRoles.dc.html": {
-      "x": 1520,
-      "y": 13488,
-      "w": 1440,
-      "h": 900,
-      "title": "Admin: roles",
-      "radius": 16
-    },
     "AdminMessages.dc.html": {
-      "x": 3040,
+      "x": 1520,
       "y": 13488,
       "w": 1440,
       "h": 900,
@@ -563,7 +531,7 @@
       "radius": 16
     },
     "AdminLegal.dc.html": {
-      "x": 4560,
+      "x": 3040,
       "y": 13488,
       "w": 1440,
       "h": 900,
@@ -585,10 +553,41 @@
       "h": 1150,
       "title": "Generated media",
       "radius": 16
+    },
+    "Onboarding.dc.html": {
+      "x": 0,
+      "y": 16138,
+      "w": 390,
+      "h": 844,
+      "title": "Onboarding",
+      "radius": 32
+    },
+    "Reviews.dc.html": {
+      "x": 470,
+      "y": 16138,
+      "w": 390,
+      "h": 1010,
+      "title": "Ratings and reviews",
+      "radius": 32
+    },
+    "ExchangeColour.dc.html": {
+      "x": 940,
+      "y": 16138,
+      "w": 390,
+      "h": 1010,
+      "title": "Exchange for another colour",
+      "radius": 32
+    },
+    "AdminRoles.dc.html": {
+      "x": 1410,
+      "y": 16138,
+      "w": 1440,
+      "h": 900,
+      "title": "Admin: roles",
+      "radius": 16
     }
   },
   "order": [
-    "Onboarding.dc.html",
     "Login.dc.html",
     "Otp.dc.html",
     "SignUp.dc.html",
@@ -601,7 +600,6 @@
     "Product.dc.html",
     "Shirt.dc.html",
     "Wishlist.dc.html",
-    "Reviews.dc.html",
     "SizeChart.dc.html",
     "Consent.dc.html",
     "TryOnPhoto.dc.html",
@@ -622,7 +620,6 @@
     "ReturnConfirm.dc.html",
     "Review.dc.html",
     "Coupons.dc.html",
-    "ExchangeColour.dc.html",
     "Profile.dc.html",
     "Addresses.dc.html",
     "AddAddress.dc.html",
@@ -655,11 +652,14 @@
     "AdminSettings.dc.html",
     "AdminPrompts.dc.html",
     "AdminConsent.dc.html",
-    "AdminRoles.dc.html",
     "AdminMessages.dc.html",
     "AdminLegal.dc.html",
     "Theme.dc.html",
-    "Media.dc.html"
+    "Media.dc.html",
+    "Onboarding.dc.html",
+    "Reviews.dc.html",
+    "ExchangeColour.dc.html",
+    "AdminRoles.dc.html"
   ],
   "notes": {
     "heading": {
@@ -672,7 +672,7 @@
     "r0": {
       "x": 0,
       "y": -110,
-      "text": "1. Getting in: onboarding, login (mobile OTP or Google + OTP), sign up",
+      "text": "1. Getting in: login (mobile code, or email code), sign up",
       "kind": "title2",
       "maxW": 5000
     },
@@ -722,6 +722,13 @@
       "x": 0,
       "y": 14578,
       "text": "8. Theme and generated media",
+      "kind": "title2",
+      "maxW": 5000
+    },
+    "r8": {
+      "x": 0,
+      "y": 16028,
+      "text": "9. Designed for a later version, not in the first release",
       "kind": "title2",
       "maxW": 5000
     }

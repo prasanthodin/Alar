@@ -1,6 +1,6 @@
 ---
 name: Alar
-status: draft
+status: final
 created: '2026-11-27'
 updated: '2026-11-27'
 sources:
@@ -15,7 +15,7 @@ sources:
 
 > How Alar works. `DESIGN.md` owns how it looks. Both win over any mock. The mocks are the 72 boards of the design canvas; each surface below names its board file (in `.working/design-canvas/project/`, suffix `.dc.html`). Terms are the PRD Glossary's. Lines tagged `[ASSUMPTION]` were chosen here.
 >
-> **This file is a draft for one reason:** the boards show 14 things the PRD does not contain or explicitly leaves out. They are listed in "Scope drawn beyond the PRD" and need the founder's yes or no before stories are written from them. Everything else is ready to build from.
+> The boards once showed 14 things the PRD did not contain. Each has been decided; see "First-release scope decisions".
 
 ## Foundation
 
@@ -41,8 +41,7 @@ sources:
 
 | Surface | Kind | Board | Reached from | Purpose |
 |---|---|---|---|---|
-| Onboarding | Fixed | `Onboarding` | First launch of the app | Three swipeable slides; "Skip" always present; never shown again |
-| Log in or sign up | Fixed | `Login`, `WebLogin` | Any action that needs an account | Mobile number, or Google |
+| Log in or sign up | Fixed | `Login`, `WebLogin` | Any action that needs an account | Mobile number and SMS code, or email address and email code |
 | One-time code | Fixed | `Otp` | Login | Six-digit code, resend timer |
 | Sign-up details | Fixed | `SignUp` | First successful code | Name required; email and PIN code optional; message choices unticked except order updates |
 | Home | SD | `Main`, `WebHome` | Launch; Home tab; wordmark | Address bar, search, department tabs, category rail, banner carousel, service strip, product grid |
@@ -53,7 +52,6 @@ sources:
 | Product page | Fixed | `Product`, `Shirt`, `WebProduct` | Any product card | Photos, price, offer, colour, size where used, Try-on entry, delivery check, details, similar products |
 | Size chart | Fixed | `SizeChart` | Product page of a sized category | Measurements; the chosen size highlighted |
 | Full saree view | Fixed | `FullSaree` | Product page | The whole item end to end, zoom and pan, section chips, mini-map |
-| Ratings | Fixed | `Reviews` | Product page | Rating summary and ratings |
 | Wishlist | Fixed | `Wishlist` | Home top bar, Profile | Saved Designs; move to Bag |
 | Try-on consent | Fixed | `Consent`, `ConsentNotice` | First "Try it on"; new notice version | Short notice, two confirmations, link to the full text |
 | Choose photo | Fixed | `TryOnPhoto` | Consent | Guidance, system picker or camera |
@@ -67,11 +65,11 @@ sources:
 | Payment result | Fixed | `OrderPlaced`, `PaymentFailed` | Payment service | Confirmed, pending or failed |
 | My orders | Fixed | `Orders` | Profile; Order confirmed | Orders by state |
 | Order detail | Fixed | `OrderDetail` | My orders | Timeline, items, address, payment, invoice, return, help |
-| Return | Fixed | `ReturnReason`, `ReturnConfirm`, `ExchangeColour` | Order detail | Reason, pickup, refund |
+| Return | Fixed | `ReturnReason`, `ReturnConfirm` | Order detail | Reason, pickup, refund |
 | Rate | Fixed | `Review` | My orders after delivery | "Did it match what you saw" and a star rating (FR-53, FR-63) |
 | Profile | Fixed | `Profile`, `EditProfile` | Home top bar | Entry to orders, wishlist, try-ons, addresses, settings |
 | Addresses | Fixed | `Addresses`, `AddAddress` | Profile; Checkout | Saved addresses; delivery check on the PIN code |
-| Notifications | Fixed | `Notifications` | Profile; Home top bar | List of messages |
+| Notifications | Fixed | `Notifications` | Profile; Home top bar | Order events and "Try-on ready"; no offers |
 | Language | Fixed | `Language` | Profile | Interface language |
 | Privacy and consent | Fixed | `Privacy`, `DeleteAccount` | Profile; Try-on tab | Consent state, her Try-on data, message choices, data requests, account deletion |
 | Help | Fixed | `Help` | Profile; Order detail | Topics, and ways to reach a person |
@@ -85,14 +83,14 @@ The architecture has two Admins (commerce, and content). The boards show one con
 
 | Surface | Board | Purpose |
 |---|---|---|
-| Sign in | `AdminLogin` | Password or Google, then a one-time code on every sign-in (FR-60) |
+| Sign in | `AdminLogin` | Password, then a one-time code by email and SMS on every sign-in (FR-60) |
 | Dashboard | `AdminDashboard` | Today's sales, orders to pack, Try-on use and health, AI spend, low stock |
 | Products | `AdminProducts`, `AdminProductEdit` | List; one Design with details, weaver (Admin only), photos, Variants, stock, price, visibility |
 | Categories | `AdminCategories` | Department and category tree; the details each category asks for; whether it uses sizes, the full-length view and Try-on |
 | Stock | `AdminInventory` | Stock movements with reason and person; receive stock; counts |
 | Orders | `AdminOrders` | Orders by state; pack, book courier, print label, cancel and refund |
 | Returns | `AdminReturns` | Review a Return, book pickup, inspect, refund or reject |
-| Customers and staff | `AdminCustomers`, `AdminRoles`, `AdminAudit` | Shoppers with consent state; staff and roles; deletion requests; the audit log |
+| Customers | `AdminCustomers`, `AdminAudit` | Shoppers with consent state; deletion requests; the audit log. Staff and roles are for a later version |
 | App content | `AdminContent` | Compose Home and other SD screens from Blocks; preview, schedule, publish |
 | AI try-on | `AdminAI`, `AdminPrompts`, `AdminConsent`, `AdminAIReports` | Model route, prompt versions with test, limits, safety checks, consent notice versions, reported results, cost |
 | Offers | `AdminOffers` | Coupons and sale prices |
@@ -160,7 +158,7 @@ Behaviour. Visual specification is in `DESIGN.md` under Components.
 | Offline | Global | Cached screens stay usable with a line under the top bar; add to Bag, Checkout and Try-on are disabled with the reason. With nothing cached: `NoInternet` |
 | Unknown Block | SD screens | Skipped silently; the rest shows (FR-32) |
 | Action failed | Any form | A red note beside the action saying what happened and what to do; what she typed is kept |
-| Low stock | Product page, Bag | A truthful count below the Owner's alert level ("Only 3 left"). See "Scope drawn beyond the PRD", item 9 |
+| Low stock | Product page, Bag | The true count at or below the Owner's level ("Only 3 left"); nothing above it |
 | Sold out | Card, Product page, Wishlist | "Sold out" replaces the purchase buttons; the page stays fully viewable |
 | On Hold by another Shopper | Product page, Bag | "Someone is paying for the last piece. Check again in a few minutes." No timer of the other Shopper's Hold |
 | Bag item changed | Bag, Checkout | An amber note on the line: the price changed, or sold out, with "Accept" or "Remove". Paying is disabled until resolved |
@@ -240,7 +238,7 @@ Lakshmi, 34, in Coimbatore, on her phone.
 2. She taps "Wedding", then opens Filters and chooses silk and a price range; the count reads "73 items" before she applies (`Listing`, `Filters`).
 3. She opens a saree (`Product`). She sees the photos, ₹3,150 with the MRP struck through, the colours, and a delivery date for her PIN code.
 4. She taps "Full saree" and drags from the blouse piece to the pallu, pinching in on the border (`FullSaree`).
-5. She taps "Try it on". She signs in with her mobile number and a code (`Login`, `Otp`), gives her name (`SignUp`).
+5. She taps "Try it on". She signs in with her mobile number and the code sent by SMS (`Login`, `Otp`), and gives her name (`SignUp`).
 6. The Consent screen says what is used, who receives it and how long it is kept. She ticks both boxes and agrees (`Consent`).
 7. She picks a full-length photo from her phone's picker (`TryOnPhoto`) and watches the three steps (`TryOnWait`).
 8. **Climax:** the picture appears, labelled "AI PREVIEW", with the line that the real drape and colour can differ (`TryOnResult`). She holds it to compare with the product photo, opens the full saree once more to check the border, and decides. Two honest views, side by side, are what convince her.
@@ -260,7 +258,7 @@ Lakshmi, 34, in Coimbatore, on her phone.
 4. **Climax:** before she confirms, the screen says in one line: ₹4,950, to the UPI account she paid from, within 5 to 7 working days after the check. Nothing is left to wonder about.
 5. The Order shows the Return's states; when the saree passes inspection the refund is sent and she is messaged.
 
-**Other paths:** the saree fails inspection → she is told why, with photos, and it is sent back (FR-23). She wants another colour → see item 5 under "Scope drawn beyond the PRD".
+**Other paths:** the saree fails inspection → she is told why, with photos, and it is sent back (FR-23). She wants another colour → she returns this one and orders the other; exchange is for a later version.
 
 ### UJ-3. The owner lists a new design in under 15 minutes
 
@@ -302,32 +300,31 @@ Lakshmi, 34, in Coimbatore, on her phone.
 
 **Failure paths:** she is offline → the action is disabled with the reason. She wants one picture gone → "Delete" on that picture, without withdrawing.
 
-## Scope drawn beyond the PRD
+## First-release scope decisions
 
-The boards were drawn to follow the reference app closely, and in doing so they show things the PRD does not have, or lists as out of scope for the first version (PRD §6.2). None is to be built until the founder says yes; a yes means a PRD change and new or changed stories.
+The boards were first drawn with 14 things the PRD did not contain. The founder asked for a recommendation on each (2026-11-27) and these are the choices made, on three tests: does it make the app easier to use, can one builder ship it in the plan, and does it keep the promise of honesty. The PRD and the boards have been updated to match. Boards for the "later" items sit in the last row of the canvas.
 
-| # | On the boards | PRD today | If yes |
-|---|---|---|---|
-| 1 | **Sign in with Google**, then a mobile code (`Login`, `EditProfile`) | Mobile number and code only (FR-26) | Change FR-26; add Google as a sign-in provider |
-| 2 | **Wishlist** (`Wishlist`, hearts on cards, Profile) | Not present | New FR |
-| 3 | **Coupons the Shopper applies** (`Coupons`, `AdminOffers`) | Discounts by date or code exist (FR-58); a coupon list for the Shopper does not | Extend FR-58 |
-| 4 | **Written reviews with photos** (`Reviews`, `Review`) | Out of scope; star rating only (FR-63) | Remove from §6.2; new FR and a moderation step in the Admin |
-| 5 | **Exchange for another colour** (`ExchangeColour`) | Returns only (FR-23) | New FR; new stock workflow |
-| 6 | **Notifications list and push messages** (`Notifications`, try-on ready, price drop, bag reminder) | Out of scope; SMS and email only, try-on ready shown in the app (FR-54) | Change FR-54; needs a push service |
-| 7 | **WhatsApp order updates** (`SignUp`, `Privacy`, `AdminMessages`) | SMS and email (FR-54) | Change FR-54; needs a WhatsApp business account |
-| 8 | **"Tell me" when a sold-out item returns** (`Wishlist`) | Not present | New FR |
-| 9 | **"Only 3 left"** on the Product page and Bag | NFR-13 forbids false urgency; a true count is not forbidden but was left out of the earlier design on purpose | Keep only as a true count at or below the Owner's alert level |
-| 10 | **Staff accounts and roles** (`AdminRoles`, staff on `AdminCustomers`) | Deferred (FR-50); one Owner at launch | Bring FR-50 into the first version |
-| 11 | **Onboarding slides** (`Onboarding`) | Not present | New FR, small |
-| 12 | **Free delivery always** | A shipping charge may apply and is shown from the Bag (FR-17) | Owner setting; no PRD change if kept as a setting |
-| 13 | **Birthday and marketing choices at sign-up** (`EditProfile`, `SignUp`) | Marketing needs separate agreement (FR-54); birthday not present | Small addition; keep boxes unticked |
-| 14 | **Men and Kids departments visible as tabs on Home** | Other categories are out of scope for the first version; the model is ready (FR-65) | Show only live departments at launch |
+| # | Feature | Decision | Why | PRD |
+|---|---|---|---|---|
+| 1 | Sign-in | **Mobile code first; email code as the second way.** No Google sign-in | SMS is what Indian shoppers expect; email covers the times an SMS does not arrive and costs nothing to send. A third-party login adds a dependency and a second consent screen for no gain | FR-26 |
+| 2 | Wishlist | **In** | Expected in every shopping app, small to build, and gives a reason to sign in and come back | FR-66 |
+| 3 | Coupon list in the Bag | **In** | Discount codes already exist; showing which ones apply removes guessing | FR-58 |
+| 4 | Written reviews with photos | **Later.** Stars, ready-made tags and a private note now | Public text and photos need moderation every day; with about 100 Designs at launch there would be few reviews to show | FR-63 |
+| 5 | Exchange for another colour | **Later** | It is a second stock workflow with money moving both ways; return and re-order covers the need | §6.2 |
+| 6 | Notifications | **In, for Order events and "Try-on ready" only**, as push plus a list in the app | A Try-on takes about 15 seconds and the Shopper may leave; push brings her back. Free to send. No marketing push | FR-54 |
+| 7 | WhatsApp updates | **Later** | Needs a business account, approved templates and a fee per message; SMS, email and push cover launch | §6.2 |
+| 8 | "Tell me when it is back" | **Later** | Handwoven stock may never come back in the same design; a promise to notify would often be broken | §6.2 |
+| 9 | "Only 3 left" | **In, as the true count at or below the Owner's level** | With about 10 Pieces of a Design it is real, useful information; it is never invented | FR-3, FR-56 |
+| 10 | Staff accounts and roles | **Later.** One Owner at launch | Every Admin action is already recorded against a named account, so roles can be added without rework | FR-50 |
+| 11 | Onboarding slides | **Out** | The app should open straight on Home; Try-on is explained at the moment she taps it | §6.2 |
+| 12 | Delivery charge | **Free on every Order at launch**, as an Owner setting | One price with no late charge is the simplest honest offer at ₹1,500–5,000; the setting allows a threshold later | FR-56 |
+| 13 | Birthday and marketing choices | **Marketing choice in, unticked. Birthday out** | The marketing choice is needed by law before any offer message; a birthday is data with no use yet | FR-54 |
+| 14 | Men and Kids tabs on Home | **Hidden until a second department is live** | An empty tab is a dead end; the tabs appear by themselves when menswear is published | FR-65 |
 
-`[ASSUMPTION]` Until decided, stories are written only for what the PRD contains; the boards for items 1–8, 10, 11 and 13 are kept as designs for a later version.
+Known difference: the `Main` and `Categories` boards still show Women, Men and Kids. Build per item 14.
 
 ## Open items
 
-- The founder's answers to the 14 items above.
 - One Admin shell or two themed Admins (see Admin surfaces).
 - Dark theme: not designed.
 - Numbers shown on the boards are examples and become Owner settings: try-ons per day, AI spend limits, photo retention, code lifetime, return window.
