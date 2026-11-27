@@ -222,24 +222,6 @@ Solid arrows are code imports; dotted arrows are runtime calls. No arrow means n
 - **Prevents:** an invoice that changes after issue; duplicate or gapped numbers.
 - **Rule:** the invoice module creates an invoice from the Checkout snapshot when an Order is created, and a credit note when a refund is made. Records are never edited. Numbers are gapless: each comes from a counter row per document type and financial year, locked and incremented in the same transaction that creates the record. The number is also written to the Checkout's recovery file (AD-30). The worker renders the file with `invoice.render` into the `documents` bucket.
 
-### AD-30 — Every Checkout leaves a recovery file off the server
-
-- **Binds:** NFR-4, NFR-8, AD-17, AD-25
-- **Prevents:** a restore losing an Order's contents or reusing an invoice number.
-- **Rule:** `begin-checkout` writes the Checkout snapshot (items, quantities, prices, tax, address, Shopper id) as a file in the `documents` bucket, keyed by Checkout id; `confirm-payment` adds the Order id and invoice number to it. After a restore, the reconciliation job rebuilds any Order the payment service shows as paid from its recovery file, with its original numbers, and sets each counter to the highest number issued before the shop accepts Orders again.
-
-### AD-31 — Named homes for records the stories exposed
-
-- **Binds:** FR-9, FR-25, FR-26, FR-27, FR-48
-- **Prevents:** three agents inventing three homes.
-- **Rule:** acceptances of terms, policies and the Try-on consent notice are all records of the `consent` module (document type, version, language, time). Payment disputes are records of the `checkout` module, linked to the Order. Inspection photos are files in the `documents` bucket, linked to the Return. An Order is `Refunded` only when every item in it has been refunded; a partial refund shows on the Return and the Order keeps its state. An account cannot be deleted while it has an Order that is neither Delivered past its return period, nor Cancelled, nor Refunded; Shopper photos and Try-on results are erased at once in any case.
-
-### AD-32 — Checks and costs for AI output
-
-- **Binds:** FR-45, FR-52, AD-10, AD-23
-- **Prevents:** an unchecked result being shown; costs in mixed currencies; erasure silently unsupported.
-- **Rule:** `ResultCheck` is a vision-capable model on the Approved-model list, marked as a check model, reached through the same provider port; if the check fails to run, the result is not shown. Provider prices are converted to paise with an exchange-rate setting when recorded. A provider that offers no erasure call is recorded in the erasure ledger as "not supported; relies on the provider's stated retention" and the Owner is alerted once per provider, not per request.
-
 ### AD-26 — All messages are jobs, sent by the worker
 
 - **Binds:** FR-26, FR-54, NFR-9
@@ -263,6 +245,24 @@ Solid arrows are code imports; dotted arrows are runtime calls. No arrow means n
 - **Binds:** NFR-16, PRD §9
 - **Prevents:** an advertising or analytics SDK collecting Shopper data.
 - **Rule:** the counts module in commerce records the events named in NFR-16 without a Shopper identity. Clients report them through `api-client`. No third-party analytics or advertising SDK is added to web or mobile.
+
+### AD-30 — Every Checkout leaves a recovery file off the server
+
+- **Binds:** NFR-4, NFR-8, AD-17, AD-25
+- **Prevents:** a restore losing an Order's contents or reusing an invoice number.
+- **Rule:** `begin-checkout` writes the Checkout snapshot (items, quantities, prices, tax, address, Shopper id) as a file in the `documents` bucket, keyed by Checkout id; `confirm-payment` adds the Order id and invoice number to it. After a restore, the reconciliation job rebuilds any Order the payment service shows as paid from its recovery file, with its original numbers, and sets each counter to the highest number issued before the shop accepts Orders again.
+
+### AD-31 — Named homes for records the stories exposed
+
+- **Binds:** FR-9, FR-25, FR-26, FR-27, FR-48
+- **Prevents:** three agents inventing three homes.
+- **Rule:** acceptances of terms, policies and the Try-on consent notice are all records of the `consent` module (document type, version, language, time). Payment disputes are records of the `checkout` module, linked to the Order. Inspection photos are files in the `documents` bucket, linked to the Return. An Order is `Refunded` only when every item in it has been refunded; a partial refund shows on the Return and the Order keeps its state. An account cannot be deleted while it has an Order that is neither Delivered past its return period, nor Cancelled, nor Refunded; Shopper photos and Try-on results are erased at once in any case.
+
+### AD-32 — Checks and costs for AI output
+
+- **Binds:** FR-45, FR-52, AD-10, AD-23
+- **Prevents:** an unchecked result being shown; costs in mixed currencies; erasure silently unsupported.
+- **Rule:** `ResultCheck` is a vision-capable model on the Approved-model list, marked as a check model, reached through the same provider port; if the check fails to run, the result is not shown. Provider prices are converted to paise with an exchange-rate setting when recorded. A provider that offers no erasure call is recorded in the erasure ledger as "not supported; relies on the provider's stated retention" and the Owner is alerted once per provider, not per request.
 
 ## Consistency Conventions
 
