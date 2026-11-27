@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { sendShopError, shopError, shopErrorOf } from "../shop-errors"
+import { sendShopError, sendShopErrorOrInternal, shopError, shopErrorOf } from "../shop-errors"
 
 describe("shop errors", () => {
   it("carries the code and details of a shop error, also when a workflow wraps it", () => {
@@ -23,5 +23,24 @@ describe("shop errors", () => {
     expect(() => sendShopError(res as never, boom)).toThrow(boom)
     expect(() => sendShopError(res as never, { code: "internal", message: "x" })).toThrow()
     expect(res.status).not.toHaveBeenCalled()
+  })
+})
+
+describe("sendShopErrorOrInternal", () => {
+  it("answers a stock error with its status, and anything else with 500 internal, logged by message only", () => {
+    const json = vi.fn()
+    const res = { status: vi.fn(() => ({ json })) }
+    const logger = { error: vi.fn() }
+    sendShopErrorOrInternal(res, shopError("stock.below_reserved", "below"), logger)
+    expect(res.status).toHaveBeenLastCalledWith(409)
+    expect(json).toHaveBeenLastCalledWith({ code: "stock.below_reserved", message: "below" })
+    sendShopErrorOrInternal(res, shopError("stock.invalid_quantity", "negative"), logger)
+    expect(res.status).toHaveBeenLastCalledWith(400)
+    sendShopErrorOrInternal(res, shopError("stock.lock_timeout", "held"), logger)
+    expect(res.status).toHaveBeenLastCalledWith(409)
+    sendShopErrorOrInternal(res, new Error("ledger down"), logger)
+    expect(res.status).toHaveBeenLastCalledWith(500)
+    expect(json).toHaveBeenLastCalledWith({ code: "internal", message: "Something went wrong" })
+    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining("ledger down"))
   })
 })

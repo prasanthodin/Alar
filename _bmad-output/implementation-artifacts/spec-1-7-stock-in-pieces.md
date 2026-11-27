@@ -2,7 +2,7 @@
 title: 'Story 1.7: Owner sets and adjusts stock in Pieces'
 type: 'feature'
 created: '2026-11-27'
-status: 'in-progress'
+status: 'in-review'
 baseline_commit: 'f27a0ba1f9d324991c2f3666d6068cd35bc06fde'
 route: 'dispatch'
 review_loop_iteration: 0
@@ -58,12 +58,12 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] contracts and codes with tests
-- [ ] ledger module, lock helper, workflow, stock location seed and backfill
-- [ ] routes and admin UI section
-- [ ] integration tests for every matrix row (the lock timeout by holding the lock from the test; the row failure by injecting a failing ledger step through a test-only container override or a workflow hook; concurrency with `Promise.all`), and that no route updates or deletes a row
-- [ ] extend the admin smoke: set stock to 10 with a reason and see the row
-- [ ] docs
+- [x] contracts and codes with tests
+- [x] ledger module, lock helper, workflow, stock location seed and backfill
+- [x] routes and admin UI section
+- [x] integration tests for every matrix row (the lock timeout by holding the lock from the test; the row failure by injecting a failing ledger step through a test-only container override or a workflow hook; concurrency with `Promise.all`), and that no route updates or deletes a row
+- [x] extend the admin smoke: set stock to 10 with a reason and see the row
+- [x] docs
 
 **Acceptance Criteria:**
 - Given the repository, when `pnpm lint && pnpm typecheck && pnpm test && pnpm build`, the commerce integration tests and the admin smoke run, then all pass and the name check passes.

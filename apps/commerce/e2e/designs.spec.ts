@@ -8,8 +8,9 @@ const EMAIL = process.env.ADMIN_E2E_EMAIL ?? "owner-e2e@example.test"
 const PASSWORD = process.env.ADMIN_E2E_PASSWORD ?? "owner-e2e-pass-1"
 const MOCK = join(__dirname, "../../mobile/public/mock")
 const SCREENSHOT = join(__dirname, "../../../docs/screenshots/admin-designs.png")
+const STOCK_SCREENSHOT = join(__dirname, "../../../docs/screenshots/admin-design-stock.png")
 
-test("the Owner creates a Design with two photos, sees what is missing, confirms and publishes", async ({ page }) => {
+test("the Owner creates a Design with two photos, sees what is missing, confirms, publishes and sets its stock", async ({ page }) => {
   const name = `Arani silk saree ${Date.now()}`
 
   await page.goto("/app/login")
@@ -65,6 +66,30 @@ test("the Owner creates a Design with two photos, sees what is missing, confirms
   await panel.getByLabel("I confirm the photos show the saree's true colour.").click()
   await panel.getByRole("button", { name: "Publish", exact: true }).click()
   await expect(panel.getByText("This design is published.")).toBeVisible()
+
+  // Stock (Story 1.7): set it to 10 Pieces with a reason and see the row in the history.
+  const stock = panel.getByTestId("design-stock")
+  await expect(stock.getByTestId("stock-stocked")).toHaveText("0")
+  await expect(stock.getByText("No stock changes yet.")).toBeVisible()
+  // A reason is required: without one nothing is sent.
+  await stock.getByLabel("Set stock to (pieces)").fill("10")
+  await stock.getByRole("button", { name: "Set stock" }).click()
+  await expect(stock.getByText("Enter a reason of up to 200 characters.")).toBeVisible()
+  await expect(stock.getByTestId("stock-stocked")).toHaveText("0")
+  await stock.getByLabel("Reason (required)").fill("First delivery from the weaver")
+  await stock.getByRole("button", { name: "Set stock" }).click()
+  await expect(page.getByText("Stock changed. In stock: 10.")).toBeVisible()
+  await expect(stock.getByTestId("stock-stocked")).toHaveText("10")
+  await expect(stock.getByTestId("stock-reserved")).toHaveText("0")
+  await expect(stock.getByTestId("stock-available")).toHaveText("10")
+  const movement = stock.getByTestId("stock-movement")
+  await expect(movement).toHaveCount(1)
+  await expect(movement.first()).toContainText("Manual adjustment")
+  await expect(movement.first().getByTestId("stock-movement-change")).toHaveText("+10")
+  await expect(movement.first()).toContainText(EMAIL)
+  await expect(movement.first()).toContainText("First delivery from the weaver")
+  await stock.scrollIntoViewIfNeeded()
+  await page.screenshot({ path: STOCK_SCREENSHOT })
 
   // The list shows it published, at Rs 3,150.
   await panel.getByRole("button", { name: "Cancel" }).click()

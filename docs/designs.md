@@ -15,6 +15,7 @@ The Owner lists a saree as a Design: a kernel product with one Variant, typed at
 | Reading a Design | `apps/commerce/src/lib/designs.ts` |
 | Admin routes | `apps/commerce/src/api/admin/shop/designs/**`, `apps/commerce/src/api/admin/shop/uploads/route.ts` |
 | Admin page "Designs" | `apps/commerce/src/admin/routes/designs/page.tsx`, editor in `src/admin/components/design-editor.tsx`, text in `src/admin/i18n/json/en.json` |
+| Stock of a Design's Variant (Story 1.7) | `docs/stock.md` |
 | Tests | `packages/contracts/src/design.test.ts`, `apps/commerce/src/lib/__tests__/*.test.ts`, `apps/commerce/integration-tests/http/designs.spec.ts`, admin smoke `apps/commerce/e2e/designs.spec.ts` |
 
 ## Fields
@@ -34,7 +35,7 @@ Attributes are typed columns linked to the product, never kernel `metadata`. The
 | photos | `photos` (jsonb) | `DesignPhoto[]`: `{ fileId, url, role: "close_up" \| "other", position }`, at most 12, positions 0, 1, 2, ... in order, each file once, at most one close-up; checked against the contract on write and on read. A request names photos by `fileId` only: each file must exist in the `catalog` bucket (checked through the kernel's file module, `design.unknown_photo` otherwise) and the kernel stores the public address it derives (`S3_FILE_URL` and the key), ignoring any `url` sent |
 | confirmation | `true_colour_confirmed_at`, `true_colour_confirmed_by` | when and by which admin user the Owner confirmed that the photos show the true colour |
 
-The product's name and description are the kernel product's `title` and `description`. A new Design gets one option (`Design`: `Standard`) and one Variant, the store's default sales channel and the default shipping profile (from the starter seed; left out when the database has none), and a handle made from the name plus a random suffix, so two Designs may share a name. Weavers (Epic 2) and stock (Story 1.7) are not part of a Design yet.
+The product's name and description are the kernel product's `title` and `description`. A new Design gets one option (`Design`: `Standard`) and one Variant, the store's default sales channel and the default shipping profile (from the starter seed; left out when the database has none), and a handle made from the name plus a random suffix, so two Designs may share a name. Its Variant keeps its stock in Pieces: `manage_inventory` is on, the kernel creates its inventory item, and `create-design` gives it a level of 0 Pieces at the India stock location (Story 1.7, `docs/stock.md`); the stock is set only through `adjust-stock`. Weavers (Epic 2) are not part of a Design yet.
 
 ## Price
 
@@ -99,7 +100,7 @@ Request bodies are strict: an unknown field (such as `status` or `metadata`) is 
 
 ## Running it locally
 
-- `pnpm --filter @shop/commerce exec medusa db:migrate` creates the two tables and the product link.
+- `pnpm --filter @shop/commerce exec medusa db:migrate` creates the two tables and the product link (and seeds the India stock location a new Design needs, `docs/stock.md`).
 - Admins exist only through `medusa user` (Story 1.4): `pnpm --filter @shop/commerce exec medusa user -e owner-e2e@example.test -p <password>`.
 - Integration tests: `DB_USERNAME=postgres DB_PASSWORD=postgres REDIS_URL=redis://localhost:6379/9 pnpm --filter @shop/commerce test:integration`. The Design tests store and then delete photos in the `catalog` bucket, so the AWS emulator must be running with that bucket (`infra/init/create-buckets.mjs`); CI runs the emulator as a service and creates the bucket first.
-- Admin smoke (skipped unless `ADMIN_E2E_BASE_URL` is set): `ADMIN_E2E_BASE_URL=http://localhost:9000 E2E_CHROME_PATH=/usr/bin/google-chrome pnpm --filter @shop/commerce exec playwright test --trace off`. It signs in as `ADMIN_E2E_EMAIL` / `ADMIN_E2E_PASSWORD` (defaults `owner-e2e@example.test` / `owner-e2e-pass-1`), creates and publishes a Design with a unique name (left in the database), and saves `docs/screenshots/admin-designs.png`. CI creates that admin with `medusa user` after starting the kernel and runs the smoke. Its output goes to the system temp directory, because `medusa develop` restarts the kernel when files in the app change.
+- Admin smoke (skipped unless `ADMIN_E2E_BASE_URL` is set): `ADMIN_E2E_BASE_URL=http://localhost:9000 E2E_CHROME_PATH=/usr/bin/google-chrome pnpm --filter @shop/commerce exec playwright test --trace off`. It signs in as `ADMIN_E2E_EMAIL` / `ADMIN_E2E_PASSWORD` (defaults `owner-e2e@example.test` / `owner-e2e-pass-1`), creates and publishes a Design with a unique name (left in the database), sets its stock to 10 Pieces with a reason (Story 1.7), and saves `docs/screenshots/admin-designs.png` and `docs/screenshots/admin-design-stock.png`. CI creates that admin with `medusa user` after starting the kernel and runs the smoke. Its output goes to the system temp directory, because `medusa develop` restarts the kernel when files in the app change.

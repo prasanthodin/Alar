@@ -30,6 +30,7 @@ import {
   type PublishRequirement,
 } from "@shop/contracts"
 import { ShopApiError, shopApi } from "../lib/shop-api"
+import { DesignStock } from "./design-stock"
 
 /** The form as typed: text fields as strings, empty meaning "not given". */
 type Form = {
@@ -111,7 +112,7 @@ type Props = {
   onChanged: (design: AdminDesignView) => void
 }
 
-/** Create or edit one Design, upload its photos, set its price and publish it. */
+/** Create or edit one Design, upload its photos, set its price and stock, and publish it. */
 export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
   const { t, i18n } = useTranslation()
   const initial = useMemo(() => (design ? formOf(design) : EMPTY), [design])
@@ -461,6 +462,8 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
               {fieldError("priceRupees")}
             </div>
           </section>
+
+          {design ? <DesignStock designId={design.id} /> : null}
 
           <section className="flex flex-col gap-y-4">
             <Heading level="h3">{t("shopDesigns.editor.photos")}</Heading>

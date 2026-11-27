@@ -14,12 +14,18 @@ const STATUS: Partial<Record<ErrorCode, number>> = {
   "design.not_found": 404,
   "design.already_published": 409,
   "design.not_draft": 409,
+  "stock.invalid_quantity": 400,
+  "stock.below_reserved": 409,
+  "stock.lock_timeout": 409,
 }
 
 const KERNEL_TYPE: Partial<Record<ErrorCode, string>> = {
   "design.not_found": MedusaError.Types.NOT_FOUND,
   "design.already_published": MedusaError.Types.NOT_ALLOWED,
   "design.not_draft": MedusaError.Types.NOT_ALLOWED,
+  "stock.below_reserved": MedusaError.Types.NOT_ALLOWED,
+  "stock.lock_timeout": MedusaError.Types.CONFLICT,
+  internal: MedusaError.Types.UNEXPECTED_STATE,
 }
 
 /**
@@ -61,6 +67,23 @@ export function sendShopError(res: EnvelopeResponse, e: unknown): void {
   const envelope = shopErrorOf(e)
   if (!envelope) throw e
   res.status(STATUS[envelope.code] ?? 400).json(envelope)
+}
+
+/** A minimal logger, as far as `sendShopErrorOrInternal` uses one. */
+type ErrorLogger = { error(message: string): void }
+
+/**
+ * Answers with the envelope of a shop error, or with 500 `internal` for any
+ * other error (logged with its message only, never the request).
+ */
+export function sendShopErrorOrInternal(res: EnvelopeResponse, e: unknown, logger: ErrorLogger): void {
+  const envelope = shopErrorOf(e)
+  if (envelope) {
+    res.status(STATUS[envelope.code] ?? 400).json(envelope)
+    return
+  }
+  logger.error(`shop: request failed: ${e instanceof Error ? e.message : String(e)}`)
+  res.status(500).json({ code: "internal", message: "Something went wrong" })
 }
 
 /** Answers with an envelope for a refused request. */

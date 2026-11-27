@@ -1,5 +1,6 @@
 import {
   AdminDesignList,
+  AdminDesignStockResponse,
   AdminDesignResponse,
   ApiError,
   NotPublishableDetails,
@@ -13,6 +14,9 @@ import {
   type UploadRefusalReason,
   type UpdateDesignInput,
 } from "@shop/contracts"
+
+/** A stock change as the Stock section sends it: an absolute target or a signed change, with the reason. */
+export type AdjustStockRequest = ({ set: number } | { delta: number }) & { reason: string }
 
 /** A contract schema, as far as this client uses it. */
 type Schema<T> = { safeParse(value: unknown): { success: true; data: T } | { success: false } }
@@ -28,8 +32,8 @@ export type CreateDesignRequest = {
 
 /**
  * The shop's admin API (`/admin/shop/*`), called with the dashboard's session
- * cookie. The Designs page calls nothing else; kernel product writes are
- * refused by the route allow-list.
+ * cookie. The Designs page calls nothing else; kernel product and stock
+ * writes are refused by the route allow-list.
  */
 
 /** A refused call: the shop error envelope. */
@@ -86,6 +90,9 @@ export const shopApi = {
     call(AdminDesignResponse, `/admin/shop/designs/${encodeURIComponent(id)}/price`, json({ priceRupees })),
   publish: (id: string, trueColourConfirmed: boolean) =>
     call(PublishDesignResult, `/admin/shop/designs/${encodeURIComponent(id)}/publish`, json({ trueColourConfirmed })),
+  getStock: (id: string) => call(AdminDesignStockResponse, `/admin/shop/designs/${encodeURIComponent(id)}/stock`),
+  adjustStock: (id: string, input: AdjustStockRequest) =>
+    call(AdminDesignStockResponse, `/admin/shop/designs/${encodeURIComponent(id)}/stock`, json(input)),
   uploadPhotos: (files: File[]) => {
     const form = new FormData()
     for (const file of files) form.append("files", file)

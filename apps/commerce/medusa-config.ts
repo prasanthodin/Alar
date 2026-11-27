@@ -43,6 +43,11 @@ module.exports = defineConfig({
     {
       resolve: './src/modules/price-history',
     },
+    // Append-only stock-movement rows (Story 1.7, AD-6), written only by the
+    // stock workflows inside the stock lock.
+    {
+      resolve: './src/modules/stock-ledger',
+    },
     // The shop's own tax provider is the only tax code (AD-5). `dependencies`
     // lets the provider, which lives in the tax module's container, read the
     // settings module and the cart and order line adjustments. The India tax

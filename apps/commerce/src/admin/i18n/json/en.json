@@ -103,7 +103,11 @@
       "design.already_published": "This design is already published.",
       "design.not_draft": "Only an unpublished design can be published.",
       "design.unknown_photo": "A photo could not be found in the shop's storage. Remove it and upload it again.",
-      "request.cross_origin": "The request was refused because it did not come from this admin. Reload the page and try again."
+      "request.cross_origin": "The request was refused because it did not come from this admin. Reload the page and try again.",
+      "stock.below_reserved": "Stock cannot go below the pieces already held for shoppers.",
+      "stock.invalid_quantity": "Stock must be a whole number of pieces, zero or more.",
+      "stock.lock_timeout": "The stock is being changed by someone else. Try again in a moment.",
+      "internal": "Something went wrong and nothing was changed. Try again."
     },
     "validation": {
       "name": "Enter a name.",
@@ -121,5 +125,40 @@
       "unreadable": "The upload could not be read. Try again."
     },
     "taxCodesFailed": "The tax codes could not be loaded."
+  },
+  "shopStock": {
+    "title": "Stock",
+    "loading": "Loading stock…",
+    "loadFailed": "The stock could not be loaded. Reload the page to try again.",
+    "counts": {
+      "stocked": "In stock",
+      "reserved": "Held for shoppers",
+      "available": "Available"
+    },
+    "availableHint": "Available is the pieces in stock minus the pieces held for shoppers who are paying.",
+    "reason": "Reason (required)",
+    "reasonPlaceholder": "For example: delivery from the weaver",
+    "setTo": "Set stock to (pieces)",
+    "setButton": "Set stock",
+    "addOne": "Add 1 piece",
+    "removeOne": "Remove 1 piece",
+    "saved": "Stock changed. In stock: {{stocked}}.",
+    "history": "Stock history",
+    "noHistory": "No stock changes yet.",
+    "causes": {
+      "manual_adjustment": "Manual adjustment",
+      "checkout_hold": "Held at checkout",
+      "payment_confirmed": "Payment confirmed",
+      "hold_released": "Hold released",
+      "fulfilled": "Dispatched",
+      "order_cancelled": "Order cancelled",
+      "return_restocked": "Return restocked"
+    },
+    "validation": {
+      "reason": "Enter a reason of up to 200 characters.",
+      "set": "Enter a whole number of pieces from 0 to {{max}}."
+    },
+    "after": "(in stock after: {{stocked}})",
+    "when": "{{at}} by {{actor}}"
   }
 }

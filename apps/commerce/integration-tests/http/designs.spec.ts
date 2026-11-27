@@ -15,6 +15,7 @@ import {
 import { DeleteObjectsCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3"
 import sharp from "sharp"
 import { seedShopSettings } from "../../src/migration-scripts/shop-settings-seed"
+import { seedShopStockLocation } from "../../src/migration-scripts/stock-location-seed"
 import { PRICE_HISTORY_MODULE } from "../../src/modules/price-history"
 import { SETTINGS_MODULE } from "../../src/modules/settings"
 import type SettingsModuleService from "../../src/modules/settings/service"
@@ -102,6 +103,8 @@ medusaIntegrationTestRunner({
         attributes: await count(`select count(*) as n from design_attributes where deleted_at is null`),
         history: await count(`select count(*) as n from price_history where deleted_at is null`),
         prices: await count(`select count(*) as n from price where deleted_at is null`),
+        inventoryItems: await count(`select count(*) as n from inventory_item where deleted_at is null`),
+        levels: await count(`select count(*) as n from inventory_level where deleted_at is null`),
         published: await count(`select count(*) as n from product where status = 'published' and deleted_at is null`),
         confirmations: await count(
           `select count(*) as n from design_attributes where true_colour_confirmed_at is not null and deleted_at is null`
@@ -175,6 +178,8 @@ medusaIntegrationTestRunner({
 
       // India, rupees and tax.bands.saree, as db:migrate seeds them.
       await seedShopSettings(container, {})
+      // The India stock location every Design keeps its stock at (Story 1.7).
+      await seedShopStockLocation(container)
 
       const { result: keys } = await createApiKeysWorkflow(container).run({
         input: { api_keys: [{ title: "Website", type: "publishable", created_by: "test" }] },

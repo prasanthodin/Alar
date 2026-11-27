@@ -11,6 +11,7 @@ import {
   resolveDesignPhotosStep,
   resolveDesignProductDefaultsStep,
 } from "./steps/design-steps"
+import { ensureVariantStockStep } from "./steps/stock-steps"
 
 export type CreateDesignWorkflowInput = {
   /** The parsed request (`parseCreateDesignInput`). */
@@ -27,7 +28,9 @@ export const DESIGN_OPTION = { title: "Design", value: "Standard" } as const
 /**
  * Creates a Design, saved unpublished (kernel status `draft`): a kernel
  * product with one Variant priced in rupees (major units), its typed
- * attributes linked to it, and the first price-history row (old price null).
+ * attributes linked to it, its stock record (an inventory item with a level
+ * of 0 Pieces at the India stock location) and the first price-history row
+ * (old price null).
  * Each photo must be a file in the `catalog` bucket (`design.unknown_photo`);
  * its public address is derived by the kernel.
  * Each step undoes itself if a later one fails, so a refusal creates nothing.
@@ -49,6 +52,8 @@ export const createDesignWorkflow = createWorkflow("create-design", (input: Crea
           {
             title: DESIGN_OPTION.value,
             options: { [DESIGN_OPTION.title]: DESIGN_OPTION.value },
+            // Stock is kept in Pieces by the kernel (Story 1.7): the variant gets an inventory item.
+            manage_inventory: true,
             // Kernel prices are in major units: whole rupees.
             prices: [{ amount: input.pricePaise / 100, currency_code: DESIGN_CURRENCY }],
           },
@@ -73,6 +78,10 @@ export const createDesignWorkflow = createWorkflow("create-design", (input: Crea
     },
   ])
   createRemoteLinkStep(links)
+
+  // Its stock record at the India stock location, 0 Pieces stocked (Story 1.7).
+  const variantId = transform({ products }, ({ products }) => products[0]!.variants[0]!.id)
+  ensureVariantStockStep({ variantId })
 
   const priceRow = transform({ products, input }, ({ products, input }) => ({
     variantId: products[0]!.variants[0]!.id,
