@@ -66,3 +66,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-6-create-and-publish-design.md`
   summary: The admin Designs list has no pagination and its order (newest first) is untested.
   evidence: Fine for about 100 Designs at launch; add paging and an order test with the catalogue admin in Epic 2.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-8-design-page-and-bag.md`
+  summary: Catalogue scoping to the publishable key's sales channels is untested; every test uses one channel.
+  evidence: The shop runs one sales channel in Epic 1. Add a second-channel case when a second channel or key becomes possible.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-8-design-page-and-bag.md`
+  summary: The store catalogue reads every Design, product and inventory level on each request, with no paging or shared cache.
+  evidence: Fine for about 100 Designs; Epic 2's catalogue read (filters, search, counts) must add paging and caching.
