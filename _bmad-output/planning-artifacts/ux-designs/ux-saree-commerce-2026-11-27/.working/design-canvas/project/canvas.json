@@ -10,73 +10,9 @@
   },
   "pages": [],
   "boards": {
-    "Main.dc.html": {
-      "x": 0,
-      "y": 0,
-      "w": 390,
-      "h": 1340,
-      "title": "Home",
-      "radius": 32
-    },
-    "Listing.dc.html": {
-      "x": 470,
-      "y": 0,
-      "w": 390,
-      "h": 1010,
-      "title": "Category listing",
-      "radius": 32
-    },
-    "Product.dc.html": {
-      "x": 940,
-      "y": 0,
-      "w": 390,
-      "h": 2120,
-      "title": "Saree page",
-      "radius": 32
-    },
-    "Shirt.dc.html": {
-      "x": 1410,
-      "y": 0,
-      "w": 390,
-      "h": 1080,
-      "title": "Shirt page (later category)",
-      "radius": 32
-    },
-    "Consent.dc.html": {
-      "x": 1880,
-      "y": 0,
-      "w": 390,
-      "h": 844,
-      "title": "Try-on consent",
-      "radius": 32
-    },
-    "Theme.dc.html": {
-      "x": 2350,
-      "y": 0,
-      "w": 1040,
-      "h": 844,
-      "title": "Theme",
-      "radius": 16
-    },
-    "FullSaree.dc.html": {
-      "x": 0,
-      "y": 2380,
-      "w": 390,
-      "h": 844,
-      "title": "Full saree view",
-      "radius": 32
-    },
-    "Media.dc.html": {
-      "x": 0,
-      "y": 5960,
-      "w": 1040,
-      "h": 1150,
-      "title": "Generated media",
-      "radius": 16
-    },
     "Onboarding.dc.html": {
       "x": 0,
-      "y": -1100,
+      "y": 0,
       "w": 390,
       "h": 844,
       "title": "Onboarding",
@@ -84,7 +20,7 @@
     },
     "Login.dc.html": {
       "x": 470,
-      "y": -1100,
+      "y": 0,
       "w": 390,
       "h": 844,
       "title": "Log in or sign up",
@@ -92,7 +28,7 @@
     },
     "Otp.dc.html": {
       "x": 940,
-      "y": -1100,
+      "y": 0,
       "w": 390,
       "h": 844,
       "title": "OTP check",
@@ -100,71 +36,279 @@
     },
     "SignUp.dc.html": {
       "x": 1410,
-      "y": -1100,
+      "y": 0,
       "w": 390,
       "h": 844,
       "title": "Sign up details",
       "radius": 32
     },
+    "Main.dc.html": {
+      "x": 0,
+      "y": 1144,
+      "w": 390,
+      "h": 1340,
+      "title": "Home",
+      "radius": 32
+    },
+    "Categories.dc.html": {
+      "x": 470,
+      "y": 1144,
+      "w": 390,
+      "h": 844,
+      "title": "Categories tab",
+      "radius": 32
+    },
+    "Search.dc.html": {
+      "x": 940,
+      "y": 1144,
+      "w": 390,
+      "h": 844,
+      "title": "Search",
+      "radius": 32
+    },
+    "Listing.dc.html": {
+      "x": 1410,
+      "y": 1144,
+      "w": 390,
+      "h": 1010,
+      "title": "Category listing",
+      "radius": 32
+    },
+    "Filters.dc.html": {
+      "x": 1880,
+      "y": 1144,
+      "w": 390,
+      "h": 844,
+      "title": "Filters",
+      "radius": 32
+    },
+    "Product.dc.html": {
+      "x": 2350,
+      "y": 1144,
+      "w": 390,
+      "h": 2120,
+      "title": "Saree page",
+      "radius": 32
+    },
+    "Shirt.dc.html": {
+      "x": 2820,
+      "y": 1144,
+      "w": 390,
+      "h": 1080,
+      "title": "Shirt page (later category)",
+      "radius": 32
+    },
+    "Wishlist.dc.html": {
+      "x": 3290,
+      "y": 1144,
+      "w": 390,
+      "h": 1010,
+      "title": "Wishlist",
+      "radius": 32
+    },
+    "Consent.dc.html": {
+      "x": 0,
+      "y": 3564,
+      "w": 390,
+      "h": 844,
+      "title": "Try-on consent",
+      "radius": 32
+    },
     "TryOnPhoto.dc.html": {
       "x": 470,
-      "y": 2380,
+      "y": 3564,
       "w": 390,
       "h": 844,
       "title": "Try-on: choose photo",
       "radius": 32
     },
-    "TryOnResult.dc.html": {
+    "TryOnWait.dc.html": {
       "x": 940,
-      "y": 2380,
+      "y": 3564,
+      "w": 390,
+      "h": 844,
+      "title": "Try-on: in progress",
+      "radius": 32
+    },
+    "TryOnResult.dc.html": {
+      "x": 1410,
+      "y": 3564,
       "w": 390,
       "h": 980,
       "title": "Try-on result",
       "radius": 32
     },
+    "TryOnProblem.dc.html": {
+      "x": 1880,
+      "y": 3564,
+      "w": 390,
+      "h": 844,
+      "title": "Try-on: photo not usable",
+      "radius": 32
+    },
+    "TryOnHub.dc.html": {
+      "x": 2350,
+      "y": 3564,
+      "w": 390,
+      "h": 1010,
+      "title": "Try-on tab",
+      "radius": 32
+    },
+    "FullSaree.dc.html": {
+      "x": 2820,
+      "y": 3564,
+      "w": 390,
+      "h": 844,
+      "title": "Full saree view",
+      "radius": 32
+    },
     "Bag.dc.html": {
-      "x": 1410,
-      "y": 2380,
+      "x": 0,
+      "y": 4874,
       "w": 390,
       "h": 1010,
       "title": "Bag",
       "radius": 32
     },
+    "EmptyBag.dc.html": {
+      "x": 470,
+      "y": 4874,
+      "w": 390,
+      "h": 844,
+      "title": "Bag, empty",
+      "radius": 32
+    },
     "Checkout.dc.html": {
-      "x": 1880,
-      "y": 2380,
+      "x": 940,
+      "y": 4874,
       "w": 390,
       "h": 1010,
       "title": "Checkout",
       "radius": 32
     },
+    "PaymentFailed.dc.html": {
+      "x": 1410,
+      "y": 4874,
+      "w": 390,
+      "h": 844,
+      "title": "Payment failed",
+      "radius": 32
+    },
     "OrderPlaced.dc.html": {
-      "x": 2350,
-      "y": 2380,
+      "x": 1880,
+      "y": 4874,
       "w": 390,
       "h": 844,
       "title": "Order confirmed",
       "radius": 32
     },
     "Orders.dc.html": {
-      "x": 2820,
-      "y": 2380,
+      "x": 2350,
+      "y": 4874,
       "w": 390,
       "h": 1010,
       "title": "My orders",
       "radius": 32
     },
     "OrderDetail.dc.html": {
-      "x": 3290,
-      "y": 2380,
+      "x": 2820,
+      "y": 4874,
       "w": 390,
       "h": 1100,
       "title": "Order detail",
       "radius": 32
     },
+    "ReturnReason.dc.html": {
+      "x": 3290,
+      "y": 4874,
+      "w": 390,
+      "h": 1010,
+      "title": "Return: reason",
+      "radius": 32
+    },
+    "ReturnConfirm.dc.html": {
+      "x": 3760,
+      "y": 4874,
+      "w": 390,
+      "h": 1010,
+      "title": "Return: pickup and refund",
+      "radius": 32
+    },
+    "Review.dc.html": {
+      "x": 4230,
+      "y": 4874,
+      "w": 390,
+      "h": 844,
+      "title": "Rate and review",
+      "radius": 32
+    },
+    "Profile.dc.html": {
+      "x": 0,
+      "y": 6274,
+      "w": 390,
+      "h": 1010,
+      "title": "Profile",
+      "radius": 32
+    },
+    "Addresses.dc.html": {
+      "x": 470,
+      "y": 6274,
+      "w": 390,
+      "h": 844,
+      "title": "Addresses",
+      "radius": 32
+    },
+    "AddAddress.dc.html": {
+      "x": 940,
+      "y": 6274,
+      "w": 390,
+      "h": 1010,
+      "title": "Add address",
+      "radius": 32
+    },
+    "Notifications.dc.html": {
+      "x": 1410,
+      "y": 6274,
+      "w": 390,
+      "h": 844,
+      "title": "Notifications",
+      "radius": 32
+    },
+    "Privacy.dc.html": {
+      "x": 1880,
+      "y": 6274,
+      "w": 390,
+      "h": 1100,
+      "title": "Privacy and consent",
+      "radius": 32
+    },
+    "Help.dc.html": {
+      "x": 2350,
+      "y": 6274,
+      "w": 390,
+      "h": 844,
+      "title": "Help",
+      "radius": 32
+    },
+    "WebHome.dc.html": {
+      "x": 0,
+      "y": 7674,
+      "w": 1440,
+      "h": 1264,
+      "title": "Website: home",
+      "radius": 16
+    },
+    "WebProduct.dc.html": {
+      "x": 1520,
+      "y": 7674,
+      "w": 1440,
+      "h": 1020,
+      "title": "Website: saree page",
+      "radius": 16
+    },
     "AdminLogin.dc.html": {
       "x": 0,
-      "y": 3760,
+      "y": 9238,
       "w": 1440,
       "h": 900,
       "title": "Admin: sign in",
@@ -172,7 +316,7 @@
     },
     "AdminDashboard.dc.html": {
       "x": 1520,
-      "y": 3760,
+      "y": 9238,
       "w": 1440,
       "h": 900,
       "title": "Admin: dashboard",
@@ -180,7 +324,7 @@
     },
     "AdminProducts.dc.html": {
       "x": 3040,
-      "y": 3760,
+      "y": 9238,
       "w": 1440,
       "h": 900,
       "title": "Admin: products",
@@ -188,42 +332,114 @@
     },
     "AdminProductEdit.dc.html": {
       "x": 4560,
-      "y": 3760,
+      "y": 9238,
       "w": 1440,
       "h": 900,
       "title": "Admin: product, variants and stock",
       "radius": 16
     },
-    "AdminOrders.dc.html": {
+    "AdminInventory.dc.html": {
       "x": 0,
-      "y": 4780,
+      "y": 10258,
+      "w": 1440,
+      "h": 900,
+      "title": "Admin: stock",
+      "radius": 16
+    },
+    "AdminCategories.dc.html": {
+      "x": 1520,
+      "y": 10258,
+      "w": 1440,
+      "h": 900,
+      "title": "Admin: categories and attributes",
+      "radius": 16
+    },
+    "AdminOrders.dc.html": {
+      "x": 3040,
+      "y": 10258,
       "w": 1440,
       "h": 900,
       "title": "Admin: orders",
       "radius": 16
     },
-    "AdminAI.dc.html": {
-      "x": 1520,
-      "y": 4780,
+    "AdminReturns.dc.html": {
+      "x": 4560,
+      "y": 10258,
       "w": 1440,
       "h": 900,
-      "title": "Admin: AI try-on controls",
+      "title": "Admin: returns and refunds",
+      "radius": 16
+    },
+    "AdminOffers.dc.html": {
+      "x": 0,
+      "y": 11278,
+      "w": 1440,
+      "h": 900,
+      "title": "Admin: offers and coupons",
       "radius": 16
     },
     "AdminContent.dc.html": {
-      "x": 3040,
-      "y": 4780,
+      "x": 1520,
+      "y": 11278,
       "w": 1440,
       "h": 900,
       "title": "Admin: app content",
       "radius": 16
     },
-    "AdminCustomers.dc.html": {
+    "AdminAI.dc.html": {
+      "x": 3040,
+      "y": 11278,
+      "w": 1440,
+      "h": 900,
+      "title": "Admin: AI try-on controls",
+      "radius": 16
+    },
+    "AdminAIReports.dc.html": {
       "x": 4560,
-      "y": 4780,
+      "y": 11278,
+      "w": 1440,
+      "h": 900,
+      "title": "Admin: AI reports and cost",
+      "radius": 16
+    },
+    "AdminCustomers.dc.html": {
+      "x": 0,
+      "y": 12298,
       "w": 1440,
       "h": 900,
       "title": "Admin: customers and staff",
+      "radius": 16
+    },
+    "AdminAudit.dc.html": {
+      "x": 1520,
+      "y": 12298,
+      "w": 1440,
+      "h": 900,
+      "title": "Admin: audit log",
+      "radius": 16
+    },
+    "AdminSettings.dc.html": {
+      "x": 3040,
+      "y": 12298,
+      "w": 1440,
+      "h": 900,
+      "title": "Admin: settings",
+      "radius": 16
+    },
+    "Theme.dc.html": {
+      "x": 0,
+      "y": 13498,
+      "w": 1040,
+      "h": 844,
+      "title": "Theme",
+      "radius": 16
+    },
+    "Media.dc.html": {
+      "x": 1120,
+      "y": 13498,
+      "w": 1040,
+      "h": 1150,
+      "title": "Generated media",
       "radius": 16
     }
   },
@@ -233,71 +449,119 @@
     "Otp.dc.html",
     "SignUp.dc.html",
     "Main.dc.html",
+    "Categories.dc.html",
+    "Search.dc.html",
     "Listing.dc.html",
+    "Filters.dc.html",
     "Product.dc.html",
     "Shirt.dc.html",
+    "Wishlist.dc.html",
     "Consent.dc.html",
-    "Theme.dc.html",
-    "FullSaree.dc.html",
     "TryOnPhoto.dc.html",
+    "TryOnWait.dc.html",
     "TryOnResult.dc.html",
+    "TryOnProblem.dc.html",
+    "TryOnHub.dc.html",
+    "FullSaree.dc.html",
     "Bag.dc.html",
+    "EmptyBag.dc.html",
     "Checkout.dc.html",
+    "PaymentFailed.dc.html",
     "OrderPlaced.dc.html",
     "Orders.dc.html",
     "OrderDetail.dc.html",
+    "ReturnReason.dc.html",
+    "ReturnConfirm.dc.html",
+    "Review.dc.html",
+    "Profile.dc.html",
+    "Addresses.dc.html",
+    "AddAddress.dc.html",
+    "Notifications.dc.html",
+    "Privacy.dc.html",
+    "Help.dc.html",
+    "WebHome.dc.html",
+    "WebProduct.dc.html",
     "AdminLogin.dc.html",
     "AdminDashboard.dc.html",
     "AdminProducts.dc.html",
     "AdminProductEdit.dc.html",
+    "AdminInventory.dc.html",
+    "AdminCategories.dc.html",
     "AdminOrders.dc.html",
-    "AdminAI.dc.html",
+    "AdminReturns.dc.html",
+    "AdminOffers.dc.html",
     "AdminContent.dc.html",
+    "AdminAI.dc.html",
+    "AdminAIReports.dc.html",
     "AdminCustomers.dc.html",
+    "AdminAudit.dc.html",
+    "AdminSettings.dc.html",
+    "Theme.dc.html",
     "Media.dc.html"
   ],
   "notes": {
     "heading": {
       "x": 0,
-      "y": -1500,
+      "y": -340,
       "text": "Alar: lavender theme, all screens",
       "kind": "title1",
       "maxW": 3390
     },
-    "r1": {
+    "r0": {
       "x": 0,
-      "y": -1230,
+      "y": -110,
       "text": "1. Getting in: onboarding, login (mobile OTP or Google + OTP), sign up",
       "kind": "title2",
-      "maxW": 3390
+      "maxW": 5000
+    },
+    "r1": {
+      "x": 0,
+      "y": 1034,
+      "text": "2. Browsing: home, categories, search, listing, filters, product pages, wishlist",
+      "kind": "title2",
+      "maxW": 5000
     },
     "r2": {
       "x": 0,
-      "y": -130,
-      "text": "2. Shopping: home, listing, product pages, consent, theme",
+      "y": 3454,
+      "text": "3. Try-on",
       "kind": "title2",
-      "maxW": 3390
+      "maxW": 5000
     },
     "r3": {
       "x": 0,
-      "y": 2250,
-      "text": "3. Try-on, bag, checkout and orders",
+      "y": 4764,
+      "text": "4. Bag, checkout and orders",
       "kind": "title2",
-      "maxW": 3390
+      "maxW": 5000
     },
     "r4": {
       "x": 0,
-      "y": 3630,
-      "text": "4. Admin (web, 1440 wide)",
+      "y": 6164,
+      "text": "5. Account",
       "kind": "title2",
       "maxW": 5000
     },
     "r5": {
       "x": 0,
-      "y": 5830,
-      "text": "5. Generated media",
+      "y": 7564,
+      "text": "6. Website (1440 wide)",
       "kind": "title2",
-      "maxW": 3390
+      "maxW": 5000
+    },
+    "r6": {
+      "x": 0,
+      "y": 9128,
+      "text": "7. Admin (web, 1440 wide)",
+      "kind": "title2",
+      "maxW": 5000
+    },
+    "r7": {
+      "x": 0,
+      "y": 13388,
+      "text": "8. Theme and generated media",
+      "kind": "title2",
+      "maxW": 5000
     }
   },
   "designSystems": []

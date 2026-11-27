@@ -395,8 +395,9 @@ boards['OrderDetail'] = ('Alar order detail', 390, 1100, phone(1100, hdr('Order 
   </div>''', PAGE))
 
 # ================================================================== ADMIN (web, 1440 x 900)
-SIDE = [('chart', 'Dashboard', 'AdminDashboard'), ('box', 'Products', 'AdminProducts'), ('receipt', 'Orders', 'AdminOrders'), ('undo', 'Returns', ''),
-        ('users', 'Customers', 'AdminCustomers'), ('layout', 'App content', 'AdminContent'), ('spark', 'AI try-on', 'AdminAI'), ('tag', 'Offers', ''), ('gear', 'Settings', '')]
+SIDE = [('chart', 'Dashboard', 'AdminDashboard'), ('box', 'Products', 'AdminProducts'), ('layout', 'Categories', 'AdminCategories'), ('download', 'Stock', 'AdminInventory'),
+        ('receipt', 'Orders', 'AdminOrders'), ('undo', 'Returns', 'AdminReturns'), ('users', 'Customers', 'AdminCustomers'), ('image', 'App content', 'AdminContent'),
+        ('spark', 'AI try-on', 'AdminAI'), ('tag', 'Offers', 'AdminOffers'), ('gear', 'Settings', 'AdminSettings')]
 
 
 def admin(active, title, actions, body, crumbs=''):
@@ -694,38 +695,560 @@ boards['AdminCustomers'] = ('Alar admin customers', 1440, 900, admin('Customers'
     </div>
   </div>'''))
 
+# ================================================================== BATCH 3: remaining shopper, web and admin screens
+B.update(c_silk='ffb3625dfed5ea5fc5c7788b667bf42e', c_cotton='9a328687a71646d20a464df692b6734b', c_wedding='e0580f650ed0d55b0f87622656b15946',
+         c_festive='cb04510b38a85031edc1ead5f9db4631', c_newin='c9689231ca6b9fbf6e7dce69f5e6e74a', c_under='2f4bea15f6858c6a5d7f1d69490b5729',
+         c_shirts='85d092fb33eeae4b036a7fbdeb8da23d', c_dhotis='cfc24db4dcc295e18f7bcf81cfa9429c')
+ICON.update(
+    clock='<circle cx="12" cy="12" r="8.500"/><path d="M12 7.500V12l3 2"/>',
+    star='<path d="M12 3l2.700 5.800 6.300.800-4.600 4.300 1.200 6.200L12 17l-5.600 3.100 1.200-6.200L3 9.600l6.300-.800z"/>',
+    user='<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>',
+    chat='<path d="M4 5h16v11H9l-5 4z"/>', call='<path d="M5 4h4l2 5-2.500 1.500a11 11 0 005 5L15 13l5 2v4a1 1 0 01-1 1A15 15 0 014 5a1 1 0 011-1z"/>',
+    globe='<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.500 3 14.500 0 18M12 3c-3 3.500-3 14.500 0 18"/>',
+    card='<rect x="3" y="5" width="18" height="14" rx="2.500"/><path d="M3 10h18"/>',
+    logout='<path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/>', wifi='<path d="M3 9a14 14 0 0118 0M6 12.500a9.500 9.500 0 0112 0M9 16a5 5 0 016 0M12 19.500v.100"/>',
+    alert='<path d="M12 4l9 16H3z"/><path d="M12 10v4.500M12 17.500v.100"/>', edit='<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+)
+SEP = f'<span style="height: 1px; background: {LINE}"></span>'
+
+
+def nav(active):
+    out = f'<nav style="position: absolute; left: 16px; right: 16px; bottom: 12px; height: 56px; border-radius: 20px; {GLASS}; border: 1px solid rgba(231, 227, 245, 0.95); display: grid; grid-template-columns: repeat(4, 1fr); align-items: center">'
+    for i, t in [('home', 'Home'), ('layout', 'Categories'), ('spark', 'Try-on'), ('bag', 'Bag')]:
+        on = t == active
+        out += f'<span style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; font-weight: {700 if on else 600}; color: {P if on else MUTE}">{ic(i, 20, 2.200 if on else 1.800)}{t}</span>'
+    return out + '</nav>'
+
+
+def check(t, on=False, count=''):
+    box = f'<span style="width: 18px; height: 18px; border-radius: 5px; box-sizing: border-box; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; ' + (f'background: {P}">' + ic('check', 12, 3.500) if on else f'border: 1.500px solid #B9B4CC">') + '</span>'
+    cnt = f'<span style="margin-left: auto; font-size: 12px; color: {MUTE}">{count}</span>' if count else ''
+    return f'<span style="display: flex; align-items: center; gap: 10px; min-height: 40px; font-size: 14px; line-height: 20px; font-weight: {600 if on else 400}">{box}{t}{cnt}</span>'
+
+
+def radiorow(t, on=False, sub=''):
+    s = f'<span style="font-size: 12px; line-height: 16px; color: {MUTE}">{sub}</span>' if sub else ''
+    return f'<span style="display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; line-height: 20px">{radio(on)}<span style="display: flex; flex-direction: column"><span style="font-weight: {600 if on else 400}">{t}</span>{s}</span></span>'
+
+
+def tog(t, on=True, sub=''):
+    s = f'<span style="font-size: 12px; line-height: 16px; color: {MUTE}">{sub}</span>' if sub else ''
+    return f'<div style="display: flex; align-items: center; gap: 12px; min-height: 44px"><span style="flex: 1; display: flex; flex-direction: column; font-size: 14px; line-height: 20px"><span>{t}</span>{s}</span>{toggle(on)}</div>'
+
+
+def note(i, t, tone='lav'):
+    bg, c = {'lav': (T4, P), 'amber': ('#FFF1DC', AMBER), 'red': ('#FCE8E6', RED), 'green': ('#E3F4EC', GREEN)}[tone]
+    return f'<div style="display: flex; gap: 10px; padding: 10px 12px; border-radius: 10px; background: {bg}; font-size: 12px; line-height: 18px; color: {MUTE if tone == "lav" else INK}">{ic(i, 16, 2, c)}<span>{t}</span></div>'
+
+
+def stars(n, s=14):
+    return '<span style="display: inline-flex; gap: 2px">' + ''.join(f'<svg width="{s}" height="{s}" viewBox="0 0 24 24" fill="{"#F2A90D" if i < n else "#E3E0EE"}" aria-hidden="true">{ICON["star"]}</svg>' for i in range(5)) + '</span>'
+
+
+def pcard(k, name, sub, price, mrp, off, h=210, extra='', badge=''):
+    bdg = f'<span style="position: absolute; left: 0; top: 10px; height: 22px; padding: 0 10px 0 8px; display: inline-flex; align-items: center; background: {P}; color: #FFFFFF; font-size: 11px; font-weight: 600; border-radius: 0 6px 6px 0">{badge}</span>' if badge else ''
+    return f'''<div style="display: flex; flex-direction: column; gap: 8px; min-width: 0"><div style="height: {h}px; border-radius: 10px; overflow: hidden; position: relative; background: {GROUND}">{img(k)}{bdg}<span style="position: absolute; right: 8px; top: 8px; width: 32px; height: 32px; border-radius: 999px; background: #FFFFFF; border: 1px solid {LINE}; display: inline-flex; align-items: center; justify-content: center; color: {P}">{ic('heart', 16, 2)}</span></div>
+      <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; line-height: 18px; font-weight: 700">{name}</span><span style="font-size: 12px; line-height: 16px; color: {MUTE}">{sub}</span><span style="display: flex; align-items: center; gap: 6px"><span style="{HF}; font-size: 14px; font-weight: 800">{price}</span><span style="font-size: 12px; color: {MUTE}; text-decoration: line-through">{mrp}</span><span style="font-size: 12px; font-weight: 700; color: {PD}">{off}</span></span></div>{extra}</div>'''
+
+
+# ------------------------------------------------------------------ Categories tab
+def rail(t, i, on=False):
+    st = f'background: #FFFFFF; color: {PD}; font-weight: 700; border-left: 3px solid {P}' if on else f'color: {INK}; font-weight: 500; border-left: 3px solid transparent'
+    return f'<span style="height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 11px; {st}">{ic(i, 20, 1.800)}{t}</span>'
+
+
+def ctile(k, t, soon=False):
+    s = f'<span style="position: absolute; left: 4px; top: 4px; height: 16px; padding: 0 5px; border-radius: 4px; background: {INK}; color: #FFFFFF; font-size: 9px; font-weight: 700; display: inline-flex; align-items: center">SOON</span>' if soon else ''
+    return f'<span style="display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; line-height: 14px; text-align: center"><span style="width: 76px; height: 92px; border-radius: 16px; overflow: hidden; position: relative; background: {T1}; display: block">{img(k, "center")}{s}</span>{t}</span>'
+
+
+boards['Categories'] = ('Alar categories', 390, 844, phone(844, hdr('Categories', 'Main.dc.html', ic('search', 20, 2, INK)) + f'''
+  <div style="flex: 1; min-height: 0; display: flex">
+    <div style="width: 84px; flex-shrink: 0; background: {T4}; display: flex; flex-direction: column">{rail('Women', 'user', True)}{rail('Men', 'user')}{rail('Kids', 'user')}{rail('Offers', 'tag')}{rail('Try-on', 'spark')}</div>
+    <div style="flex: 1; min-width: 0; padding: 16px 12px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; align-items: center; justify-content: space-between">{h2('Sarees', 14)}<a href="Listing.dc.html" style="font-size: 13px; font-weight: 600; text-decoration: none">View all</a></div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 8px">{ctile('c_silk', 'Silk')}{ctile('c_cotton', 'Cotton')}{ctile('c_wedding', 'Wedding')}{ctile('c_festive', 'Festive')}{ctile('c_newin', 'New in')}{ctile('c_under', 'Under ₹2,500')}</div>
+      {SEP}{h2('More for women', 14)}
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 8px">{ctile('c_sarees', 'Blouses', True)}{ctile('c_under', 'Kurtas', True)}{ctile('c_newin', 'Dupattas', True)}</div>
+    </div>
+  </div>''' + nav('Categories')))
+
+# ------------------------------------------------------------------ Search
+def srow(i, t, sub=''):
+    s = f'<span style="font-size: 12px; color: {MUTE}">{sub}</span>' if sub else ''
+    return f'<span style="display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 14px">{ic(i, 18, 2, MUTE)}<span style="flex: 1; display: flex; flex-direction: column">{t}{s}</span><span style="transform: rotate(-45deg); display: inline-flex; color: {MUTE}">{ic("back", 16, 2)}</span></span>'
+
+
+def sprod(k, t, p):
+    return f'<span style="display: flex; align-items: center; gap: 12px">{pic(k, 44, 55, 8)}<span style="flex: 1; display: flex; flex-direction: column; font-size: 13px; line-height: 18px"><strong style="font-weight: 600">{t}</strong><span style="color: {MUTE}">{p}</span></span>{ic("right", 16, 2.200, MUTE)}</span>'
+
+
+boards['Search'] = ('Alar search', 390, 844, phone(844, f'''
+  <header style="height: 56px; box-sizing: border-box; padding: 0 16px 0 4px; display: flex; align-items: center; gap: 4px; flex-shrink: 0; border-bottom: 1px solid {LINE}">
+    <a href="Main.dc.html" aria-label="Back" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; color: {INK}">{ic('back', 24)}</a>
+    <span style="flex: 1; display: flex; align-items: center; gap: 8px; height: 40px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; border: 1.500px solid {P}; font-size: 14px">kanchi<span style="width: 1.500px; height: 18px; background: {P}"></span><span style="margin-left: auto; color: {MUTE}">{ic('close', 16, 2.200)}</span></span>
+  </header>
+  <div style="padding: 8px 16px 0; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; flex-direction: column">{srow('search', '<span><strong style="font-weight: 700">kanchi</strong>puram silk sarees</span>', 'in Sarees')}{srow('search', '<span><strong style="font-weight: 700">kanchi</strong>puram wedding sarees</span>')}{srow('search', '<span><strong style="font-weight: 700">kanchi</strong> cotton sarees</span>')}{srow('clock', '<span><strong style="font-weight: 700">kanchi</strong>puram violet</span>', 'You searched this before')}</div>
+    {SEP}{h2('Products', 14)}
+    {sprod('violet', 'Kanchipuram silk saree, violet', '₹4,800')}{sprod('emerald', 'Kanchipuram silk saree, emerald', '₹4,950')}
+    {SEP}{h2('Trending now', 14)}
+    <div style="display: flex; flex-wrap: wrap; gap: 8px">{chip('Wedding silks')}{chip('Under ₹2,500')}{chip('Soft silk')}{chip('Kasavu')}{chip('Temple border')}{chip('Try-on ready')}</div>
+  </div>'''))
+
+# ------------------------------------------------------------------ Filters
+def frail(t, on=False, n=''):
+    st = f'background: #FFFFFF; font-weight: 700; color: {INK}' if on else f'font-weight: 500; color: {INK}'
+    dot = f'<span style="min-width: 16px; height: 16px; border-radius: 999px; background: {P}; color: #FFFFFF; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">{n}</span>' if n else ''
+    return f'<span style="height: 48px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; {st}">{t}{dot}</span>'
+
+
+boards['Filters'] = ('Alar filters', 390, 844, phone(844, f'''
+  <header style="height: 56px; box-sizing: border-box; padding: 0 16px 0 4px; display: flex; align-items: center; gap: 4px; flex-shrink: 0; border-bottom: 1px solid {LINE}"><a href="Listing.dc.html" aria-label="Close" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; color: {INK}">{ic('close', 22)}</a><span style="flex: 1; {HF}; font-size: 16px; font-weight: 700">Filters</span><a href="#clear" style="font-size: 13px; font-weight: 600; text-decoration: none">Clear all</a></header>
+  <div style="flex: 1; min-height: 0; display: flex">
+    <div style="width: 128px; flex-shrink: 0; background: {T4}; display: flex; flex-direction: column">{frail('Fabric', True, '2')}{frail('Colour', n='1')}{frail('Price')}{frail('Weave')}{frail('Occasion')}{frail('Border')}{frail('Discount')}{frail('Delivery time')}{frail('Try-on ready')}</div>
+    <div style="flex: 1; min-width: 0; padding: 8px 16px; display: flex; flex-direction: column">
+      <span style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; margin: 4px 0 8px; border-radius: 8px; border: 1px solid {T2}; font-size: 13px; color: #9B97AD">{ic('search', 14, 2, MUTE)}Search fabric</span>
+      {check('Pure silk', True, '42')}{check('Soft silk', True, '31')}{check('Cotton', False, '28')}{check('Silk cotton', False, '14')}{check('Tussar', False, '8')}{check('Linen', False, '5')}
+    </div>
+  </div>''' + bar(f'<span style="display: flex; flex-direction: column"><span style="{HF}; font-size: 16px; font-weight: 800">73 items</span><span style="font-size: 12px; color: {MUTE}">3 filters on</span></span>' + btn('Apply', href='Listing.dc.html'), 'minmax(0, 1fr) 180px')))
+
+# ------------------------------------------------------------------ Wishlist
+def move(t='Move to bag', off=False):
+    st = f'background: #F6F5FA; color: {MUTE}; border: 1px solid {LINE}' if off else f'background: #FFFFFF; color: {PD}; border: 1.500px solid {P}'
+    return f'<span style="height: 32px; border-radius: 8px; {st}; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">{t}</span>'
+
+
+boards['Wishlist'] = ('Alar wishlist', 390, 1010, phone(1010, hdr('Wishlist', 'Main.dc.html', f'<span style="font-size: 13px; color: {MUTE}">4 items</span>') + f'''
+  <div style="padding: 12px 16px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px">
+    {pcard('violet', 'Kanchipuram silk saree', 'Violet', '₹4,800', '₹5,400', '11% OFF', 210, move(), 'Price dropped')}
+    {pcard('emerald', 'Kanchipuram silk saree', 'Emerald', '₹4,950', '₹5,500', '10% OFF', 210, move())}
+    {pcard('mustard', 'Chettinad cotton saree', 'Mustard', '₹1,650', '₹1,900', '13% OFF', 210, move())}
+    {pcard('navy', 'Banarasi silk saree', 'Navy', '₹4,950', '₹5,600', '11% OFF', 210, move('Sold out · Tell me', True))}
+  </div>''' + nav('')))
+
+# ------------------------------------------------------------------ Try-on waiting / problem / hub
+def wstep(t, state):
+    if state == 'done':
+        d = f'<span style="width: 20px; height: 20px; border-radius: 999px; background: {P}; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center">{ic("check", 12, 3.500)}</span>'
+    elif state == 'on':
+        d = f'<span style="width: 20px; height: 20px; border-radius: 999px; border: 2.500px solid {T2}; border-top-color: {P}; box-sizing: border-box"></span>'
+    else:
+        d = f'<span style="width: 20px; height: 20px; border-radius: 999px; border: 2px solid {T2}; box-sizing: border-box"></span>'
+    return f'<span style="display: flex; align-items: center; gap: 12px; min-height: 36px; font-size: 14px; font-weight: {600 if state != "todo" else 400}; color: {INK if state != "todo" else MUTE}">{d}{t}</span>'
+
+
+boards['TryOnWait'] = ('Alar try-on in progress', 390, 844, phone(844, hdr('Making your try-on', 'TryOnPhoto.dc.html') + f'''
+  <div style="padding: 20px 16px 0; display: flex; flex-direction: column; gap: 16px; align-items: center">
+    <div style="display: flex; align-items: center; gap: 12px"><span style="width: 120px; height: 160px; border-radius: 16px; overflow: hidden; position: relative; background: {GROUND}; display: block">{img('tryon', '80% center')}</span><span style="width: 32px; height: 32px; border-radius: 999px; background: {T1}; color: {P}; display: inline-flex; align-items: center; justify-content: center">{ic('plus', 16, 2.400)}</span><span style="width: 120px; height: 160px; border-radius: 16px; overflow: hidden; position: relative; background: {GROUND}; display: block">{img('maroon')}</span></div>
+    <div style="width: 100%; display: flex; flex-direction: column; gap: 6px"><div style="height: 6px; border-radius: 999px; background: {T1}; overflow: hidden"><span style="display: block; width: 58%; height: 100%; border-radius: 999px; background: {P}"></span></div><div style="display: flex; justify-content: space-between; font-size: 12px; color: {MUTE}"><span>About 15 seconds</span><span>58%</span></div></div>
+    {card(wstep('Photo checked', 'done') + wstep('Draping the saree on you', 'on') + wstep('Final quality check', 'todo'), 12, 0, 'width: 100%; box-sizing: border-box')}
+    <div style="width: 100%">{note('bell', 'You can keep browsing. We will tell you the moment it is ready, and it will be saved under Try-on.')}</div>
+  </div>
+  <div style="margin-top: auto; padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 8px">{btn('Keep browsing', 'ghost', href='Listing.dc.html')}<a href="TryOnPhoto.dc.html" style="display: inline-flex; align-items: center; justify-content: center; height: 40px; font-size: 14px; font-weight: 600; color: {MUTE}; text-decoration: none">Cancel</a></div>'''))
+
+boards['TryOnProblem'] = ('Alar try-on problem', 390, 844, phone(844, hdr('Your try-on', 'TryOnPhoto.dc.html') + f'''
+  <div style="padding: 32px 16px 0; display: flex; flex-direction: column; gap: 16px; align-items: center; text-align: center">
+    <span style="width: 64px; height: 64px; border-radius: 999px; background: #FFF1DC; color: {AMBER}; display: inline-flex; align-items: center; justify-content: center">{ic('image', 30, 1.800)}</span>
+    <h1 style="margin: 0; {HF}; font-size: 20px; line-height: 26px; font-weight: 800">We could not use this photo</h1>
+    <p style="margin: 0; font-size: 14px; line-height: 22px; color: {MUTE}">We can see more than one person. Please choose a photo with only you in it.</p>
+    <div style="width: 100%; text-align: left">{card(h2('A good photo has', 14) + f'<div style="display: flex; flex-direction: column; gap: 8px">{tip("You alone, standing")}{tip("Head to feet in the frame")}{tip("Bright, even light")}</div>', 12, 10)}</div>
+    <div style="width: 100%; text-align: left">{note('check', 'This attempt is not counted. You still have 5 free try-ons today.', 'green')}</div>
+  </div>
+  <div style="margin-top: auto; padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 8px">{btn('Choose another photo', href='TryOnPhoto.dc.html', icon='image')}{btn('Back to the saree', 'ghost', href='Product.dc.html')}</div>'''))
+
+
+def tr(k, t):
+    return f'<span style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; line-height: 14px; color: {MUTE}"><span style="height: 136px; border-radius: 10px; overflow: hidden; position: relative; background: {GROUND}; display: block">{img(k)}<span style="position: absolute; left: 4px; top: 4px; height: 16px; padding: 0 5px; border-radius: 4px; background: {P}; color: #FFFFFF; font-size: 9px; font-weight: 700; display: inline-flex; align-items: center">AI</span></span>{t}</span>'
+
+
+boards['TryOnHub'] = ('Alar try-on tab', 390, 1010, phone(1010, hdr('Try-on', 'Main.dc.html', f'<span style="font-size: 12px; font-weight: 600; color: {PD}; height: 28px; padding: 0 10px; border-radius: 999px; background: {T1}; display: inline-flex; align-items: center">3 of 5 left today</span>') + f'''
+  <div style="padding: 12px 16px 0; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; gap: 12px; padding: 12px; border-radius: 16px; background: {T1}; align-items: center">{pic('tryon', 72, 96, 10, '80% center')}<div style="flex: 1; display: flex; flex-direction: column; gap: 6px"><strong style="{HF}; font-size: 16px; line-height: 22px; font-weight: 800">See any saree on you</strong><span style="font-size: 12px; line-height: 18px; color: {MUTE}">Your photo is saved. Pick a saree and tap Try it on.</span>{btn('Pick a saree', href='Listing.dc.html', h=32, extra='font-size: 13px; align-self: flex-start')}</div></div>
+    <div style="display: flex; flex-direction: column; gap: 10px"><div style="display: flex; align-items: center; justify-content: space-between">{h2('My try-ons', 14)}<span style="font-size: 12px; color: {MUTE}">6 saved</span></div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px">{tr('maroon', 'Arani silk')}{tr('violet', 'Kanchipuram')}{tr('emerald', 'Kanchipuram')}{tr('peacock', 'Soft silk')}{tr('mustard', 'Chettinad')}{tr('navy', 'Banarasi')}</div></div>
+    {card(f'<div style="display: flex; gap: 12px; align-items: center">{pic("tryon", 48, 64, 8, "80% center")}<span style="flex: 1; display: flex; flex-direction: column; font-size: 13px; line-height: 18px"><strong style="font-weight: 700">My photo</strong><span style="color: {MUTE}">Deleted by itself in 26 days if not used</span></span></div><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">{sbtn("Change photo")}{sbtn("Delete photo")}</div>', 12, 10)}
+    <a href="Privacy.dc.html" style="font-size: 13px; font-weight: 600; text-decoration: none">How my photo is used, and how to withdraw</a>
+  </div>''' + nav('Try-on'), PAGE))
+
+# ------------------------------------------------------------------ Empty bag / payment failed
+boards['EmptyBag'] = ('Alar empty bag', 390, 844, phone(844, hdr('Bag', 'Main.dc.html') + f'''
+  <div style="padding: 40px 16px 0; display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center">
+    <span style="width: 72px; height: 72px; border-radius: 999px; background: {T1}; color: {P}; display: inline-flex; align-items: center; justify-content: center">{ic('bag', 32, 1.600)}</span>
+    <h1 style="margin: 0; {HF}; font-size: 20px; line-height: 26px; font-weight: 800">Your bag is empty</h1>
+    <p style="margin: 0; font-size: 14px; line-height: 22px; color: {MUTE}">Sarees you add will wait here.</p>
+    {btn('Start shopping', href='Main.dc.html', extra='width: 200px')}
+  </div>
+  <div style="padding: 32px 16px 0; display: flex; flex-direction: column; gap: 10px"><div style="display: flex; align-items: center; justify-content: space-between">{h2('From your wishlist', 14)}<a href="Wishlist.dc.html" style="font-size: 13px; font-weight: 600; text-decoration: none">View all</a></div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">''' + ''.join(f'<span style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700"><span style="height: 140px; border-radius: 10px; overflow: hidden; position: relative; background: {GROUND}; display: block">{img(k)}</span>{p}</span>' for k, p in [('violet', '₹4,800'), ('emerald', '₹4,950'), ('mustard', '₹1,650')]) + '''</div></div>''' + nav('Bag')))
+
+boards['PaymentFailed'] = ('Alar payment failed', 390, 844, phone(844, hdr('Payment', 'Checkout.dc.html') + f'''
+  <div style="padding: 32px 16px 0; display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center">
+    <span style="width: 64px; height: 64px; border-radius: 999px; background: #FCE8E6; color: {RED}; display: inline-flex; align-items: center; justify-content: center">{ic('alert', 30, 1.800)}</span>
+    <h1 style="margin: 0; {HF}; font-size: 20px; line-height: 26px; font-weight: 800">Payment did not go through</h1>
+    <p style="margin: 0; font-size: 14px; line-height: 22px; color: {MUTE}">Your UPI app did not confirm the payment. No order has been placed.</p>
+  </div>
+  <div style="padding: 20px 16px 0; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; border: 1.500px solid {P}; background: {T4}">{ic('clock', 20, 2, P)}<span style="flex: 1; font-size: 13px; line-height: 18px"><strong style="font-weight: 700">Your sarees are held for you</strong><br><span style="color: {MUTE}">Pay within the time left to keep them.</span></span><strong style="{HF}; font-size: 18px; font-weight: 800; color: {PD}">11:42</strong></div>
+    {card(f'<div style="display: flex; align-items: center; gap: 8px">{pic("maroon", 40, 50, 8)}{pic("ivory", 40, 50, 8)}<span style="flex: 1; font-size: 13px; color: {MUTE}; padding-left: 4px">2 items</span><strong style="{HF}; font-size: 15px; font-weight: 800">₹4,950</strong></div>', 12)}
+    {note('shield', 'If money left your account, the bank returns it by itself in 5 to 7 working days. You do not need to do anything.')}
+  </div>
+  <div style="margin-top: auto; padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 8px">{btn('Try again', href='Checkout.dc.html')}{btn('Pay another way', 'ghost', href='Checkout.dc.html')}<a href="Help.dc.html" style="display: inline-flex; align-items: center; justify-content: center; height: 36px; font-size: 13px; font-weight: 600; text-decoration: none">Need help?</a></div>'''))
+
+# ------------------------------------------------------------------ Profile
+def qtile(i, t, href):
+    return f'<a href="{href}" style="height: 64px; border-radius: 12px; border: 1px solid {LINE}; background: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 600; color: {INK}; text-decoration: none">{ic(i, 20, 1.800, P)}{t}</a>'
+
+
+def lrow(i, t, href='#', sub='', color=INK):
+    s = f'<span style="font-size: 12px; line-height: 16px; color: {MUTE}; font-weight: 400">{sub}</span>' if sub else ''
+    return f'<a href="{href}" style="display: flex; align-items: center; gap: 12px; min-height: 48px; color: {color}; font-size: 14px; font-weight: 600; text-decoration: none">{ic(i, 18, 2, P if color == INK else color)}<span style="flex: 1; display: flex; flex-direction: column">{t}{s}</span>{ic("right", 16, 2.200, MUTE)}</a>'
+
+
+boards['Profile'] = ('Alar profile', 390, 1010, phone(1010, f'''
+  <div style="background: linear-gradient(180deg, {T1} 0%, {PAGE} 100%); padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 12px">
+    <div style="height: 44px; display: flex; align-items: center; justify-content: space-between; margin-left: -12px"><a href="Main.dc.html" aria-label="Back" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; color: {INK}">{ic('back', 24)}</a><a href="Notifications.dc.html" aria-label="Notifications" style="color: {INK}">{ic('bell', 22, 1.800)}</a></div>
+    <div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px; height: 56px; border-radius: 999px; background: {P}; color: #FFFFFF; {HF}; font-size: 20px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center">LN</span><span style="flex: 1; display: flex; flex-direction: column"><strong style="{HF}; font-size: 18px; line-height: 24px; font-weight: 800">Lakshmi Narayanan</strong><span style="font-size: 13px; color: {MUTE}">+91 98400 12345</span></span><span style="height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid {T2}; background: #FFFFFF; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center">Edit</span></div>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">{qtile('box', 'Orders', 'Orders.dc.html')}{qtile('heart', 'Wishlist', 'Wishlist.dc.html')}{qtile('spark', 'Try-ons', 'TryOnHub.dc.html')}{qtile('help', 'Help', 'Help.dc.html')}</div>
+  </div>
+  <div style="padding: 0 16px; display: flex; flex-direction: column; gap: 12px">
+    {card(lrow('pin', 'Addresses', 'Addresses.dc.html', '2 saved') + SEP + lrow('card', 'Payments and refunds', sub='1 refund on the way') + SEP + lrow('tag', 'Coupons', sub='2 you can use'), 16, 0, 'padding-top: 4px; padding-bottom: 4px')}
+    {card(lrow('bell', 'Notifications', 'Notifications.dc.html') + SEP + lrow('globe', 'Language', sub='English · தமிழ் · తెలుగు · ಕನ್ನಡ · മലയാളം') + SEP + lrow('shield', 'Privacy and consent', 'Privacy.dc.html', 'Try-on photo, data, account'), 16, 0, 'padding-top: 4px; padding-bottom: 4px')}
+    {card(lrow('receipt', 'Terms, returns and shipping policy') + SEP + lrow('chat', 'Grievance officer') + SEP + lrow('logout', 'Log out', color=RED), 16, 0, 'padding-top: 4px; padding-bottom: 4px')}
+    <span style="font-size: 12px; color: {MUTE}; text-align: center">Alar app 1.0.0</span>
+  </div>''', PAGE))
+
+# ------------------------------------------------------------------ Addresses
+def addr(name, tag, lines, on=False):
+    bd = f'1.500px solid {P}' if on else f'1px solid {LINE}'
+    return f'<div style="background: #FFFFFF; border: {bd}; border-radius: 16px; padding: 12px; display: flex; gap: 12px">{radio(on)}<div style="flex: 1; display: flex; flex-direction: column; gap: 8px"><div style="display: flex; flex-direction: column; gap: 2px; font-size: 13px; line-height: 20px"><span><strong style="font-weight: 700">{name}</strong> {chip(tag, tone="lav")}{" " + chip("DEFAULT", tone="grey") if on else ""}</span><span style="color: {MUTE}">{lines}</span></div><div style="display: flex; gap: 8px">{sbtn("Edit")}{sbtn("Remove")}</div></div></div>'
+
+
+boards['Addresses'] = ('Alar addresses', 390, 844, phone(844, hdr('Addresses', 'Profile.dc.html') + f'''
+  <div style="padding: 12px 16px 0; display: flex; flex-direction: column; gap: 12px">
+    {addr('Lakshmi Narayanan', 'HOME', '14, 2nd Cross Street, Mandaveli, Chennai, Tamil Nadu 600028<br>+91 98400 12345', True)}
+    {addr('Lakshmi Narayanan', 'WORK', '3rd Floor, Prestige Polygon, Anna Salai, Chennai, Tamil Nadu 600035<br>+91 98400 12345')}
+    {note('truck', 'We deliver across Tamil Nadu, Kerala, Karnataka, Andhra Pradesh, Telangana and Puducherry. More states are coming.')}
+  </div>''' + bar(btn('Add a new address', href='AddAddress.dc.html', icon='plus'), '1fr'), PAGE))
+
+boards['AddAddress'] = ('Alar add address', 390, 1010, phone(1010, hdr('Add address', 'Addresses.dc.html') + f'''
+  <div style="padding: 16px 16px 0; display: flex; flex-direction: column; gap: 12px">
+    {field('Full name', 'Lakshmi Narayanan')}{field('Mobile number', '98400 12345', pre='+91')}
+    <div style="display: flex; gap: 12px; align-items: flex-end">{field('PIN code', '600028', w='140px')}<span style="flex: 1; height: 44px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: {GREEN}">{ic('check', 16, 2.600)}We deliver here by Tue, 1 Dec</span></div>
+    {field('House, flat or building', '14, 2nd Cross Street')}{field('Area or street', 'Mandaveli')}{field('Landmark (optional)', ph='Near the temple tank')}
+    <div style="display: flex; gap: 12px">{field('City', 'Chennai')}{field('State', 'Tamil Nadu')}</div>
+    <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 600">Save as</span><div style="display: flex; gap: 8px">{chip('Home', True)}{chip('Work')}{chip('Other')}</div></div>
+    {check('Make this my default address', True)}
+  </div>''' + bar(btn('Save address', href='Addresses.dc.html'), '1fr')))
+
+# ------------------------------------------------------------------ Notifications
+def nrow(i, t, s, when, unread=False):
+    dot = f'<span style="width: 8px; height: 8px; border-radius: 999px; background: {P}; flex-shrink: 0"></span>' if unread else ''
+    return f'<div style="display: flex; gap: 12px; padding: 12px 16px; background: {T4 if unread else "#FFFFFF"}; border-bottom: 1px solid {LINE}"><span style="width: 40px; height: 40px; border-radius: 12px; background: {T1}; color: {P}; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0">{ic(i, 20, 1.800)}</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 14px; line-height: 20px; font-weight: {700 if unread else 600}">{t}</strong><span style="font-size: 13px; line-height: 18px; color: {MUTE}">{s}</span><span style="font-size: 11px; color: {MUTE}">{when}</span></span>{dot}</div>'
+
+
+boards['Notifications'] = ('Alar notifications', 390, 844, phone(844, hdr('Notifications', 'Profile.dc.html', f'<a href="#read" style="font-size: 13px; font-weight: 600; text-decoration: none">Mark all read</a>') + f'''
+  <div style="display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid {LINE}">{chip('All', True)}{chip('Orders')}{chip('Try-on')}{chip('Offers')}</div>
+  {nrow('truck', 'Your order has shipped', 'AL-2611-00418 is on the way. Arrives by Tue, 1 Dec.', '2 hours ago', True)}
+  {nrow('spark', 'Your try-on is ready', 'See the Arani silk saree on you.', 'Yesterday, 6:31 pm', True)}
+  {nrow('tag', 'Price dropped on your wishlist', 'Kanchipuram silk saree, violet is now ₹4,800.', 'Yesterday, 10:05 am')}
+  {nrow('undo', 'Refund sent', '₹2,400 for AL-2610-00193 has gone back to your UPI account.', '2 Nov')}
+  {nrow('shield', 'We updated the try-on notice', 'Please read and agree again before your next try-on.', '20 Nov')}'''))
+
+# ------------------------------------------------------------------ Privacy and consent
+boards['Privacy'] = ('Alar privacy and consent', 390, 1100, phone(1100, hdr('Privacy and consent', 'Profile.dc.html') + f'''
+  <div style="padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px">
+    {card(f'<div style="display: flex; align-items: center; justify-content: space-between">{h2("Try-on consent", 14)}{chip("AGREED · VERSION 3", tone="green")}</div><span style="font-size: 13px; line-height: 20px; color: {MUTE}">You agreed on 26 Nov 2026 that your photo may be sent to the AI services named in the notice to make try-on pictures.</span><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">{sbtn("Read the notice")}{sbtn("Withdraw consent")}</div><span style="font-size: 12px; line-height: 18px; color: {MUTE}">Withdrawing deletes your photo and try-on pictures at once. Shopping works as before.</span>', 12, 10)}
+    {card(h2('My try-on data', 14) + row('Photo stored', '1') + row('Try-on pictures saved', '6') + row('Deleted by itself', 'After 30 days without use') + f'<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">{sbtn("Delete pictures")}{sbtn("Delete everything")}</div>', 12, 8)}
+    {card(h2('Messages from Alar', 14) + tog('Order updates on WhatsApp', True) + SEP + tog('Order updates by SMS', True, 'Needed for delivery; cannot be turned off') + SEP + tog('Offers and new arrivals', False), 12, 0)}
+    {card(lrow('download', 'Get a copy of my data', sub='Sent to your email within 7 days') + SEP + lrow('edit', 'Correct my details') + SEP + lrow('chat', 'Complain to the grievance officer', sub='Reply within 48 hours'), 16, 0, 'padding-top: 4px; padding-bottom: 4px')}
+    <div style="border: 1px solid #F3C7C3; border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #FFFFFF"><strong style="font-size: 14px; font-weight: 700; color: {RED}">Delete my account</strong><span style="font-size: 12px; line-height: 18px; color: {MUTE}">Removes your profile, addresses, wishlist and try-on data. Invoices are kept for the time tax law requires.</span><span style="height: 36px; border-radius: 8px; border: 1.500px solid {RED}; color: {RED}; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">Start account deletion</span></div>
+  </div>''', PAGE))
+
+# ------------------------------------------------------------------ Help
+boards['Help'] = ('Alar help', 390, 844, phone(844, hdr('Help', 'Profile.dc.html') + f'''
+  <div style="padding: 12px 16px 0; display: flex; flex-direction: column; gap: 12px">
+    {card(f'<span style="font-size: 12px; color: {MUTE}">Is it about this order?</span><div style="display: flex; gap: 12px; align-items: center">{pic("maroon", 44, 55, 8)}<span style="flex: 1; display: flex; flex-direction: column; font-size: 13px; line-height: 18px"><strong style="font-weight: 700">AL-2611-00418 · On the way</strong><span style="color: {MUTE}">Arrives by Tue, 1 Dec</span></span>{ic("right", 16, 2.200, MUTE)}</div>', 12, 8)}
+    {card(lrow('truck', 'Where is my order?') + SEP + lrow('undo', 'Return, exchange or refund') + SEP + lrow('card', 'Payment problem') + SEP + lrow('spark', 'Try-on and my photo') + SEP + lrow('user', 'Account and login'), 16, 0, 'padding-top: 4px; padding-bottom: 4px')}
+    {h2('Talk to us', 14)}
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">{qtile('chat', 'WhatsApp', '#wa')}{qtile('call', 'Call', '#call')}{qtile('mail', 'Email', '#mail')}</div>
+    <span style="font-size: 12px; line-height: 18px; color: {MUTE}">Monday to Saturday, 10 am to 6 pm. We answer in English, Tamil, Telugu, Kannada and Malayalam.</span>
+  </div>''', PAGE))
+
+# ------------------------------------------------------------------ Returns
+def seg(a, b):
+    return f'<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 10px; background: {T1}"><span style="height: 36px; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">{a}</span><span style="height: 36px; border-radius: 8px; font-size: 13px; font-weight: 600; color: {MUTE}; display: inline-flex; align-items: center; justify-content: center">{b}</span></div>'
+
+
+ITEM = f'<div style="display: flex; gap: 12px">{pic("emerald", 60, 75, 8)}<div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 14px; line-height: 20px; font-weight: 700">Kanchipuram silk saree</strong><span style="font-size: 12px; color: {MUTE}">Emerald · With blouse piece · Qty 1</span><span style="{HF}; font-size: 14px; font-weight: 800">₹4,950</span><span style="font-size: 12px; color: {GREEN}; font-weight: 600">Return open until 19 Nov</span></div></div>'
+boards['ReturnReason'] = ('Alar return reason', 390, 1010, phone(1010, hdr('Return or exchange', 'OrderDetail.dc.html', f'<span style="font-size: 13px; font-weight: 600; color: {MUTE}">Step 1 of 2</span>') + f'''
+  <div style="padding: 12px 16px 0; display: flex; flex-direction: column; gap: 12px">
+    {card(ITEM, 12)}
+    {seg('Return for refund', 'Exchange colour')}
+    {card(h2('Why are you returning it?', 14) + f'<div style="display: flex; flex-direction: column">{radiorow("Colour looks different from the photos", True)}{radiorow("Fabric or quality not as expected")}{radiorow("Damaged or has a defect", sub="Photos needed")}{radiorow("Wrong item received", sub="Photos needed")}{radiorow("Changed my mind")}</div>', 12, 4)}
+    <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 600">Add photos (optional for this reason)</span><div style="display: flex; gap: 8px">{pic('emerald', 64, 64, 10, 'center 60%')}<span style="width: 64px; height: 64px; border-radius: 10px; border: 1px dashed {T3}; background: {T4}; color: {PD}; display: inline-flex; align-items: center; justify-content: center">{ic('camera', 20, 1.800)}</span></div></div>
+    {field('Tell us more (optional)', ph='What looked different?')}
+  </div>''' + bar(btn('Continue', href='ReturnConfirm.dc.html'), '1fr'), PAGE))
+
+boards['ReturnConfirm'] = ('Alar return pickup and refund', 390, 1010, phone(1010, hdr('Pickup and refund', 'ReturnReason.dc.html', f'<span style="font-size: 13px; font-weight: 600; color: {MUTE}">Step 2 of 2</span>') + f'''
+  <div style="padding: 12px 16px 0; display: flex; flex-direction: column; gap: 12px">
+    {card(f'<div style="display: flex; justify-content: space-between; align-items: center">{h2("Pickup from", 14)}<a href="Addresses.dc.html" style="font-size: 13px; font-weight: 600; text-decoration: none">Change</a></div><span style="font-size: 13px; line-height: 20px; color: {MUTE}"><strong style="color: {INK}; font-weight: 700">Lakshmi Narayanan</strong><br>14, 2nd Cross Street, Mandaveli, Chennai 600028</span><div style="display: flex; gap: 8px">{chip("Mon 16 Nov", True)}{chip("Tue 17 Nov")}{chip("Wed 18 Nov")}</div>', 12, 10)}
+    {card(h2('Refund', 14) + row('Item price', '₹4,950') + row('Pickup charge', 'FREE', color=GREEN) + SEP + row('You get back', '₹4,950', True) + f'<span style="font-size: 12px; line-height: 18px; color: {MUTE}">To the UPI account you paid from, within 5 to 7 working days after we check the saree.</span>', 12, 8)}
+    {card(h2('Before the pickup', 14) + f'<div style="display: flex; flex-direction: column; gap: 8px">{tip("Saree unused and unwashed")}{tip("Blouse piece still attached, not cut")}{tip("Tags and the original cover in place")}{tip("Fall or pico stitched, or blouse cut", False)}</div>', 12, 10)}
+    {note('receipt', 'Returns follow our Returns, Refunds and Cancellation Policy. Damaged or wrong items are always taken back.')}
+  </div>''' + bar(btn('Confirm return', href='Orders.dc.html'), '1fr'), PAGE))
+
+# ------------------------------------------------------------------ Review
+boards['Review'] = ('Alar rate and review', 390, 844, phone(844, hdr('Rate this saree', 'Orders.dc.html') + f'''
+  <div style="padding: 12px 16px 0; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; gap: 12px; align-items: center">{pic('emerald', 48, 60, 8)}<span style="display: flex; flex-direction: column; font-size: 13px; line-height: 18px"><strong style="font-size: 14px; font-weight: 700">Kanchipuram silk saree</strong><span style="color: {MUTE}">Emerald · Delivered on 12 Nov</span></span></div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px; border-radius: 16px; background: {T4}">{stars(4, 36)}<span style="font-size: 14px; font-weight: 600">Good</span></div>
+    <div style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 600">What did you like?</span><div style="display: flex; flex-wrap: wrap; gap: 8px">{chip('Colour as shown', True)}{chip('Soft fabric', True)}{chip('Rich border')}{chip('Good value')}{chip('Neat packing')}{chip('Fast delivery')}</div></div>
+    <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 600">Your review (optional)</span><span style="min-height: 96px; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid {T2}; font-size: 14px; line-height: 20px">The green is exactly like the photo and the border is beautiful.</span></label>
+    <div style="display: flex; gap: 8px">{pic('emerald', 64, 64, 10, 'center 60%')}<span style="width: 64px; height: 64px; border-radius: 10px; border: 1px dashed {T3}; background: {T4}; color: {PD}; display: inline-flex; align-items: center; justify-content: center">{ic('camera', 20, 1.800)}</span></div>
+    <span style="font-size: 12px; line-height: 18px; color: {MUTE}">Shown with your first name. The overall rating appears on a saree once it has 5 ratings.</span>
+  </div>''' + bar(btn('Submit', href='Orders.dc.html'), '1fr')))
+
+# ================================================================== WEBSITE (1440 wide)
+def webnav():
+    return f'''<div style="height: 32px; background: {T1}; color: {PD}; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 24px"><span>Free delivery across South India</span><span>7 days easy return</span><span>Try any saree on your own photo</span></div>
+  <div style="height: 64px; padding: 0 48px; display: flex; align-items: center; gap: 32px; border-bottom: 1px solid {LINE}; background: #FFFFFF">{logo(26)}
+    <span style="display: flex; gap: 24px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em"><span style="color: {P}">WOMEN</span><span>MEN</span><span>KIDS</span><span>OFFERS</span><span style="display: inline-flex; align-items: center; gap: 4px; color: {PD}">{ic('spark', 14, 2.400)}TRY-ON</span></span>
+    <span style="flex: 1; max-width: 480px; margin-left: auto; display: flex; align-items: center; gap: 8px; height: 40px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; border: 1px solid {T2}; font-size: 14px; color: #9B97AD">{ic('search', 18, 2, MUTE)}Search for sarees, shirts and more</span>
+    <span style="display: flex; gap: 24px; font-size: 12px; font-weight: 600">''' + ''.join(f'<span style="display: flex; flex-direction: column; align-items: center; gap: 2px">{ic(i, 20, 1.800)}{t}</span>' for i, t in [('user', 'Profile'), ('heart', 'Wishlist'), ('bag', 'Bag')]) + '</span></div>'
+
+
+def webpc(k, n, s, p, m, o, badge=''):
+    return pcard(k, n, s, p, m, o, 320, '', badge)
+
+
+boards['WebHome'] = ('Alar website home', 1440, 1264, f'''<div style="width: 1440px; height: 1264px; box-sizing: border-box; overflow: hidden; background: #FFFFFF; color: {INK}; {BODY}; display: flex; flex-direction: column">
+  {webnav()}
+  <div style="padding: 24px 48px 0; display: flex; flex-direction: column; gap: 32px">
+    <div style="height: 400px; border-radius: 20px; overflow: hidden; position: relative; background: {INK}">{img('wedding', 'right 30%')}
+      <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(20, 12, 10, 0.82) 0%, rgba(20, 12, 10, 0.45) 40%, rgba(20, 12, 10, 0) 68%)"></div>
+      <div style="position: absolute; left: 56px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; gap: 12px; color: #FFFFFF; max-width: 440px"><span style="align-self: flex-start; height: 28px; padding: 0 12px; border-radius: 999px; background: #FFFFFF; color: {PD}; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; display: inline-flex; align-items: center">WEDDING EDIT</span><span style="{HF}; font-size: 40px; line-height: 46px; font-weight: 800; letter-spacing: -0.02em">Silks for the big day, from ₹3,200</span><span style="font-size: 14px; line-height: 22px; color: rgba(255, 255, 255, 0.85)">Kanchipuram, Banarasi and Arani silks. See each one on you before you buy.</span>{btn('Shop wedding silks', extra='align-self: flex-start; margin-top: 4px')}</div>
+      <div style="position: absolute; left: 0; right: 0; bottom: 16px; display: flex; justify-content: center; gap: 6px"><span style="width: 20px; height: 6px; border-radius: 999px; background: #FFFFFF"></span><span style="width: 6px; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.5)"></span><span style="width: 6px; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.5)"></span><span style="width: 6px; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.5)"></span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px">{h2('Shop by category', 20)}<div style="display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 16px">''' + ''.join(f'<span style="display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; font-weight: 600"><span style="width: 100%; height: 150px; border-radius: 16px; overflow: hidden; position: relative; background: {T1}; display: block">{img(k, "center")}</span>{t}</span>' for k, t in [('c_sarees', 'Sarees'), ('c_silk', 'Silk'), ('c_cotton', 'Cotton'), ('c_wedding', 'Wedding'), ('c_festive', 'Festive'), ('c_newin', 'New in'), ('c_under', 'Under ₹2,500'), ('c_shirts', 'Shirts'), ('c_dhotis', 'Dhotis')]) + f'''</div></div>
+    <div style="display: flex; flex-direction: column; gap: 16px"><div style="display: flex; align-items: center; justify-content: space-between">{h2('New arrivals', 20)}<a href="#all" style="font-size: 14px; font-weight: 600; text-decoration: none">View all</a></div>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 20px">{webpc('maroon', 'Arani silk saree', 'Maroon, temple border', '₹3,150', '₹3,600', '12% OFF', 'Just in')}{webpc('peacock', 'Soft silk saree', 'Peacock blue', '₹2,400', '₹2,800', '14% OFF')}{webpc('emerald', 'Kanchipuram silk saree', 'Emerald, pink border', '₹4,950', '₹5,500', '10% OFF')}{webpc('ivory', 'Kasavu cotton saree', 'Ivory, red border', '₹1,800', '₹2,000', '10% OFF')}{webpc('violet', 'Kanchipuram silk saree', 'Violet, gold buttas', '₹4,800', '₹5,400', '11% OFF', 'Try-on ready')}</div></div>
+  </div>
+</div>''')
+
+
+def spec(a, b):
+    return f'<div style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 13px; font-weight: 700">{a}</strong><span style="font-size: 13px; color: {MUTE}">{b}</span></div>'
+
+
+def gal(k, pos='center top', blob=''):
+    src = f'<img src="/_blob/{blob}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block">' if blob else img(k, pos)
+    return f'<span style="height: 470px; border-radius: 10px; overflow: hidden; position: relative; background: {GROUND}; display: block">{src}</span>'
+
+
+boards['WebProduct'] = ('Alar website product', 1440, 1020, f'''<div style="width: 1440px; height: 1020px; box-sizing: border-box; overflow: hidden; background: #FFFFFF; color: {INK}; {BODY}; display: flex; flex-direction: column">
+  {webnav()}
+  <div style="padding: 16px 48px 0; display: flex; flex-direction: column; gap: 16px">
+    <span style="font-size: 13px; color: {MUTE}">Home › Women › Sarees › Silk › <strong style="color: {INK}; font-weight: 600">Arani silk saree</strong></span>
+    <div style="display: grid; grid-template-columns: minmax(0, 1.350fr) minmax(0, 1fr); gap: 40px">
+      <div style="display: flex; flex-direction: column; gap: 12px"><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">{gal('maroon')}{gal('maroon', 'center 85%')}</div>
+        <a href="FullSaree.dc.html" style="height: 320px; border-radius: 10px; overflow: hidden; position: relative; background: {GROUND}; display: block"><img src="/_blob/5ad786513b9724fe51ec5dfd3729c532" alt="Mockup image of the whole saree laid flat" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block"><span style="position: absolute; left: 12px; top: 12px; height: 32px; padding: 0 12px; border-radius: 8px; background: #FFFFFF; border: 1px solid {LINE}; color: {INK}; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px">{ic('search', 16, 2, P)}Full saree · scroll to zoom, drag to move</span></a></div>
+      <div style="display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 6px"><h1 style="margin: 0; {HF}; font-size: 24px; line-height: 30px; font-weight: 800; letter-spacing: -0.01em">Arani silk saree</h1><span style="font-size: 14px; color: {MUTE}">Maroon, with gold temple border and striped pallu</span><span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px">{stars(5)}<strong style="font-weight: 700">4.6</strong><span style="color: {MUTE}">128 ratings</span></span></div>
+        <div style="display: flex; align-items: center; gap: 10px"><span style="{HF}; font-size: 26px; font-weight: 800">₹3,150</span><span style="font-size: 14px; color: {MUTE}">MRP <span style="text-decoration: line-through">₹3,600</span></span><span style="height: 22px; padding: 0 8px; border-radius: 5px; background: {P}; color: #FFFFFF; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center">12% OFF</span><span style="font-size: 12px; color: {MUTE}">Price includes all taxes</span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 14px"><strong style="font-weight: 700">Colour</strong> Maroon</span><div style="display: flex; gap: 10px">''' + ''.join(f'<span style="width: 56px; height: 72px; border-radius: 10px; overflow: hidden; position: relative; background: {GROUND}; box-sizing: border-box; border: {"2px solid " + P if k == "maroon" else "1px solid " + LINE}; display: block">{img(k)}</span>' for k in ['maroon', 'violet', 'emerald', 'peacock']) + f'''</div></div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: {T1}"><span style="width: 40px; height: 40px; border-radius: 12px; background: #FFFFFF; color: {P}; display: inline-flex; align-items: center; justify-content: center">{ic('spark', 20, 2)}</span><span style="flex: 1; display: flex; flex-direction: column; font-size: 13px; line-height: 18px"><strong style="font-size: 14px; font-weight: 700">See this saree on you</strong><span style="color: {MUTE}">Upload one photo. Adults only.</span></span>{btn('Try it on', 'dark', h=36, extra='font-size: 13px')}</div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">{btn('Buy now', 'outline', h=44)}{btn('Add to bag', icon='bag', h=44)}</div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid {T2}; border-radius: 12px"><span style="display: flex; align-items: center; height: 36px; padding: 0 10px; border-radius: 8px; border: 1px solid {T2}; font-size: 13px; width: 120px; box-sizing: border-box">600028</span><span style="flex: 1; display: flex; flex-direction: column; font-size: 13px; line-height: 18px"><strong style="font-weight: 700">Get it by Tue, 1 Dec</strong><span style="color: {MUTE}">Free delivery · 7 days easy return · Pay online</span></span></div>
+        <div style="border: 1px solid {T2}; border-radius: 16px; padding: 16px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">{spec('Fabric', 'Pure silk')}{spec('Weave', 'Arani')}{spec('Length', '6.2 m + 0.8 m blouse')}{spec('Border', 'Gold zari, temple')}{spec('Blouse piece', 'Attached, plain maroon')}{spec('Care', 'Dry clean only')}</div>
+        <span style="font-size: 12px; line-height: 18px; color: {MUTE}">Colours may look slightly different on your screen. Only 3 left.</span>
+      </div>
+    </div>
+  </div>
+</div>''')
+
+# ================================================================== ADMIN, batch 3
+boards['AdminReturns'] = ('Alar admin returns', 1440, 900, admin('Returns', 'Returns and refunds', abtn('Export', 'ghost', 'download'), f'''
+  {tabs(['To review 2', 'Pickup booked 1', 'Received, to check 1', 'Refunded 23', 'Rejected 2'], 'To review 2')}
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; flex: 1; min-height: 0">
+    <div style="display: flex; flex-direction: column; gap: 12px; min-width: 0">
+      {table(['Return', 'Order', 'Customer', 'Item', 'Reason', 'Type', 'Asked on'], [
+        [bold('RT-00031'), 'AL-2611-00287', 'Lakshmi N.', pic('emerald', 28, 35, 5) + 'Kanchipuram silk, emerald', 'Colour looks different', chip('REFUND', tone='lav'), mute('14 Nov')],
+        [bold('RT-00030'), 'AL-2611-00254', 'Anitha P.', pic('rust', 28, 35, 5) + 'Tussar silk, rust', 'Damaged or defect', chip('REFUND', tone='lav'), mute('13 Nov')]],
+        ['0.800fr', '1.100fr', '0.900fr', '1.800fr', '1.300fr', '0.700fr', '0.700fr'])}
+      {acard(h2('This month', 14) + f'<div style="display: flex; gap: 32px">' + ''.join(f'<span style="display: flex; flex-direction: column"><strong style="{HF}; font-size: 20px; font-weight: 800">{v}</strong><span style="font-size: 12px; color: {MUTE}">{t}</span></span>' for v, t in [('6.2%', 'Return rate'), ('₹71,400', 'Refunded'), ('3.4 days', 'Request to refund'), ('Colour', 'Top reason')]) + '</div>')}
+      <span style="font-size: 12px; color: {MUTE}">Approving books the pickup. The refund is sent only after the saree is received and checked; stock goes back in only if it passes.</span>
+    </div>
+    {acard(f"""<div style="display: flex; justify-content: space-between; align-items: center">{h2('RT-00031', 16)}{chip('TO REVIEW', tone='amber')}</div>
+      <div style="display: flex; gap: 10px">{pic('emerald', 44, 55, 6)}<span style="flex: 1; display: flex; flex-direction: column; font-size: 13px; line-height: 18px">{bold('Kanchipuram silk saree')}{mute('Emerald · AL-SR-0002-EMR · delivered 12 Nov')}</span>{bold('₹4,950')}</div>
+      {SEP}<div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 18px">{row('Reason', 'Colour looks different')}{row('Customer says', '"Looks darker than the photo"')}{row('Within 7 days', f'<span style="font-weight: 600; color: {GREEN}">Yes, day 2</span>')}{row('Earlier returns', '0 of 3 orders')}</div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 12px; font-weight: 600">Photos from the customer</span><div style="display: flex; gap: 8px">{pic('emerald', 72, 72, 8, 'center 60%')}{pic('emerald', 72, 72, 8, 'center 90%')}</div></div>
+      {SEP}<div style="display: flex; flex-direction: column; gap: 4px">{check('Unused, unwashed', True)}{check('Blouse piece attached', True)}{check('Tags in place', False)}</div>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto">{btn('Approve and book pickup', icon='truck', h=36, extra='font-size: 13px')}<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">{abtn('Offer exchange')}{abtn('Reject with reason')}</div></div>""", gap=12)}
+  </div>'''))
+
+boards['AdminOffers'] = ('Alar admin offers', 1440, 900, admin('Offers', 'Offers and coupons', abtn('New sale price', 'ghost', 'tag') + abtn('New coupon', 'primary', 'plus'), f'''
+  {tabs(['Coupons 4', 'Sale prices 12', 'Free delivery rule', 'Used coupons'], 'Coupons 4')}
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; flex: 1; min-height: 0">
+    <div style="display: flex; flex-direction: column; gap: 12px; min-width: 0">
+      {table(['Code', 'Gives', 'Minimum order', 'Used', 'Valid', 'For', 'Status', 'On'], [
+        [bold('WELCOME200'), '₹200 off', '₹2,000', '84 of 500', '1 Nov to 31 Dec', 'First order', chip('LIVE', tone='green'), toggle(True)],
+        [bold('PONGAL10'), '10% off, up to ₹500', '₹3,000', '0 of 1,000', '8 Jan to 17 Jan', 'Everyone', chip('SCHEDULED', tone='lav'), toggle(True)],
+        [bold('SILK300'), '₹300 off', '₹4,000', '31 of 200', '15 Nov to 15 Dec', 'Silk sarees', chip('LIVE', tone='green'), toggle(True)],
+        [bold('DIWALI15'), '15% off, up to ₹750', '₹3,000', '212 of 300', '1 Oct to 5 Nov', 'Everyone', chip('ENDED', tone='grey'), toggle(False)]],
+        ['1.100fr', '1.300fr', '0.900fr', '0.800fr', '1.200fr', '0.900fr', '0.800fr', '0.400fr'])}
+      <span style="font-size: 12px; color: {MUTE}">Discounts are always whole rupees. A coupon can never take a saree below its cost; the system refuses it at checkout.</span>
+    </div>
+    {acard(h2('New coupon', 16) + afield('Code', 'NEWYEAR250') + f'<div style="display: flex; gap: 12px">{afield("Type", "Amount off", sel=True)}{afield("Value", "₹250")}</div><div style="display: flex; gap: 12px">{afield("Minimum order", "₹2,500")}{afield("Total uses", "400")}</div><div style="display: flex; gap: 12px">{afield("From", "28 Dec 2026")}{afield("Until", "5 Jan 2027")}</div>' + afield('Works on', 'All categories', sel=True) + f'<div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px"><span>One use per customer</span>{toggle(True)}</div><div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px"><span>Show on the product page offer card</span>{toggle(True)}</div><div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px"><span>Can be used with a sale price</span>{toggle(False)}</div>' + f'<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: auto">{abtn("Cancel")}{abtn("Create coupon", "primary")}</div>', gap=10)}
+  </div>'''))
+
+
+def snav(t, on=False):
+    st = f'background: {T1}; color: {PD}; font-weight: 700' if on else f'color: {INK}; font-weight: 500'
+    return f'<span style="height: 36px; padding: 0 10px; border-radius: 8px; display: flex; align-items: center; font-size: 13px; {st}">{t}</span>'
+
+
+boards['AdminSettings'] = ('Alar admin settings', 1440, 900, admin('Settings', 'Settings', abtn('Save changes', 'primary'), f'''
+  <div style="display: grid; grid-template-columns: 200px minmax(0, 1fr) minmax(0, 1fr); gap: 16px; flex: 1; min-height: 0">
+    {acard(snav('Store and brand', True) + snav('Payments') + snav('Delivery') + snav('Taxes and invoices') + snav('Returns') + snav('Messages') + snav('Legal pages') + snav('Dated legal values') + snav('Backups'), gap=4, pad=8)}
+    <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+      {acard(h2('Brand', 14) + f'<div style="display: flex; gap: 12px">{afield("Store name", "Alar", hint="Used in the app, website, emails and invoices. Change it here and it changes everywhere.")}{afield("Short tagline", "Sarees you can see on you")}</div><div style="display: flex; gap: 12px">{afield("Legal name on invoices", "[Company name]")}{afield("GSTIN", "[To be added]")}</div><div style="display: flex; gap: 12px; align-items: center"><span style="width: 44px; height: 44px; border-radius: 12px; background: {P}; flex-shrink: 0"></span>{afield("Primary colour", "#6F52F0")}{afield("Logo", "alar-wordmark.svg")}</div>', gap=10)}
+      {acard(f'<div style="display: flex; align-items: center; justify-content: space-between">{h2("Payments", 14)}{chip("RAZORPAY · TEST MODE", tone="amber")}</div>' + tog('UPI', True) + SEP + tog('Cards', True) + SEP + tog('Net banking', True) + SEP + tog('Cash on delivery', False, 'Planned for later. Turning it on needs a courier that collects cash.') + f'<div style="display: flex; gap: 12px">{afield("Hold stock while paying", "15 minutes")}{afield("Refunds go to", "Original payment", sel=True)}</div>', gap=4)}
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+      {acard(h2('Delivery', 14) + afield('Courier partner', '[Provider to be chosen]', sel=True) + f'<div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 12px; font-weight: 600">We deliver to</span><div style="display: flex; flex-wrap: wrap; gap: 6px">{chip("Tamil Nadu", True)}{chip("Kerala", True)}{chip("Karnataka", True)}{chip("Andhra Pradesh", True)}{chip("Telangana", True)}{chip("Puducherry", True)}{chip("+ Add state")}</div></div><div style="display: flex; gap: 12px">{afield("Free delivery above", "₹0 (always free)")}{afield("Return window", "7 days")}</div>', gap=10)}
+      {acard(f'<div style="display: flex; align-items: center; justify-content: space-between">{h2("Tax bands", 14)}{chip("CHECK WITH ACCOUNTANT", tone="amber")}</div>' + table(['Band', 'Rate', 'Applies to', 'From'], [[bold('Saree (fabric)'), '5%', 'All sarees', '22 Sep 2025'], [bold('Garment, low'), '5%', 'Up to ₹2,500', '22 Sep 2025'], [bold('Garment, high'), '18%', 'Above ₹2,500', '22 Sep 2025']], ['1.300fr', '0.500fr', '1.100fr', '1fr']) + f'<span style="font-size: 12px; line-height: 18px; color: {MUTE}">Shelf prices include tax and stay whole rupees. A new rate is added with its start date; old invoices keep the old rate.</span>', gap=10)}
+    </div>
+  </div>'''))
+
+
+def mv(when, k, v, ch, why, by, bal):
+    c = GREEN if ch.startswith('+') else RED
+    return [mute(when), pic(k, 28, 35, 5) + f'<span style="display: flex; flex-direction: column">{bold(v)}</span>', f'<strong style="font-weight: 700; color: {c}">{ch}</strong>', why, mute(by), bold(bal)]
+
+
+boards['AdminInventory'] = ('Alar admin stock', 1440, 900, admin('Stock', 'Stock', abtn('Stock count', 'ghost', 'box') + abtn('Receive stock', 'primary', 'plus'), f'''
+  <div style="display: flex; gap: 16px">{kpi('Pieces in stock', '1,012', 'Across 104 products', MUTE)}{kpi('On hold right now', '4', 'In checkouts, released after 15 min', AMBER)}{kpi('Low stock', '6', 'Below alert level', AMBER)}{kpi('Sold out', '2', 'Hidden from Buy, shown as Sold out', RED)}{kpi('Stock value at cost', '₹18.4 L', 'Owner only', MUTE)}</div>
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; flex: 1; min-height: 0">
+    <div style="display: flex; flex-direction: column; gap: 12px; min-width: 0">
+      {tabs(['Movements', 'By product', 'Low stock 6', 'Count differences'], 'Movements')}
+      {table(['When', 'Variant', 'Change', 'Why', 'By', 'Balance'], [
+        mv('Today 6:42 pm', 'maroon', 'Arani silk · Maroon', '−1', 'Sold · AL-2611-00418', 'System', '3'),
+        mv('Today 6:41 pm', 'maroon', 'Arani silk · Maroon', 'Hold 1', 'Checkout started', 'System', '4 (1 held)'),
+        mv('Today 4:10 pm', 'violet', 'Kanchipuram · Violet', '+10', 'Received · batch NOV-26-B', 'Saranya K.', '27'),
+        mv('Today 1:15 pm', 'peacock', 'Soft silk · Peacock', '+1', 'Return passed check · RT-00028', 'Murugan V.', '41'),
+        mv('Yesterday', 'navy', 'Banarasi · Navy', '−1', 'Damaged, written off', 'Arun', '0'),
+        mv('Yesterday', 'ivory', 'Kasavu cotton · Ivory', '−2', 'Stock count correction', 'Arun', '10')],
+        ['1fr', '1.800fr', '0.700fr', '1.800fr', '0.900fr', '0.800fr'])}
+      <span style="font-size: 12px; color: {MUTE}">Stock changes only through these named actions. Nobody can type over a number without a reason, and every line stays in the log.</span>
+    </div>
+    {acard(h2('Receive stock', 16) + afield('Product', 'Arani silk saree', sel=True) + afield('Colour', 'Maroon', sel=True) + f'<div style="display: flex; gap: 12px">{afield("Pieces", "10")}{afield("Cost per piece", "₹2,050")}</div>' + afield('Weaver (admin only)', 'Family loom 03, Arani', sel=True) + afield('Batch', 'DEC-26-A') + afield('Note', 'Checked for defects, all good', 52) + f'<div style="display: flex; justify-content: space-between; font-size: 13px"><span>Stock after this</span><strong style="font-weight: 700">13 pieces</strong></div><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: auto">{abtn("Cancel")}{abtn("Add to stock", "primary")}</div>', gap=10)}
+  </div>'''))
+
+
+def tree(t, lvl=0, on=False, tag=''):
+    st = f'background: {T1}; color: {PD}; font-weight: 700' if on else f'color: {INK}; font-weight: {600 if lvl == 0 else 500}'
+    tg = ('<span style="margin-left: auto">' + chip(tag, tone='grey' if tag == 'DRAFT' else 'green') + '</span>') if tag else ''
+    return f'<span style="height: 34px; padding: 0 10px 0 {10 + lvl * 18}px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-size: 13px; {st}"><span style="color: {MUTE}">{ic("drag", 14, 3)}</span>{t}{tg}</span>'
+
+
+def attr(n, typ, vals, req=True, flt=True):
+    return [bold(n), typ, mute(vals), toggle(req), toggle(flt)]
+
+
+boards['AdminCategories'] = ('Alar admin categories', 1440, 900, admin('Categories', 'Categories and attributes', abtn('Add category', 'ghost', 'plus') + abtn('Save changes', 'primary'), f'''
+  <div style="display: grid; grid-template-columns: 300px minmax(0, 1fr) 320px; gap: 16px; flex: 1; min-height: 0">
+    {acard(h2('Category tree', 14) + tree('Women', 0, tag='LIVE') + tree('Sarees', 1, True) + tree('Silk', 2) + tree('Cotton', 2) + tree('Wedding', 2) + tree('Festive', 2) + tree('Blouses', 1, tag='DRAFT') + tree('Men', 0, tag='DRAFT') + tree('Shirts', 1) + tree('Dhotis', 1) + tree('Kids', 0, tag='DRAFT') + f'<span style="font-size: 12px; line-height: 18px; color: {MUTE}; margin-top: 8px">A draft department is hidden from shoppers until you make it live. Nothing in the app is built only for sarees.</span>', gap=2)}
+    <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+      {acard(f'<div style="display: flex; align-items: center; justify-content: space-between">{h2("Sarees: product details", 14)}{abtn("Add detail", icon="plus")}</div>' + table(['Detail', 'Type', 'Choices', 'Required', 'Filter'], [
+        attr('Fabric', 'Pick one', 'Pure silk, Soft silk, Cotton, Silk cotton, Tussar, Linen'), attr('Weave', 'Pick one', 'Arani, Kanchipuram, Chettinad, Banarasi…'),
+        attr('Colour', 'Colour', '18 named colours'), attr('Border', 'Pick one', 'Temple, Plain zari, Checked, Contrast', False),
+        attr('Occasion', 'Pick many', 'Wedding, Festive, Daily, Office', False), attr('Length', 'Number (m)', '5.5 to 6.5', True, False),
+        attr('Blouse piece', 'Yes or no', 'Attached, colour', True, False)], ['1fr', '0.900fr', '2.400fr', '0.600fr', '0.500fr']), gap=10)}
+      {acard(h2('How this category sells', 14) + f'<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 24px">{tog("Has sizes", False, "Sarees: colour only. Shirts: colour and size.")}{tog("Full-length zoom view", True, "Needs a 21:9 flat photo")}{tog("AI try-on allowed", True, "Uses the saree prompt")}{tog("Size chart on the page", False)}</div>', gap=6)}
+    </div>
+    {acard(h2('Category page', 14) + afield('Name shown', 'Sarees') + afield('Web address', '/women/sarees') + f'<span style="font-size: 12px; font-weight: 600">Thumbnail</span><span style="width: 96px; height: 116px; border-radius: 16px; overflow: hidden; position: relative; background: {T1}; display: block">{img("c_sarees", "center")}</span>' + afield('Tax band', 'Saree (fabric) 5%', sel=True) + afield('Sort by default', 'Newest first', sel=True) + afield('Return window', 'Store default (7 days)', sel=True) + tog('Show in the app', True), gap=10)}
+  </div>'''))
+
+boards['AdminAIReports'] = ('Alar admin AI reports', 1440, 900, admin('AI try-on', 'AI try-on controls', abtn('Save changes', 'primary'), f'''
+  {tabs(['Models and routing', 'Prompts', 'Safety checks', 'Consent notice', 'Reports 2', 'Usage and cost'], 'Reports 2')}
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 16px; flex: 1; min-height: 0">
+    <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+      {table(['Report', 'Reason given', 'Saree', 'Model', 'Prompt', 'When', 'Status'], [
+        [bold('RP-0012'), 'Saree looks wrong', pic('violet', 28, 35, 5) + 'Kanchipuram, violet', 'Gemini image', 'v7', mute('Today 3:12 pm'), chip('TO REVIEW', tone='amber')],
+        [bold('RP-0011'), 'My face was changed', pic('maroon', 28, 35, 5) + 'Arani silk, maroon', 'GPT Image', 'v7', mute('Yesterday'), chip('TO REVIEW', tone='amber')],
+        [bold('RP-0010'), 'Saree looks wrong', pic('navy', 28, 35, 5) + 'Banarasi, navy', 'Gemini image', 'v6', mute('22 Nov'), chip('FIXED IN V7', tone='green')]],
+        ['0.700fr', '1.200fr', '1.600fr', '0.900fr', '0.500fr', '0.900fr', '0.900fr'])}
+      {acard(h2('Usage and cost, last 7 days', 14) + '<div style="display: flex; gap: 32px">' + ''.join(f'<span style="display: flex; flex-direction: column"><strong style="{HF}; font-size: 20px; font-weight: 800">{v}</strong><span style="font-size: 12px; color: {MUTE}">{t}</span></span>' for v, t in [('1,318', 'Try-ons made'), ('₹6,940', 'Spent'), ('₹5.27', 'Per try-on'), ('18%', 'Added to bag after'), ('0.9%', 'Reported')]) + '</div>' + f'<div style="display: flex; align-items: flex-end; gap: 10px; height: 120px">' + ''.join(f'<span style="flex: 1; height: {h}%; border-radius: 6px 6px 0 0; background: {P if i == 6 else T3}"></span>' for i, h in enumerate([52, 61, 48, 70, 66, 83, 95])) + '</div>')}
+    </div>
+    {acard(f"""<div style="display: flex; justify-content: space-between; align-items: center">{h2('RP-0012', 16)}{chip('OWNER ONLY', tone='grey')}</div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><span style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: {MUTE}"><span style="height: 230px; border-radius: 10px; overflow: hidden; position: relative; background: {GROUND}; display: block">{img('violet')}<span style="position: absolute; left: 22%; top: 3%; width: 56%; height: 22%; border-radius: 999px; background: #D8D4E6"></span></span>Result (face hidden)</span><span style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: {MUTE}"><span style="height: 230px; border-radius: 10px; overflow: hidden; position: relative; background: {GROUND}; display: block">{img('violet', 'center 80%')}</span>Real product photo</span></div>
+      <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 18px">{row('Shopper says', '"Border is silver, not gold"')}{row('Model', 'Gemini image · 13 s')}{row('Prompt', 'Saree, Nivi drape · v7')}{row('Automatic check', f'<span style="font-weight: 600; color: {GREEN}">Passed</span>')}</div>
+      {note('shield', "The shopper's own photo is never shown to staff. The result is shown with the face hidden, to the owner only, and only because it was reported.")}
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto">{btn('Remove result and give the try-on back', h=36, extra='font-size: 13px')}<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">{abtn('Turn off try-on for this saree')}{abtn('Close, no action')}</div></div>""", gap=12)}
+  </div>'''))
+
+boards['AdminAudit'] = ('Alar admin audit log', 1440, 900, admin('Customers', 'Customers and staff', abtn('Export', 'ghost', 'download'), f'''
+  {tabs(['Customers 1,284', 'Staff 3', 'Roles', 'Deletion requests 1', 'Audit log'], 'Audit log')}
+  <div style="display: flex; align-items: center; gap: 8px"><span style="display: flex; align-items: center; gap: 8px; width: 280px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 8px; border: 1px solid {T2}; background: #FFFFFF; font-size: 13px; color: #9B97AD">{ic('search', 16, 2, MUTE)}Search the log</span>{chip('Everything', True)}{chip('Prices')}{chip('Stock')}{chip('AI settings')}{chip('Sign-ins')}{chip('Customer data')}<span style="margin-left: auto; display: flex; gap: 8px">{abtn('Who: Anyone')}{abtn('Last 7 days')}</span></div>
+  {table(['When', 'Who', 'Area', 'What changed', 'Before', 'After'], [
+    [mute('Today 6:02 pm'), bold('Arun') + chip('OWNER', tone='lav'), 'AI settings', 'Daily spend limit', '₹1,500', bold('₹2,000')],
+    [mute('Today 4:10 pm'), bold('Saranya K.'), 'Stock', 'Received Kanchipuram · Violet', '17', bold('27')],
+    [mute('Today 2:41 pm'), bold('Arun') + chip('OWNER', tone='lav'), 'Prices', 'Arani silk saree, selling price', '₹3,250', bold('₹3,150')],
+    [mute('Today 11:20 am'), bold('Murugan V.'), 'Orders', 'AL-2611-00409 marked packed', 'To pack', bold('Packed')],
+    [mute('Today 9:58 am'), bold('Saranya K.'), 'Sign-in', 'Signed in with password and code', '', mute('Chennai · Chrome')],
+    [mute('Yesterday 7:15 pm'), bold('Arun') + chip('OWNER', tone='lav'), 'AI settings', 'Prompt "Saree, Nivi drape" published', 'v6', bold('v7')],
+    [mute('Yesterday 5:30 pm'), bold('Arun') + chip('OWNER', tone='lav'), 'Customer data', 'Erased account on request (DR-0004)', 'Active', bold('Erased')],
+    [mute('Yesterday 3:02 pm'), bold('System'), 'Sign-in', '5 wrong codes, account locked 15 min', 'Murugan V.', mute('Unknown device')],
+    [mute('25 Nov 6:40 pm'), bold('Saranya K.'), 'App content', 'Home screen published', 'Version 11', bold('Version 12')]],
+    ['1fr', '1.200fr', '0.800fr', '2.200fr', '0.900fr', '1fr'])}
+  <span style="font-size: 12px; color: {MUTE}">The log cannot be edited or deleted by anyone, including the owner. Both admin systems write to it.</span>'''))
+
 # ------------------------------------------------------------------ write files + canvas
 for name, (title, w, h, inner) in boards.items():
     open(os.path.join(OUT, name + '.dc.html'), 'w').write(page(title, w, h, inner))
 
 c = json.load(open(os.path.join(OUT, 'canvas.json')))
-bd = c['boards']
-TITLES = dict(Onboarding='Onboarding', Login='Log in or sign up', Otp='OTP check', SignUp='Sign up details', TryOnPhoto='Try-on: choose photo',
-              TryOnResult='Try-on result', Bag='Bag', Checkout='Checkout', OrderPlaced='Order confirmed', Orders='My orders', OrderDetail='Order detail',
-              AdminLogin='Admin: sign in', AdminDashboard='Admin: dashboard', AdminProducts='Admin: products', AdminProductEdit='Admin: product, variants and stock',
-              AdminOrders='Admin: orders', AdminAI='Admin: AI try-on controls', AdminContent='Admin: app content', AdminCustomers='Admin: customers and staff')
-ROW1 = ['Onboarding', 'Login', 'Otp', 'SignUp']                       # y = -1100, above the shopping row
-ROW3 = ['FullSaree', 'TryOnPhoto', 'TryOnResult', 'Bag', 'Checkout', 'OrderPlaced', 'Orders', 'OrderDetail']
-ROW4 = ['AdminLogin', 'AdminDashboard', 'AdminProducts', 'AdminProductEdit', 'AdminOrders', 'AdminAI', 'AdminContent', 'AdminCustomers']
-for i, n in enumerate(ROW1):
-    bd[n + '.dc.html'] = dict(x=i * 470, y=-1100, w=390, h=boards[n][2], title=TITLES[n], radius=32)
-for i, n in enumerate(ROW3):
-    if n == 'FullSaree':
-        bd['FullSaree.dc.html'].update(x=0, y=2380)
-    else:
-        bd[n + '.dc.html'] = dict(x=i * 470, y=2380, w=390, h=boards[n][2], title=TITLES[n], radius=32)
-for i, n in enumerate(ROW4):
-    bd[n + '.dc.html'] = dict(x=(i % 4) * 1520, y=3760 + (i // 4) * 1020, w=1440, h=900, title=TITLES[n], radius=16)
-bd['Media.dc.html'].update(x=0, y=5960)
-c['order'] = [n + '.dc.html' for n in ROW1] + ['Main.dc.html', 'Listing.dc.html', 'Product.dc.html', 'Shirt.dc.html', 'Consent.dc.html', 'Theme.dc.html'] + \
-             [n + '.dc.html' for n in ROW3] + [n + '.dc.html' for n in ROW4] + ['Media.dc.html']
-c['notes'] = {
-    'heading': {'x': 0, 'y': -1500, 'text': 'Alar: lavender theme, all screens', 'kind': 'title1', 'maxW': 3390},
-    'r1': {'x': 0, 'y': -1230, 'text': '1. Getting in: onboarding, login (mobile OTP or Google + OTP), sign up', 'kind': 'title2', 'maxW': 3390},
-    'r2': {'x': 0, 'y': -130, 'text': '2. Shopping: home, listing, product pages, consent, theme', 'kind': 'title2', 'maxW': 3390},
-    'r3': {'x': 0, 'y': 2250, 'text': '3. Try-on, bag, checkout and orders', 'kind': 'title2', 'maxW': 3390},
-    'r4': {'x': 0, 'y': 3630, 'text': '4. Admin (web, 1440 wide)', 'kind': 'title2', 'maxW': 5000},
-    'r5': {'x': 0, 'y': 5830, 'text': '5. Generated media', 'kind': 'title2', 'maxW': 3390},
-}
+old = c['boards']
+T = dict(Onboarding='Onboarding', Login='Log in or sign up', Otp='OTP check', SignUp='Sign up details',
+         Main='Home', Listing='Category listing', Product='Saree page', Shirt='Shirt page (later category)', Consent='Try-on consent', Theme='Theme',
+         Categories='Categories tab', Search='Search', Filters='Filters', Wishlist='Wishlist',
+         FullSaree='Full saree view', TryOnPhoto='Try-on: choose photo', TryOnWait='Try-on: in progress', TryOnResult='Try-on result', TryOnProblem='Try-on: photo not usable', TryOnHub='Try-on tab',
+         Bag='Bag', EmptyBag='Bag, empty', Checkout='Checkout', PaymentFailed='Payment failed', OrderPlaced='Order confirmed', Orders='My orders', OrderDetail='Order detail',
+         Profile='Profile', Addresses='Addresses', AddAddress='Add address', Notifications='Notifications', Privacy='Privacy and consent', Help='Help',
+         ReturnReason='Return: reason', ReturnConfirm='Return: pickup and refund', Review='Rate and review',
+         WebHome='Website: home', WebProduct='Website: saree page',
+         AdminLogin='Admin: sign in', AdminDashboard='Admin: dashboard', AdminProducts='Admin: products', AdminProductEdit='Admin: product, variants and stock',
+         AdminInventory='Admin: stock', AdminCategories='Admin: categories and attributes', AdminOrders='Admin: orders', AdminReturns='Admin: returns and refunds',
+         AdminOffers='Admin: offers and coupons', AdminContent='Admin: app content', AdminAI='Admin: AI try-on controls', AdminAIReports='Admin: AI reports and cost',
+         AdminCustomers='Admin: customers and staff', AdminAudit='Admin: audit log', AdminSettings='Admin: settings', Media='Generated media')
+ROWS = [
+    ('1. Getting in: onboarding, login (mobile OTP or Google + OTP), sign up', ['Onboarding', 'Login', 'Otp', 'SignUp']),
+    ('2. Browsing: home, categories, search, listing, filters, product pages, wishlist', ['Main', 'Categories', 'Search', 'Listing', 'Filters', 'Product', 'Shirt', 'Wishlist']),
+    ('3. Try-on', ['Consent', 'TryOnPhoto', 'TryOnWait', 'TryOnResult', 'TryOnProblem', 'TryOnHub', 'FullSaree']),
+    ('4. Bag, checkout and orders', ['Bag', 'EmptyBag', 'Checkout', 'PaymentFailed', 'OrderPlaced', 'Orders', 'OrderDetail', 'ReturnReason', 'ReturnConfirm', 'Review']),
+    ('5. Account', ['Profile', 'Addresses', 'AddAddress', 'Notifications', 'Privacy', 'Help']),
+    ('6. Website (1440 wide)', ['WebHome', 'WebProduct']),
+    ('7. Admin (web, 1440 wide)', ['AdminLogin', 'AdminDashboard', 'AdminProducts', 'AdminProductEdit', 'AdminInventory', 'AdminCategories', 'AdminOrders', 'AdminReturns',
+                                    'AdminOffers', 'AdminContent', 'AdminAI', 'AdminAIReports', 'AdminCustomers', 'AdminAudit', 'AdminSettings']),
+    ('8. Theme and generated media', ['Theme', 'Media']),
+]
+nb, order, notes, y = {}, [], {'heading': {'x': 0, 'y': -340, 'text': 'Alar: lavender theme, all screens', 'kind': 'title1', 'maxW': 3390}}, 0
+for ri, (label, names) in enumerate(ROWS):
+    notes[f'r{ri}'] = {'x': 0, 'y': y - 110, 'text': label, 'kind': 'title2', 'maxW': 5000}
+    x, rowh, per = 0, 0, (4 if names[0].startswith('Admin') else 99)
+    for i, n in enumerate(names):
+        f = n + '.dc.html'
+        w, h = (old[f]['w'], old[f]['h']) if f in old and n not in boards else (boards[n][1], boards[n][2])
+        if i and i % per == 0:
+            x, y = 0, y + rowh + 120
+            rowh = 0
+        nb[f] = dict(x=x, y=y, w=w, h=h, title=T[n], radius=32 if w == 390 else 16)
+        order.append(f)
+        x += w + 80
+        rowh = max(rowh, h)
+    y += rowh + 300
+c['boards'], c['order'], c['notes'] = nb, order, notes
 json.dump(c, open(os.path.join(OUT, 'canvas.json'), 'w'), indent=2)
-print(len(boards), 'boards written')
+missing = [f for f in old if f not in nb]
+print(len(boards), 'boards built;', len(nb), 'on canvas; missing from layout:', missing)
