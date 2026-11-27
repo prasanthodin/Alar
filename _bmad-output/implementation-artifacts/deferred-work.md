@@ -57,3 +57,12 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-5-dated-settings-and-tax.md`
   summary: The seed does not repair an India region or tax region that already existed with other settings (tax-exclusive prices, a non-saree default rate, another provider).
   evidence: Only databases built outside the repository have such rows; every in-repo path creates India fresh. Revisit if an existing database is ever imported.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-6-create-and-publish-design.md`
+  summary: Uploaded photos that are removed in the editor, or left by a cancelled form, stay in the public catalog bucket; nothing records references or deletes orphans.
+  evidence: Uploads are public on arrival. Add a reference check and an orphan cleanup job (kernel scheduled job starting a workflow) when the catalogue grows (Epic 2).
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-6-create-and-publish-design.md`
+  summary: A future-dated tax band can take effect and leave a published Design's price outside every band; nothing re-checks published Designs when a setting takes effect.
+  evidence: publish-design and set-design-price check bands in effect now. Epic 2's tax-rate admin (FR-37) must refuse a band change that strands a published price, or re-check at the effective time.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-6-create-and-publish-design.md`
+  summary: The admin Designs list has no pagination and its order (newest first) is untested.
+  evidence: Fine for about 100 Designs at launch; add paging and an order test with the catalogue admin in Epic 2.
