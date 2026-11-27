@@ -14,11 +14,16 @@ export const ADMIN_SIDEBAR_ZONE = "sidebar"
 export const HIDDEN_ADMIN_NAV_ENTRIES = ["core:nav:/inventory"] as const
 
 export type HideAdminNavigationInput = {
-  /** The current system default for the zone, so other preferences survive. */
-  current: LayoutConfigurationData | null
+  /** The layout to store: the current one with the entries hidden (`withHiddenEntries`). */
+  configuration: LayoutConfigurationData
 }
 
-/** Hides the entries for every admin through the sidebar's system default layout. */
+export type HidePersonalAdminNavigationInput = HideAdminNavigationInput & {
+  /** The admin whose own saved sidebar layout this is. */
+  user_id: string
+}
+
+/** The layout with the entries hidden; every other preference in it is kept. */
 export function withHiddenEntries(current: LayoutConfigurationData | null): LayoutConfigurationData {
   const widgets = { ...(current?.widgets ?? {}) }
   for (const id of HIDDEN_ADMIN_NAV_ENTRIES) {
@@ -27,14 +32,33 @@ export function withHiddenEntries(current: LayoutConfigurationData | null): Layo
   return { ...current, widgets }
 }
 
+/** Stores the sidebar's system default layout, which every admin without a layout of their own sees. */
 export const hideAdminNavigationWorkflow = createWorkflow(
   "hide-admin-navigation",
-  (input: { configuration: LayoutConfigurationData }) => {
+  (input: HideAdminNavigationInput) => {
     const layout = setLayoutConfigurationStep({
       zone: ADMIN_SIDEBAR_ZONE,
-      // A system default belongs to no user; the step needs the field.
+      // Required by the step's type but unused for a system default: the step
+      // stores the default without a user and restores it by zone on compensation.
       user_id: "system",
       is_default: true,
+      configuration: input.configuration,
+    })
+    return new WorkflowResponse(layout)
+  }
+)
+
+/**
+ * Stores one admin's own sidebar layout. Unlike the kernel's
+ * `setLayoutConfigurationWorkflow`, it leaves the admin's chosen scope alone.
+ */
+export const hidePersonalAdminNavigationWorkflow = createWorkflow(
+  "hide-personal-admin-navigation",
+  (input: HidePersonalAdminNavigationInput) => {
+    const layout = setLayoutConfigurationStep({
+      zone: ADMIN_SIDEBAR_ZONE,
+      user_id: input.user_id,
+      is_default: false,
       configuration: input.configuration,
     })
     return new WorkflowResponse(layout)

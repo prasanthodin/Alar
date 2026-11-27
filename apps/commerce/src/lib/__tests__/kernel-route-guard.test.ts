@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 import type { MedusaNextFunction, MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { decideKernelRoute, kernelRouteGuard } from "../kernel-route-guard"
+import { KERNEL_ROUTE_MATCHERS, decideKernelRoute, kernelRouteGuard } from "../kernel-route-guard"
 
 describe("decideKernelRoute", () => {
   it("lets an allowed route through, ignoring the query string", () => {
@@ -24,6 +24,17 @@ describe("decideKernelRoute", () => {
     ["POST", "/admin/reservations"],
   ])("refuses %s %s", (method, url) => {
     expect(decideKernelRoute(method, url).allowed).toBe(false)
+  })
+
+  it("is mounted on every kernel namespace and allows nothing yet under /rbac, /cloud and /hooks", () => {
+    expect([...KERNEL_ROUTE_MATCHERS]).toEqual(["/store*", "/admin*", "/auth*", "/rbac*", "/cloud*", "/hooks*"])
+    expect(decideKernelRoute("POST", "/rbac/roles").allowed).toBe(false)
+    expect(decideKernelRoute("GET", "/cloud/auth").allowed).toBe(false)
+    expect(decideKernelRoute("POST", "/hooks/payment/razorpay").allowed).toBe(false)
+  })
+
+  it("treats an unusual case of a shop prefix as a kernel path, and refuses it", () => {
+    expect(decideKernelRoute("GET", "/Store/shop/x").allowed).toBe(false)
   })
 
   it("passes shop routes untouched", () => {

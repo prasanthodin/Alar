@@ -3,9 +3,11 @@ import { KERNEL_ROUTE_MATCHERS, kernelRouteGuard } from '../lib/kernel-route-gua
 
 export default defineMiddlewares({
   routes: [
-    // The route allow-list (AD-21, Story 1.4). Global middlewares (no method)
-    // run before every route middleware and handler, so a refused request
-    // changes nothing. Shop routes under /store/shop and /admin/shop pass.
+    // The route allow-list (AD-21, Story 1.4). The kernel's own CORS,
+    // publishable-key, body-parser and auth middlewares run first; this global
+    // middleware (no method) then runs before every route middleware and
+    // handler, so a refused request changes nothing. Shop routes under
+    // /store/shop and /admin/shop pass.
     ...KERNEL_ROUTE_MATCHERS.map((matcher) => ({
       matcher,
       middlewares: [kernelRouteGuard],

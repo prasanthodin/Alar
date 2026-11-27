@@ -60,6 +60,17 @@ medusaIntegrationTestRunner({
         refunds: await count(`select count(*) as n from refund where deleted_at is null`),
         paymentCollections: await count(`select count(*) as n from payment_collection where deleted_at is null`),
         orderChanges: await count(`select count(*) as n from order_change where deleted_at is null`),
+        canceledOrders: await count(`select count(*) as n from "order" where canceled_at is not null`),
+        draftOrders: await count(`select count(*) as n from "order" where is_draft_order = true`),
+        inventoryItems: await count(`select count(*) as n from inventory_item where deleted_at is null`),
+        variantStockLinks: await count(`select count(*) as n from product_variant_inventory_item where deleted_at is null`),
+        stockLocations: await count(`select count(*) as n from stock_location where deleted_at is null`),
+        creditLines: await count(`select count(*) as n from order_credit_line where deleted_at is null`),
+        fulfillments: await count(`select count(*) as n from fulfillment where deleted_at is null`),
+        paymentSessions: await count(`select count(*) as n from payment_session where deleted_at is null`),
+        returns: await count(`select count(*) as n from "return" where deleted_at is null`),
+        claims: await count(`select count(*) as n from order_claim where deleted_at is null`),
+        exchanges: await count(`select count(*) as n from order_exchange where deleted_at is null`),
       }
     }
 
@@ -219,6 +230,19 @@ medusaIntegrationTestRunner({
         expect((await call("GET", `/admin/orders/${orderId}`, { headers: asAdmin() })).status).toBe(200)
         expect((await call("GET", "/admin/products", { headers: asAdmin() })).status).toBe(200)
         expect((await call("GET", "/admin/customers", { headers: asAdmin() })).status).toBe(200)
+        // The admin shell on every screen, and the rest of the Order page.
+        for (const url of [
+          "/admin/users/me",
+          "/admin/stores",
+          "/admin/feature-flags",
+          "/admin/layouts/sidebar/configuration",
+          `/admin/orders/${orderId}/changes`,
+          `/admin/orders/${orderId}/preview`,
+          "/admin/reservations",
+        ]) {
+          const res = await call("GET", url, { headers: asAdmin() })
+          expect({ url, status: res.status }).toEqual({ url, status: 200 })
+        }
       })
 
       // URLs and bodies are functions: the ids exist only once beforeAll has run.
@@ -292,6 +316,36 @@ medusaIntegrationTestRunner({
             data: { configuration: { widgets: { "core:nav:/inventory": { hidden: false } } } },
           })
         )
+      })
+
+      it("also hides Inventory in a sidebar layout an admin saved earlier, keeping their other settings", async () => {
+        const me = await call("GET", "/admin/users/me", { headers: asAdmin() })
+        const settings = getContainer().resolve(Modules.SETTINGS)
+        await settings.setLayoutConfiguration("sidebar", me.data.user.id, {
+          widgets: { "core:nav:/orders": { order: 2 }, "core:nav:/inventory": { order: 3 } },
+        })
+        await settings.setActiveLayoutScope("sidebar", me.data.user.id, "personal")
+
+        await hideAdminStockNavigation({ container: getContainer() })
+        const res = await call("GET", "/admin/layouts/sidebar/configuration", { headers: asAdmin() })
+        expect(res.data.active_scope).toBe("personal")
+        expect(res.data.personal_configuration.configuration.widgets).toEqual({
+          "core:nav:/orders": { order: 2 },
+          "core:nav:/inventory": { order: 3, hidden: true },
+        })
+      })
+    })
+
+    describe("other kernel namespaces", () => {
+      it.each([
+        ["GET", "/cloud/auth"],
+        ["POST", "/hooks/payment/pp_system_default"],
+        ["GET", "/rbac/roles"],
+        ["POST", "/rbac/roles"],
+      ] as const)("refuses %s %s for a signed-in admin", async (method, url) => {
+        const before = await snapshot()
+        expectRefused(await call(method, url, { headers: asAdmin(), data: {} }))
+        expect(await snapshot()).toEqual(before)
       })
     })
 

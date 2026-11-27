@@ -1,15 +1,21 @@
 import type { MedusaNextFunction, MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { isShopRoute, matchKernelRoute, normalisePath, type ApiError } from "@shop/contracts"
 
-/** Where the guard is mounted: every kernel store, admin and auth route (AD-21). */
-export const KERNEL_ROUTE_MATCHERS = ["/store*", "/admin*", "/auth*"] as const
+/**
+ * Where the guard is mounted: every kernel route namespace (AD-21). Nothing
+ * under /rbac, /cloud or /hooks is allowed yet; Story 1.10 adds the payment hook.
+ */
+export const KERNEL_ROUTE_MATCHERS = ["/store*", "/admin*", "/auth*", "/rbac*", "/cloud*", "/hooks*"] as const
 
 export type GuardDecision = { allowed: true } | { allowed: false; error: ApiError }
 
 /**
  * Decides whether a kernel request may reach its handler. Shop routes pass
- * untouched; every other path must match ALLOWED_KERNEL_ROUTES in
- * `@shop/contracts`. A CORS preflight is judged by the method it asks for.
+ * untouched (the prefix match is case-sensitive, so `/Store/shop/x` is not a
+ * shop route and is refused); every other path must match ALLOWED_KERNEL_ROUTES
+ * in `@shop/contracts`. The kernel answers CORS preflights for its existing
+ * routes itself (`preflightContinue: false`), so only the preflights it leaves
+ * alone reach the guard; those are judged by the method they ask for.
  */
 export function decideKernelRoute(
   method: string,
