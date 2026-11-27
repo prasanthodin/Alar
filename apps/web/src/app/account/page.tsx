@@ -11,7 +11,8 @@ export const metadata: Metadata = { title: t("account.title"), robots: { index: 
 export default async function AccountPage() {
   const res = await api().getShopper()
   if (!res.ok) {
-    if (res.error.code === "auth.unauthenticated") redirect("/sign-in")
+    // A stale or rejected token: clear the cookie in a route handler, then go to sign-in.
+    if (res.error.code === "auth.unauthenticated") redirect("/sign-out")
     return (
       <>
         <TopBar />

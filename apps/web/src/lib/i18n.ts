@@ -8,9 +8,12 @@ export function t(key: MessageKey): string {
   return en[key]
 }
 
+// Compile-time completeness check: typecheck fails if an error code has no message in en.json.
+const errorMessages: Record<`error.${ErrorCode}`, string> = en
+
 /** Shopper-facing text for a contract error code. */
 export function errorText(code: ErrorCode): string {
-  return t(`error.${code}` as MessageKey)
+  return errorMessages[`error.${code}`]
 }
 
 /** The wordmark: the store name, lower case, until shop settings provide it. */

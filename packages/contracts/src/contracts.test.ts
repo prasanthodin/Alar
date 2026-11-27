@@ -27,6 +27,7 @@ describe("ErrorCode", () => {
       "auth.unauthenticated",
       "response.invalid",
       "network.unavailable",
+      "rate.limited",
       "client.update_required",
       "route.not_allowed",
       "internal",

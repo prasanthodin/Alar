@@ -46,7 +46,6 @@ jobs:
       JWT_SECRET: ci-only-jwt-secret
       COOKIE_SECRET: ci-only-cookie-secret
       NEXT_PUBLIC_MEDUSA_BACKEND_URL: http://localhost:9000
-      NEXT_PUBLIC_DEFAULT_REGION: dk
       NEXT_PUBLIC_BASE_URL: http://localhost:8000
 
     steps:
@@ -74,9 +73,10 @@ jobs:
       - name: Test
         run: pnpm test
 
-      # The storefront's build reads regions from the kernel, so the kernel is
-      # migrated (the starter's initial data seed runs as a migration script)
-      # and started before the build. See docs/starter.md.
+      # The website's build does not need the kernel, but the end-to-end test
+      # after it does: migrate (the starter's initial data seed runs as a
+      # migration script), start the kernel and read the seeded publishable key,
+      # which the build checks for and the running website uses. See docs/starter.md.
       - name: Migrate and seed the kernel database
         working-directory: apps/commerce
         run: pnpm exec medusa db:migrate
@@ -104,6 +104,29 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Kernel log
+      - name: Start the website
+        run: |
+          nohup pnpm --filter @shop/web start > "$RUNNER_TEMP/web.log" 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8000/ > /dev/null; then
+              echo "Website is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat "$RUNNER_TEMP/web.log"
+          exit 1
+
+      - name: Install Playwright's Chromium
+        run: pnpm --filter @shop/web exec playwright install --with-deps chromium
+
+      - name: End-to-end test
+        env:
+          E2E_BASE_URL: http://localhost:8000
+        run: pnpm --filter @shop/web run e2e
+
+      - name: Kernel and website logs
         if: failure()
-        run: cat "$RUNNER_TEMP/commerce.log" || true
+        run: |
+          cat "$RUNNER_TEMP/commerce.log" || true
+          cat "$RUNNER_TEMP/web.log" || true

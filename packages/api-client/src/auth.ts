@@ -5,11 +5,10 @@ import {
   ShopperView,
   SignInInput,
   SignUpInput,
-  type ErrorCode,
   type Result,
 } from "@shop/contracts"
 import { z } from "zod"
-import { mapFailure, type TokenStore, type Transport } from "./client"
+import { mapFailure, type KernelFailure, type TokenStore, type Transport } from "./client"
 
 // Kernel shapes. Private to api-client: nothing outside this package sees them.
 // z.object strips unknown fields, so new kernel fields are ignored.
@@ -52,8 +51,8 @@ function invalidInput<T>(error: z.ZodError): Result<T> {
   })
 }
 
-const serverOr = (code: ErrorCode) => (status: number): ErrorCode =>
-  status >= 500 ? "internal" : code
+/** Statuses that mean "these credentials or details were refused" on register, login and customer creation. */
+const CREDENTIAL_STATUSES = [400, 401, 422] as const
 
 export function createAuth(transport: Transport, tokenStore: TokenStore) {
   async function fetchShopper(token: string): Promise<Result<ShopperView>> {
@@ -63,7 +62,7 @@ export function createAuth(transport: Transport, tokenStore: TokenStore) {
       token,
       schema: KernelCustomerEnvelope,
     })
-    if (!res.ok) return mapFailure(res.failure, serverOr("auth.unauthenticated"))
+    if (!res.ok) return mapFailure(res.failure, "auth.unauthenticated")
     return toShopperView(res.data.customer)
   }
 
@@ -82,19 +81,42 @@ export function createAuth(transport: Transport, tokenStore: TokenStore) {
       const parsedInput = SignUpInput.safeParse(input)
       if (!parsedInput.success) return invalidInput(parsedInput.error)
       const { email, password, firstName, lastName } = parsedInput.data
+      const failed = (failure: KernelFailure) =>
+        mapFailure<ShopperView>(failure, "auth.sign_up_failed", CREDENTIAL_STATUSES)
 
+      let identityToken: string
       const registered = await transport.request({
         method: "POST",
         path: "/auth/customer/emailpass/register",
         body: { email, password },
         schema: KernelToken,
       })
-      if (!registered.ok) return mapFailure(registered.failure, serverOr("auth.sign_up_failed"))
+      if (registered.ok) {
+        identityToken = registered.data.token
+      } else {
+        const f = registered.failure
+        if (f.kind !== "http" || !(CREDENTIAL_STATUSES as readonly number[]).includes(f.status)) {
+          return failed(f)
+        }
+        // The identity may exist from an earlier sign-up that stopped before the customer was created.
+        // With the right password and no customer yet, finish that sign-up; anything else fails the same way.
+        const existing = await login(email, password)
+        if (!existing.ok) return failed(registered.failure)
+        const me = await transport.request({
+          method: "GET",
+          path: "/store/customers/me",
+          token: existing.data.token,
+          schema: KernelCustomerEnvelope,
+        })
+        if (me.ok) return fail("auth.sign_up_failed", "An account already exists for this identity")
+        if (me.failure.kind !== "http" || me.failure.status !== 401) return failed(me.failure)
+        identityToken = existing.data.token
+      }
 
       const created = await transport.request({
         method: "POST",
         path: "/store/customers",
-        token: registered.data.token,
+        token: identityToken,
         body: {
           email,
           ...(firstName ? { first_name: firstName } : {}),
@@ -102,11 +124,11 @@ export function createAuth(transport: Transport, tokenStore: TokenStore) {
         },
         schema: KernelCustomerEnvelope,
       })
-      if (!created.ok) return mapFailure(created.failure, serverOr("auth.sign_up_failed"))
+      if (!created.ok) return failed(created.failure)
 
-      // The registration token has no customer attached; sign in for a token that does.
+      // The identity token has no customer attached; sign in for a token that does.
       const session = await login(email, password)
-      if (!session.ok) return mapFailure(session.failure, serverOr("auth.sign_up_failed"))
+      if (!session.ok) return failed(session.failure)
 
       const view = toShopperView(created.data.customer)
       if (!view.ok) return view
@@ -121,7 +143,9 @@ export function createAuth(transport: Transport, tokenStore: TokenStore) {
       const { email, password } = parsedInput.data
 
       const session = await login(email, password)
-      if (!session.ok) return mapFailure(session.failure, serverOr("auth.invalid_credentials"))
+      if (!session.ok) {
+        return mapFailure(session.failure, "auth.invalid_credentials", CREDENTIAL_STATUSES)
+      }
 
       const shopper = await fetchShopper(session.data.token)
       if (!shopper.ok) {

@@ -66,7 +66,7 @@ The website is now four pages (`/`, `/sign-up`, `/sign-in`, `/account`) that rea
 
 ## Building the website
 
-`next build` no longer needs the kernel: no page reads the kernel at build time (`/account` renders on request). The build still checks that `NEXT_PUBLIC_MEDUSA_BACKEND_URL` and `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` are set (`apps/web/check-env-variables.js`), because the running website needs them. CI still migrates and starts the kernel before `pnpm build` and reads the seeded key from the database; that ordering is no longer required by the build itself.
+`next build` no longer needs the kernel: no page reads the kernel at build time (`/account` renders on request). The build still checks that `NEXT_PUBLIC_MEDUSA_BACKEND_URL` and `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` are set (`apps/web/check-env-variables.js`), because the running website needs them. CI still migrates and starts the kernel and reads the seeded key before `pnpm build`, because after the build it starts the website with `next start` and runs the end-to-end test against both.
 
 ## End-to-end test
 

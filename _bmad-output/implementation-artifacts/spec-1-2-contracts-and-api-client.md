@@ -2,7 +2,7 @@
 title: 'Story 1.2: Shared contracts and the api-client seam'
 type: 'feature'
 created: '2026-11-27'
-status: 'in-review'
+status: 'done'
 baseline_commit: '14149f7629549e3769779d542f059f83a0d00659'
 route: 'dispatch'
 review_loop_iteration: 0
@@ -70,7 +70,7 @@ context:
 - Packages ship TypeScript source (`exports: ./src/index.ts`); Next compiles them via `transpilePackages`, and Tailwind loads `@shop/tokens` from `tailwind.config.js` through its jiti loader. No package build step.
 - `api-client` uses `@medusajs/js-sdk`'s `client.fetch` with `jwtTokenStorageMethod: "nostore"`; the token comes from the caller's `TokenStore` per request. Kernel shapes are private zod schemas in `auth.ts`.
 - Added error code `input.invalid` (the list says "at least"); sign-up and sign-in inputs are validated before any kernel call.
-- Sign-up = register, create customer with the registration token, then sign in for a customer token; the session is stored only after all three succeed. Sign-in whose identity has no customer maps to `auth.invalid_credentials`. Sign-out clears the token store (kernel JWTs are stateless). HTTP 426 maps to `client.update_required`, 5xx to `internal`.
+- Sign-up = register, create customer with the registration token, then sign in for a customer token; the session is stored only after all three succeed. Sign-in whose identity has no customer maps to `auth.invalid_credentials`. If register is refused, sign-up tries the password: an identity with no customer (an earlier sign-up that stopped halfway) is finished; anything else is `auth.sign_up_failed`. Sign-out clears the token store (kernel JWTs are stateless). Status mapping: 401 (and 400/422 on register, login and customer creation) → the call's auth code, 426 → `client.update_required`, 429 → `rate.limited` (added), any other status → `internal`. Requests time out after `REQUEST_TIMEOUT_MS` (15 s) → `network.unavailable`. `/account` sends a rejected session to the `/sign-out` route handler, which clears the cookie.
 - Root `eslint.config.ts` turns off `@medusajs/zod-import-source` for `packages/**` (zod 4.6.7 is pinned directly); `turbo.json` lists `eslint.config.ts` as a global dependency so cached lint results are invalidated when it changes.
 - Wordmark text: `NEXT_PUBLIC_STORE_NAME`, else `brand.defaultName` in en.json, until shop settings exist (Story 1.5).
 - Stayed on Tailwind 3 (the starter's); fonts are self-hosted via `@fontsource/*` so builds need no font download.

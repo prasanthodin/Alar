@@ -32,9 +32,10 @@
   "error.auth.invalid_credentials": "The email or password is not right. Check them and try again.",
   "error.auth.sign_up_failed": "We could not create an account with these details. If you already have one, sign in instead.",
   "error.auth.unauthenticated": "Please sign in to continue.",
-  "error.input.invalid": "Check the highlighted details. The email must be valid and the password at least 8 characters.",
+  "error.input.invalid": "Check your details. The email must be a valid address and the password at least 8 characters.",
   "error.response.invalid": "Something went wrong on our side. Please try again in a moment.",
   "error.network.unavailable": "We could not reach the shop. Check your connection and try again.",
+  "error.rate.limited": "Too many attempts. Wait a few minutes, then try again.",
   "error.client.update_required": "This page is out of date. Reload it and try again.",
   "error.route.not_allowed": "That is not available. Please go back and try again.",
   "error.internal": "Something went wrong on our side. Please try again in a moment."

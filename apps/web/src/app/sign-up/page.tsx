@@ -1,3 +1,4 @@
+import { PASSWORD_MIN_LENGTH } from "@shop/contracts"
 import type { Metadata } from "next"
 import { signUpAction } from "@/app/actions"
 import { AuthForm } from "@/components/auth-form"
@@ -24,7 +25,7 @@ export default function SignUpPage() {
                 type: "password",
                 autoComplete: "new-password",
                 required: true,
-                minLength: 8,
+                minLength: PASSWORD_MIN_LENGTH,
                 hint: "form.passwordHint",
               },
               { name: "firstName", label: "form.firstName", type: "text", autoComplete: "given-name" },

@@ -17,7 +17,7 @@ type Field = {
 }
 
 const fieldClass =
-  "h-field w-full rounded-sm border border-border-control bg-surface px-3 text-field-web text-text placeholder:text-placeholder focus:border-[1.5px] focus:border-primary focus:outline-none"
+  "h-field w-full rounded-sm border border-border-control bg-surface px-3 text-field-web text-text placeholder:text-placeholder focus:border-primary"
 
 export function AuthForm({
   action,
