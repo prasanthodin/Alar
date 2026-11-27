@@ -129,8 +129,105 @@ No UX design contract exists yet (no `DESIGN.md` or `EXPERIENCE.md`). The founde
 
 ### FR Coverage Map
 
-{{requirements_coverage_map}}
+FR-1: Epic 2 - Browse and filter Designs
+FR-2: Epic 2 - Search Designs
+FR-3: Epic 1, completed in 2 - Design page
+FR-4: Epic 2 - Weaver provenance
+FR-5: Epic 2 - Whole-rupee, all-inclusive prices
+FR-6: Epic 2 - View the whole saree
+FR-7: Epic 2 - Prepare a Full saree view
+FR-8: Epic 4 - Try-on consent
+FR-9: Epic 4 - Adults only, own photo only
+FR-10: Epic 4 - Provide a Shopper photo
+FR-11: Epic 4 - Generate a Try-on result
+FR-12: Epic 4 - Present a Try-on result honestly
+FR-13: Epic 4 - Report a Try-on result
+FR-14: Epic 4 - Try-on limits
+FR-15: Epic 4 - Withdraw consent and erase
+FR-16: Epic 1, completed in 3 - Cart
+FR-17: Epic 3 - Delivery check
+FR-18: Epic 1 - Prepaid checkout
+FR-19: Epic 1 - No overselling
+FR-20: Epic 1 - Order confirmation and invoice
+FR-21: Epic 1, completed in 3 - Track an Order
+FR-22: Epic 3 - Cancel before dispatch
+FR-23: Epic 1, completed in 3 - Request a Return
+FR-24: Epic 1 - Refunds to source
+FR-25: Epic 1 - Inspect before restock
+FR-26: Epic 3 - Sign in
+FR-27: Epic 3 - Delete account
+FR-28: Epic 3 - Privacy requests and complaints
+FR-29: Epic 3 - Required disclosures
+FR-30: Epic 5 - Compose a screen from Blocks
+FR-31: Epic 5 - Draft, preview, schedule, publish
+FR-32: Epic 5 - Old apps keep working
+FR-33: Epic 5 - No unreviewed features
+FR-34: Epic 1, completed in 2 - Create and publish a Design
+FR-35: Epic 2 - Variants
+FR-36: Epic 1 - Stock in Pieces
+FR-37: Epic 2 - Tax and price data
+FR-38: Epic 2 - Claims need evidence
+FR-39: Epic 4 - Model route
+FR-40: Epic 4 - Approved-model list
+FR-41: Epic 4 - Prompt versions
+FR-42: Epic 4 - Limits and spend
+FR-43: Epic 4 - Test before publishing
+FR-44: Epic 4 - Review queue
+FR-45: Epic 4 - Cost and failure view
+FR-46: Epic 4 - Change history
+FR-47: Epic 1, completed in 3 - Manage Orders
+FR-48: Epic 1, completed in 3 - Refund
+FR-49: Epic 3 - Shopper support
+FR-50: deferred (PRD §6.2) - Staff accounts (deferred; see §6
+FR-51: Epic 4 - Try-on retention
+FR-52: Epic 4 - Check every Try-on result
+FR-53: Epic 3 - Ask whether it matched
+FR-54: Epic 3 - Messages
+FR-55: Epic 6 - Minimum app version
+FR-56: Epic 3 - Shop settings
+FR-57: Epic 2 - Weavers
+FR-58: Epic 2 - Discounts
+FR-59: Epic 3 - Notices, policies and translations
+FR-60: Epic 1 - Admin sign-in
+
+Every FR from FR-1 to FR-33 is also delivered in the Android app by Epic 6.
 
 ## Epic List
 
-{{epics_list}}
+Seven epics, in build order. Each leaves something a Shopper or the Owner can use; each builds only on the ones before it. `[ASSUMPTION]` The grouping and order were proposed by the analyst on the fast path.
+
+### Epic 1: One saree, bought and returned end to end
+The Owner lists one Design; a Shopper pays for it on the website, receives an invoice, gets it shipped, returns it and is refunded. The repository, the contracts, the deployment and the seven spike questions are settled on the way, because this slice cannot work without them.
+**FRs covered (first working version of each):** FR-3, FR-16, FR-18, FR-19, FR-20, FR-21, FR-23, FR-24, FR-25, FR-34, FR-36, FR-47, FR-48, FR-60
+**NFRs:** NFR-4, NFR-8, NFR-11, NFR-12
+**Notes:** starts from the Medusa DTC starter; replaces its data layer and checkout; proves the Hold, server-side payment confirmation, the route allow-list, the stack on the ARM server and the size gate.
+
+### Epic 2: Shoppers find a saree and trust what they see
+A Shopper browses, filters and searches about 100 Designs, reads who wove each one, and inspects the whole saree in the Full saree view. The Owner lists Designs with full attributes, Weavers, tax data and evidence-backed claims in under 15 minutes.
+**FRs covered:** FR-1, FR-2, FR-3 (complete), FR-4, FR-5, FR-6, FR-7, FR-34 (complete), FR-35, FR-37, FR-38, FR-57, FR-58
+**NFRs:** NFR-1, NFR-14
+
+### Epic 3: A complete shop: accounts, orders, returns and support
+A Shopper signs in with a one-time code, checks delivery to her pincode, follows her Order, cancels or returns it, rates whether it matched, is told about every step, and can use her privacy rights. The Owner runs Orders, Returns, refunds, complaints and shop settings from the Admin.
+**FRs covered:** FR-16 (complete), FR-17, FR-21 (complete), FR-22, FR-23 (complete), FR-26, FR-27, FR-28, FR-29, FR-47 (complete), FR-48 (complete), FR-49, FR-53, FR-54, FR-56, FR-59
+**NFRs:** NFR-5, NFR-6, NFR-13
+
+### Epic 4: Try-on with consent, under the Owner's control
+An adult Shopper accepts the Try-on consent notice, uploads her photo and sees herself in a Design, labelled as AI-generated; she can report a result, and withdraw consent and have everything erased. The Owner chooses models and prompts within guardrails, tests them on sample sarees, caps spending and can switch Try-on off. The launch gate test decides whether Try-on ships.
+**FRs covered:** FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-15, FR-39, FR-40, FR-41, FR-42, FR-43, FR-44, FR-45, FR-46, FR-51, FR-52
+**NFRs:** NFR-2, NFR-3
+
+### Epic 5: The Owner changes the shop's screens without a release
+The Owner builds home, category and campaign screens from Blocks, previews, schedules and publishes them, and they appear on the website at once.
+**FRs covered:** FR-30, FR-31, FR-32, FR-33
+
+### Epic 6: The Android app
+A Shopper does everything above in the Android app: server-driven screens, native checkout, photo picker, Try-on, the Full saree view, and a forced update when her version is too old.
+**FRs covered (in the app):** FR-1 to FR-33 as built for the website, FR-55
+**NFRs:** NFR-1, NFR-15
+
+### Epic 7: Ready to launch and to run alone
+The Owner is alerted when something breaks, can restore the shop from backups, sees the counts behind the success metrics, has the legal documents and disclosures live, and the app is accepted by the store.
+**FRs covered:** none new; FR-50 stays deferred
+**NFRs:** NFR-7, NFR-8 (complete), NFR-9, NFR-10, NFR-16, and a final pass on NFR-1 to NFR-15
+
