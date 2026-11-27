@@ -1,6 +1,6 @@
 ---
 status: draft
-stepsCompleted: []
+stepsCompleted: [1]
 inputDocuments:
   - 'prds/prd-saree-commerce-2026-11-27/prd.md'
   - 'prds/prd-saree-commerce-2026-11-27/addendum.md'

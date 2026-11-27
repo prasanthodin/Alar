@@ -70,6 +70,20 @@ clothing later.
   (dictated as "Flowsys"; read here as Floci, a free LocalStack replacement).
   To confirm.
 
+## Look and feel (founder, 2026-11-27)
+- UI and UX are a very important step and must be researched properly.
+- Primary colour from the lavender family, with a distinctive hue.
+- No shadows anywhere, on the mobile app or the website.
+- Font sizes, text sizes and text placement standard and right-sized for
+  mobile and for the website.
+- Margins, padding and gaps consistent and exact everywhere.
+- Front end may use shadcn, TypeScript and Tailwind CSS, or whatever is best.
+- Micro-animations are welcome.
+- Videos, images and carousels for the interface can come from Higgsfield.
+- Follow how iPhone and Android interfaces are evolving now; the founder
+  names glass-style backgrounds as the current direction.
+- Overall: modern, unique, attractive.
+
 ## AI controls the admin must have (founder, 2026-11-27)
 - Image-model routing is admin-managed: which model serves try-on, with the
   ability to switch models without a code release.
