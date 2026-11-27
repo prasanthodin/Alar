@@ -99,7 +99,8 @@ export const ALLOWED_KERNEL_ROUTES: readonly KernelRoute[] = [
   r("GET", "/admin/customer-groups"),
 
   // Settings: store, profile, users, regions, tax regions, return reasons, sales
-  // channels, product types and tags, locations, publishable API keys (read only).
+  // channels, product types and tags, locations (read only). Not API keys: the
+  // list read takes `?type=secret` too, and the query is not part of the match.
   r("GET", "/admin/currencies"),
   r("GET", "/admin/price-preferences"),
   r("GET", "/admin/sales-channels/:id"),
@@ -117,14 +118,14 @@ export const ALLOWED_KERNEL_ROUTES: readonly KernelRoute[] = [
   r("GET", "/admin/stock-locations"),
   r("GET", "/admin/stock-locations/:id"),
   r("GET", "/admin/shipping-profiles"),
-  r("GET", "/admin/api-keys"),
-  r("GET", "/admin/api-keys/:id"),
 ]
 
 /**
- * Kernel routes that must never be allowed: cart completion and direct edits of
- * stock levels, reservations, payments, payment collections, refunds, and Order
- * edits that move money or stock. Only the shop's workflows do these.
+ * Kernel routes that must never be allowed: cart completion; stock levels,
+ * inventory items, stock locations and variant stock links; reservations;
+ * payments, payment collections and store payment sessions; and Order,
+ * fulfillment, return, claim, exchange and draft-order writes that move money
+ * or stock. Only the shop's workflows do these.
  */
 export const NEVER_ALLOWED_KERNEL_ROUTES: readonly KernelRoute[] = [
   // Cart completion: only `confirm-payment` completes a cart, on the server (Story 1.10).
@@ -153,10 +154,28 @@ export const NEVER_ALLOWED_KERNEL_ROUTES: readonly KernelRoute[] = [
   r("POST", "/admin/payment-collections/:id/payment-sessions"),
   r("POST", "/admin/orders/:id/payment-sessions/authorize"),
 
-  // Order changes that move money or stock.
+  // Store payment sessions: payment starts only in the shop's checkout (Story 1.10).
+  r("POST", "/store/payment-collections/:id/payment-sessions"),
+  r("POST", "/store/payment-collections/:id/payment-sessions/:session_id"),
+
+  // Stock locations and the links that say how much stock a variant uses.
+  r("DELETE", "/admin/stock-locations/:id"),
+  r("POST", "/admin/products/:id/variants/:variant_id/inventory-items"),
+  r("POST", "/admin/products/:id/variants/:variant_id/inventory-items/:inventory_item_id"),
+  r("DELETE", "/admin/products/:id/variants/:variant_id/inventory-items/:inventory_item_id"),
+  r("POST", "/admin/products/:id/variants/inventory-items/batch"),
+
+  // Orders: cancellation, credit lines and fulfillments (stock leaves only through `fulfil-order`).
+  r("POST", "/admin/orders/:id/cancel"),
   r("POST", "/admin/orders/:id/credit-lines"),
   r("POST", "/admin/orders/:id/fulfillments"),
   r("POST", "/admin/orders/:id/fulfillments/:fulfillment_id/cancel"),
+  r("POST", "/admin/orders/:id/fulfillments/:fulfillment_id/shipments"),
+  r("POST", "/admin/orders/:id/fulfillments/:fulfillment_id/mark-as-delivered"),
+  r("POST", "/admin/fulfillments/:id/shipment"),
+  r("POST", "/admin/fulfillments/:id/cancel"),
+
+  // Order edits.
   r("POST", "/admin/order-edits"),
   r("DELETE", "/admin/order-edits/:id"),
   r("POST", "/admin/order-edits/:id/request"),
@@ -168,11 +187,50 @@ export const NEVER_ALLOWED_KERNEL_ROUTES: readonly KernelRoute[] = [
   r("POST", "/admin/order-edits/:id/shipping-method"),
   r("POST", "/admin/order-edits/:id/shipping-method/:action_id"),
   r("DELETE", "/admin/order-edits/:id/shipping-method/:action_id"),
-  r("POST", "/admin/returns/:id/receive/confirm"),
+
+  // Returns: creating, requesting, receiving and their item actions (only `restock-return`).
+  r("POST", "/admin/returns"),
   r("POST", "/admin/returns/:id/request"),
-  r("POST", "/admin/claims/:id/request"),
-  r("POST", "/admin/exchanges/:id/request"),
+  r("POST", "/admin/returns/:id/request-items"),
+  r("POST", "/admin/returns/:id/request-items/:action_id"),
+  r("DELETE", "/admin/returns/:id/request-items/:action_id"),
+  r("POST", "/admin/returns/:id/receive"),
+  r("DELETE", "/admin/returns/:id/receive"),
+  r("POST", "/admin/returns/:id/receive/confirm"),
+  r("POST", "/admin/returns/:id/receive-items"),
+  r("POST", "/admin/returns/:id/receive-items/:action_id"),
+  r("DELETE", "/admin/returns/:id/receive-items/:action_id"),
+  r("POST", "/admin/returns/:id/dismiss-items"),
+  r("POST", "/admin/returns/:id/dismiss-items/:action_id"),
+  r("DELETE", "/admin/returns/:id/dismiss-items/:action_id"),
+
+  // Claims and exchanges: requesting them and their inbound and outbound item actions.
+  ...(["claims", "exchanges"] as const).flatMap((kind) => [
+    r("POST", `/admin/${kind}/:id/request`),
+    ...(["inbound", "outbound"] as const).flatMap((side) => [
+      r("POST", `/admin/${kind}/:id/${side}/items`),
+      r("POST", `/admin/${kind}/:id/${side}/items/:action_id`),
+      r("DELETE", `/admin/${kind}/:id/${side}/items/:action_id`),
+    ]),
+  ]),
+
+  // Draft orders: converting into an Order, and every edit write.
   r("POST", "/admin/draft-orders/:id/convert-to-order"),
+  r("POST", "/admin/draft-orders/:id/edit"),
+  r("DELETE", "/admin/draft-orders/:id/edit"),
+  r("POST", "/admin/draft-orders/:id/edit/request"),
+  r("POST", "/admin/draft-orders/:id/edit/confirm"),
+  r("POST", "/admin/draft-orders/:id/edit/items"),
+  r("POST", "/admin/draft-orders/:id/edit/items/item/:item_id"),
+  r("POST", "/admin/draft-orders/:id/edit/items/:action_id"),
+  r("DELETE", "/admin/draft-orders/:id/edit/items/:action_id"),
+  r("POST", "/admin/draft-orders/:id/edit/promotions"),
+  r("DELETE", "/admin/draft-orders/:id/edit/promotions"),
+  r("POST", "/admin/draft-orders/:id/edit/shipping-methods"),
+  r("POST", "/admin/draft-orders/:id/edit/shipping-methods/:action_id"),
+  r("DELETE", "/admin/draft-orders/:id/edit/shipping-methods/:action_id"),
+  r("POST", "/admin/draft-orders/:id/edit/shipping-methods/method/:method_id"),
+  r("DELETE", "/admin/draft-orders/:id/edit/shipping-methods/method/:method_id"),
 ]
 
 /** Path prefixes of the shop's own routes, outside the kernel allow-list. */
