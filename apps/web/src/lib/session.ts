@@ -2,6 +2,7 @@ import "server-only"
 import { createApiClient, type TokenStore } from "@shop/api-client"
 import { cookies } from "next/headers"
 import pkg from "../../package.json"
+import { commerceBaseUrl, publishableKey } from "./server-env"
 
 export const SESSION_COOKIE = "shop_session"
 const THIRTY_DAYS = 60 * 60 * 24 * 30
@@ -30,8 +31,8 @@ function cookieTokenStore(): TokenStore {
 /** An api-client for the current request. Server only. */
 export function api() {
   return createApiClient({
-    baseUrl: process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ?? "http://localhost:9000",
-    publishableKey: process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY ?? "",
+    baseUrl: commerceBaseUrl(),
+    publishableKey: publishableKey(),
     platform: "web",
     version: pkg.version,
     getLanguage: () => "en",

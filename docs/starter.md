@@ -39,14 +39,15 @@ FORBIDDEN_NAME=<name> node scripts/check-forbidden-name.mjs
 
 ## Running locally
 
-Needs Node.js 24 (`corepack enable` provides pnpm), PostgreSQL and Redis.
+Needs Node.js 24 (`corepack enable` provides pnpm), PostgreSQL, Redis and the S3 emulator. The simplest way to get all of them, or the whole system, is the compose stack: see `docs/local-environment.md`. The kernel checks its environment at start (`apps/commerce/src/env.ts`) and names any missing or malformed variable.
 
 ```bash
 pnpm install
 
 # Kernel
 cp apps/commerce/.env.template apps/commerce/.env
-# set DATABASE_URL, e.g. postgres://postgres:postgres@localhost:5432/commerce
+# set DATABASE_URL, REDIS_URL, JWT_SECRET, COOKIE_SECRET and the S3_* variables
+# (docker compose -f infra/compose.yaml up -d floci bucket-init starts the emulator)
 createdb commerce
 cd apps/commerce && pnpm exec medusa db:migrate   # migrations plus the starter's initial data seed
 cd ../.. && pnpm commerce:dev                      # http://localhost:9000, /health answers OK

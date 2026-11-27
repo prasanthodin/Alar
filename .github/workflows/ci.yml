@@ -30,6 +30,15 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     env:
       # The forbidden product name: read from the FORBIDDEN_NAME repository variable,
@@ -45,6 +54,16 @@ jobs:
       AUTH_CORS: http://localhost:9000
       JWT_SECRET: ci-only-jwt-secret
       COOKIE_SECRET: ci-only-cookie-secret
+      # The kernel's event bus, workflow engine and locking run on Redis (Story 1.3).
+      REDIS_URL: redis://localhost:6379
+      # File storage settings the kernel checks at start; nothing uploads in CI,
+      # so no emulator runs here (scripts/compose-smoke.sh covers file storage).
+      S3_ENDPOINT: http://localhost:4566
+      S3_BUCKET: catalog
+      S3_REGION: us-east-1
+      S3_FILE_URL: http://localhost:4566/catalog
+      S3_ACCESS_KEY_ID: ci-only
+      S3_SECRET_ACCESS_KEY: ci-only
       NEXT_PUBLIC_MEDUSA_BACKEND_URL: http://localhost:9000
       NEXT_PUBLIC_BASE_URL: http://localhost:8000
 

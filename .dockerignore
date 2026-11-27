@@ -1,0 +1,23 @@
+# Build context for apps/commerce/Dockerfile and apps/web/Dockerfile (repository root).
+.git
+**/node_modules
+**/.next
+**/.medusa
+**/.turbo
+**/.cache
+**/dist
+**/coverage
+**/test-results
+**/playwright-report
+**/*.tsbuildinfo
+**/.DS_Store
+# Local env files and secrets never enter an image; templates may.
+**/.env*
+!**/.env.template
+*.pem
+infra/.env
+infra/certs
+# Not needed to build or run the applications.
+_bmad
+_bmad-output
+docs

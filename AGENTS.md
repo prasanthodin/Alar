@@ -60,7 +60,7 @@ A pnpm + Turborepo workspace monorepo created from the Medusa DTC starter (see `
 │   ├── contracts/                # @shop/contracts: zod schemas, inferred types
 │   ├── api-client/               # @shop/api-client: the only kernel caller
 │   └── tokens/                   # @shop/tokens: DESIGN.md tokens and Tailwind theme
-├── infra/                        # Deployment and local environment (compose file arrives later)
+├── infra/                        # compose.yaml (whole stack), Caddyfile, bucket init; see docs/local-environment.md
 ├── scripts/                      # Repository scripts (check-forbidden-name.mjs and its tests)
 ├── eslint.config.ts              # Root ESLint: @medusajs/eslint-plugin recommended
 └── turbo.json                    # Task graph: build, dev, start, lint, typecheck, test, seed

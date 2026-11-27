@@ -1,0 +1,17 @@
+# One entry point for the local stack (and, with a domain and TLS, for staging in
+# Story 1.24). Kernel routes go to commerce; everything else is the website.
+{
+	# The admin API stays on localhost inside the container (used by the health check).
+	admin localhost:2019
+}
+
+:8080 {
+	@commerce path /store /store/* /auth /auth/* /admin /admin/* /health
+	handle @commerce {
+		reverse_proxy commerce:9000
+	}
+
+	handle {
+		reverse_proxy web:8000
+	}
+}

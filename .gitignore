@@ -63,3 +63,7 @@ Thumbs.db
 # Playwright
 **/playwright-report/
 **/test-results/
+
+# Extra CA certificates for image builds behind a TLS-intercepting proxy (local only)
+infra/certs/*
+!infra/certs/.gitkeep

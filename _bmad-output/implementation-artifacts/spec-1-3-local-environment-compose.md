@@ -2,7 +2,7 @@
 title: 'Story 1.3: Local environment from one compose file'
 type: 'feature'
 created: '2026-11-27'
-status: 'in-progress'
+status: 'in-review'
 baseline_commit: '0a35554bf56dbd2155fda1b7192d7a3f72bde66c'
 route: 'dispatch'
 review_loop_iteration: 0
@@ -55,18 +55,29 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] commerce config, env schema, middlewares, spike script, Dockerfile -- per Code Map
-- [ ] web env check, health route, internal URL, Dockerfile -- per Code Map
-- [ ] `infra/*` -- compose with healthchecks for all six services and the one-shot bucket init; Caddy serves the site on `http://localhost:8080` and proxies `/store`, `/auth`, `/admin`, `/health` to commerce
-- [ ] tests -- vitest for `apps/commerce/src/env.ts` (missing and malformed rows) and the web env check; a unit test that the access-log formatter drops query strings and never includes body fields
-- [ ] `scripts/compose-smoke.sh` (new) -- brings the stack up, waits for health, checks Redis config, runs the spike, uploads and fetches a file, runs the Story 1.2 e2e through Caddy, prints a summary; not run in CI yet
-- [ ] docs -- how to start, stop, reset volumes, and set an image mirror
+- [x] commerce config, env schema, middlewares, spike script, Dockerfile -- per Code Map
+- [x] web env check, health route, internal URL, Dockerfile -- per Code Map
+- [x] `infra/*` -- compose with healthchecks for all six services and the one-shot bucket init; Caddy serves the site on `http://localhost:8080` and proxies `/store`, `/auth`, `/admin`, `/health` to commerce
+- [x] tests -- vitest for `apps/commerce/src/env.ts` (missing and malformed rows) and the web env check; a unit test that the access-log formatter drops query strings and never includes body fields
+- [x] `scripts/compose-smoke.sh` (new) -- brings the stack up, waits for health, checks Redis config, runs the spike, uploads and fetches a file, runs the Story 1.2 e2e through Caddy, prints a summary; not run in CI yet
+- [x] docs -- how to start, stop, reset volumes, and set an image mirror
 
 **Acceptance Criteria:**
 - Given Docker Compose v2, when `scripts/compose-smoke.sh` runs, then every matrix row passes and the script exits 0.
 - Given the repository, when `pnpm lint && pnpm typecheck && pnpm test && pnpm build` run, then all pass.
 
 ## Implementation Notes
+
+- Request id and access log live in `apps/commerce/src/lib/request-log.ts`, hooked from `apps/commerce/instrumentation.ts` (Node's `http.server.request.start` diagnostics channel), not in `src/api/middlewares.ts`. App middlewares run after the kernel's CORS, publishable-key and auth middlewares, so requests those answer (400 without a key, 401 on `/admin`) were never logged. The formatter is `src/lib/access-log.ts`. The kernel's own HTTP log is off with `LOG_LEVEL=info` (it records client IP and query strings). Health probes are logged too.
+- `workerMode` reads `MEDUSA_WORKER_MODE` (zod default and compose value `shared`), because `medusa exec` sets `server` for its own process. Otherwise the spike script's process would also consume events.
+- Spike event proof: a file subscriber (`src/subscribers/spike-redis-ping.ts`) runs a stored one-step workflow; the script polls the stored run. This works across processes.
+- File provider runs with `acl: false`: Floci, like S3, rejects ACL headers on new buckets. `catalog` is public by bucket policy (public-access block relaxed for policies). Floci does not enforce bucket policies (anonymous GET works on any bucket), which matters for `documents` in Story 1.9.
+- Publishable key: commerce runs `migrate` → `export-publishable-key` (writes a shared volume file) → `start`. The web entrypoint reads that file when `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` is empty. The web server reads the kernel URL and key by dynamic `process.env[name]` lookup (`src/lib/server-env.ts`), so they are not inlined at `next build`. The Dockerfiles pass placeholder env values only to the build step.
+- Image builds take an optional `certs` build context (`BUILD_CA_DIR`, default `infra/certs`, git-ignored) for TLS-intercepting proxies. This session copied the agent proxy CA there.
+- `@aws-sdk/client-s3` is a direct commerce dependency (the bucket init runs with the commerce image). Web gained `zod` and `vitest`, commerce gained `vitest` (config is `vitest.config.mts`, because commerce is CommonJS), and `ansi-colors` was removed from web.
+- CI (`.github/workflows/ci.yml`) now has a `redis:8` service plus `REDIS_URL` and `S3_*` env values, because the kernel requires them at start and build.
+- `floci/floci:2.5.0` pulled fine, so there was no retag. This session used mirror images from `mirror.gcr.io` for postgres, caddy and node, set in `infra/.env`.
+- Not proxied by Caddy: the admin UI at `/app` (the spec lists only `/store`, `/auth`, `/admin`, `/health`).
 
 ## Spec Change Log
 
