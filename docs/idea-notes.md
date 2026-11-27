@@ -60,6 +60,15 @@ clothing later.
 - The founder builds the product alone using cloud AI agents; a team comes
   later.
 - App name: Alar. It may change, so the product must make renaming easy.
+- The founder's own family weaves sarees, and so do family friends. Today
+  they give their sarees to a dealer. The main agenda is to cut out the
+  dealer and sell directly to customers.
+- Launch catalogue: about 100 saree designs, about 10 pieces of each.
+- Launch within one to two months at most, including all testing.
+- Hosting: Oracle Cloud free tier for testing and deployment. For AWS-style
+  services in development, the free AWS emulator the founder named
+  (dictated as "Flowsys"; read here as Floci, a free LocalStack replacement).
+  To confirm.
 
 ## AI controls the admin must have (founder, 2026-11-27)
 - Image-model routing is admin-managed: which model serves try-on, with the

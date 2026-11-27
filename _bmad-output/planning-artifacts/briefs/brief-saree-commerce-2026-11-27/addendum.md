@@ -28,7 +28,7 @@ Depth that does not belong in the brief but must not be lost. Sources are the fo
 
 ## Catalogue, stock and tax
 
-- Mostly quantity-one pieces: two buyers reaching for the same saree is the normal failure case, so a timed hold at checkout is needed. Medusa does not provide one by default.
+- About 100 designs with about 10 pieces each at launch. Stock is per design, so overselling the last piece is the failure case to prevent; a timed checkout hold is useful but less urgent than it would be for one-of-a-kind pieces. Medusa reserves stock when the order is placed.
 - Per product: tax code, fibre, weave, zari, stitched or unstitched, blouse piece, dimensions in metres, weaver and origin, evidence behind any "silk" or "handloom" claim.
 - Variant model (colour, size, stock per variant, images per variant) must be ready for later clothing categories.
 - Tax rate per product with effective dates; per-piece threshold computed on the discounted pre-tax price for stitched items; two invoice lines for a saree sold with a stitched blouse; credit notes on returns.
@@ -51,7 +51,7 @@ Depth that does not belong in the brief but must not be lost. Sources are the fo
 ## Technical decisions and their conditions
 
 - Medusa (commerce) + Payload (CMS), TypeScript on Postgres, a separate try-on worker, and one API of the shop's own in front. Accepted by the founder subject to a one-week spike: a Razorpay provider for current Medusa, a checkout stock hold for quantity-one items, and a Payload block rendered in the app with preview.
-- If the stock hold proves awkward, re-score Saleor + Payload.
+- The stock hold is no longer a deciding risk at about 10 pieces per design; the Razorpay provider and the Payload-to-app rendering remain the spike's main questions.
 - Medusa charges for staff role permissions and audit logs. With one operator this matters less at launch; decide before a team joins.
 - Not microservices: three deployables split by workload.
 - Mobile framework not yet chosen. Payload's preview and the best saree viewer are both web-based, which favours a framework with good web output or web-view embedding.
@@ -64,6 +64,13 @@ Depth that does not belong in the brief but must not be lost. Sources are the fo
 - Go or Rust backend: no open-source CMS and commerce core found.
 - Bagisto: strong Indian payment support, but its CMS has no content blocks.
 - Value segment under Rs 800: where growth is, but served by Meesho at an average order near Rs 274 with high cash-on-delivery failure.
+
+## Hosting (founder preference)
+
+- Oracle Cloud free tier for testing and first deployment. A quick check of public sources (search extracts, not Oracle's page read in full): the free ARM allowance was reduced in 2026 to the equivalent of 2 CPUs and 12 GB of memory running continuously; Oracle may reclaim free instances it judges idle (95th-percentile CPU under 20% over 7 days); there is no service guarantee. Commerce, CMS, database, cache and try-on worker on that allowance is likely tight and needs testing.
+- Suitable for development and testing. For taking real payments, either accept the reclaim and outage risk knowingly, with off-site database backups and a rehearsed restore, or move to a paid instance at launch.
+- Floci is a free, MIT-licensed local AWS emulator (a replacement for LocalStack). It is a development and test tool, not a production service. Code against the S3 interface so that images work locally on Floci and in production on Oracle's S3-compatible object storage.
+- Try-on images and the tiled saree views are the heavy storage and bandwidth users; the free tier's storage and egress limits were not checked.
 
 ## Solo-builder implications
 
