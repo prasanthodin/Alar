@@ -58,6 +58,23 @@ cp apps/web/.env.template apps/web/.env.local
 pnpm web:dev                                       # http://localhost:8000
 ```
 
-## Building the storefront
+## Starter pages removed (Story 1.2)
 
-`next build` in `apps/web` prerenders pages (for example `/sitemap.xml`) that read regions and products from the kernel with the publishable key. The kernel must therefore be migrated, seeded and running before `pnpm build`, and `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` must hold the seeded key. CI does exactly this: it migrates the database (which runs the seed), starts the kernel with `pnpm dev`, waits for `/health`, reads the publishable key from the database, then runs `pnpm build` at the root.
+Story 1.2 removed the starter's storefront data layer and pages: `apps/web/src/lib/` (data, config, util, context, hooks), `apps/web/src/modules/*`, every route under `src/app/[countryCode]/`, `src/app/{buy,ucp,llms.txt,api,.well-known}`, `src/middleware.ts` and `src/app/sitemap.ts`, together with the dependencies only they used (Stripe, Adyen, InstantSearch, `@medusajs/js-sdk`, `@medusajs/types`, the Medusa UI preset, Headless UI, Radix, lodash, qs, pg and others).
+
+The website is now four pages (`/`, `/sign-up`, `/sign-in`, `/account`) that read the kernel only through `@shop/api-client`, which returns the view models in `@shop/contracts`. Styling comes from `@shop/tokens` (DESIGN.md). Shopper-facing text is in `apps/web/messages/en.json`. ESLint fails any `apps/web` import of `@medusajs/js-sdk` or `@medusajs/types` (`no-restricted-imports`).
+
+## Building the website
+
+`next build` no longer needs the kernel: no page reads the kernel at build time (`/account` renders on request). The build still checks that `NEXT_PUBLIC_MEDUSA_BACKEND_URL` and `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` are set (`apps/web/check-env-variables.js`), because the running website needs them. CI still migrates and starts the kernel before `pnpm build` and reads the seeded key from the database; that ordering is no longer required by the build itself.
+
+## End-to-end test
+
+`apps/web/e2e/auth.spec.ts` signs up, signs out, signs in and tries a wrong password against a running kernel and website. It is skipped unless `E2E_BASE_URL` is set:
+
+```bash
+pnpm commerce:dev & pnpm web:dev &
+E2E_BASE_URL=http://localhost:8000 pnpm --filter @shop/web exec playwright test --trace off
+```
+
+Set `E2E_CHROME_PATH` to use a locally installed Chrome when Playwright's own browser is not installed.

@@ -59,3 +59,7 @@ Thumbs.db
 
 # Medusa build output
 **/.medusa/
+
+# Playwright
+**/playwright-report/
+**/test-results/

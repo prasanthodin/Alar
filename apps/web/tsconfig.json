@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ES2022",
     "lib": [
       "dom",
       "dom.iterable",
@@ -19,20 +19,8 @@
     "jsx": "react-jsx",
     "incremental": true,
     "paths": {
-      "@lib/*": [
-        "./src/lib/*"
-      ],
-      "@modules/*": [
-        "./src/modules/*"
-      ],
-      "@pages/*": [
-        "./src/pages/*"
-      ],
-      "types/*": [
-        "./src/types/*"
-      ],
-      "styles/*": [
-        "./src/styles/*"
+      "@/*": [
+        "./src/*"
       ]
     },
     "plugins": [
@@ -45,15 +33,13 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "src/app/.well-known/**/*.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     ".next",
-    ".nyc_output",
-    "coverage",
-    "jest-coverage"
+    "playwright-report",
+    "test-results"
   ]
 }

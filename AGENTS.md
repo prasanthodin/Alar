@@ -2,12 +2,12 @@
 
 ## Overview
 
-A pnpm + Turborepo workspace monorepo created from the Medusa DTC starter (see `docs/starter.md`). It contains the commerce kernel `apps/commerce` (`@shop/commerce`, `@medusajs/medusa` 2.23.1, Node 24 LTS, TypeScript 6.0.x, PostgreSQL 15+) and the Next.js storefront `apps/web` (`@shop/web`). All workspace packages use the `@shop/*` scope; other `apps/*` and `packages/*` directories are created by the story that first needs them.
+A pnpm + Turborepo workspace monorepo created from the Medusa DTC starter (see `docs/starter.md`). It contains the commerce kernel `apps/commerce` (`@shop/commerce`, `@medusajs/medusa` 2.23.1, Node 24 LTS, TypeScript 6.0.x, PostgreSQL 15+) the Next.js website `apps/web` (`@shop/web`) and the shared packages `packages/contracts` (zod schemas and inferred types), `packages/api-client` (the only code that talks to the kernel) and `packages/tokens` (DESIGN.md tokens). All workspace packages use the `@shop/*` scope; other `apps/*` and `packages/*` directories are created by the story that first needs them.
 
 ## Before You Start
 
 1. **Detect the package manager** (see [Package Manager](#package-manager)). Never assume pnpm.
-2. **Commerce and web both exist** (`apps/commerce`, `apps/web`); do not add other `apps/*` or `packages/*` directories unless your story creates them.
+2. **Commerce, web, contracts, api-client and tokens exist**; do not add other `apps/*` or `packages/*` directories unless your story creates them.
 3. **Load the matching Medusa skill** if available (see [Medusa Skills & MCP Server](#medusa-skills--mcp-server)).
 4. **Read the `AGENTS.md` of the `@medusajs/*` package you're about to use** (see [Medusa Package Docs](#medusa-package-docs-node_modules)). It describes the installed version, which beats memory.
 
@@ -27,8 +27,9 @@ A pnpm + Turborepo workspace monorepo created from the Medusa DTC starter (see `
 | Admin widgets / pages | `apps/commerce/src/admin/` | `@medusajs/admin-sdk`, `@medusajs/ui`, `@medusajs/icons` |
 | Module/plugin config | `apps/commerce/medusa-config.ts` | `@medusajs/framework` |
 | Tests | `apps/commerce/integration-tests/`, `src/**/__tests__/` | `@medusajs/test-utils` |
-| Storefront API calls | `apps/web/src/lib/data/` | `@medusajs/js-sdk`, `@medusajs/types` (`HttpTypes`) |
-| Storefront UI | `apps/web/src/modules/<feature>/`, routes in `src/app/` | `@medusajs/ui` |
+| Cross-unit shapes (view models, error codes) | `packages/contracts/src/` | zod 4.6.7 |
+| Kernel calls from any client | `packages/api-client/src/` (UI never imports `@medusajs/js-sdk` or `@medusajs/types`; lint fails) | `@medusajs/js-sdk` |
+| Website UI | routes in `apps/web/src/app/`, server actions in `src/app/actions.ts`, text in `apps/web/messages/en.json` | `packages/tokens`, DESIGN.md |
 | Lint failure | the flagged file | `@medusajs/eslint-plugin` |
 
 ## Directory Structure
@@ -53,8 +54,12 @@ A pnpm + Turborepo workspace monorepo created from the Medusa DTC starter (see `
 │   └── web/                      # Next.js storefront (@shop/web)
 │       └── src/
 │           ├── app/              # Next.js App Router routes
-│           ├── lib/data/         # Server-side Medusa API calls (js-sdk)
-│           └── modules/          # Feature UI: cart, checkout, products, account, order...
+│           ├── components/       # Shared UI pieces
+│           └── lib/              # i18n helper, cookie-backed api-client session
+├── packages/
+│   ├── contracts/                # @shop/contracts: zod schemas, inferred types
+│   ├── api-client/               # @shop/api-client: the only kernel caller
+│   └── tokens/                   # @shop/tokens: DESIGN.md tokens and Tailwind theme
 ├── infra/                        # Deployment and local environment (compose file arrives later)
 ├── scripts/                      # Repository scripts (check-forbidden-name.mjs and its tests)
 ├── eslint.config.ts              # Root ESLint: @medusajs/eslint-plugin recommended
@@ -93,7 +98,7 @@ Run from the repo root unless noted. Turbo skips missing apps automatically.
 
 ### Build
 
-`@shop/web`'s `next build` reads regions from the kernel, so start commerce (migrated and seeded) first; see `docs/starter.md`.
+`@shop/web`'s `next build` does not need the kernel, but needs `NEXT_PUBLIC_MEDUSA_BACKEND_URL` and `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` set; see `docs/starter.md`.
 
 ```bash
 <pm> run build              # all apps
@@ -116,7 +121,7 @@ cd apps/web && <pm> run lint           # eslint (flat config)
 
 ### Test
 
-The root `<pm> run test` runs each app's `test` script via turbo: commerce runs `test:unit` (passes with no tests), web has no suite yet, and `node --test "scripts/*.test.mjs"` covers the repository scripts. Integration suites need a live database and run from `apps/commerce`:
+The root `<pm> run test` runs each app's `test` script via turbo: commerce runs `test:unit` (passes with no tests), the packages run vitest, web's e2e suite runs separately with Playwright when `E2E_BASE_URL` is set, and `node --test "scripts/*.test.mjs"` covers the repository scripts. Integration suites need a live database and run from `apps/commerce`:
 
 ```bash
 cd apps/commerce && <pm> run test:unit                      # **/src/**/__tests__/**/*.unit.spec.ts

@@ -1,0 +1,23 @@
+{
+  "name": "@shop/tokens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Design tokens from DESIGN.md as plain constants, shared by web and mobile",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vitest": "^5.1.2"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  }
+}

@@ -18,3 +18,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-1-repository-from-starter.md`
   summary: CI checks the web build against `medusa develop` rather than a built kernel, has no dependency cache and no pull_request trigger.
   evidence: Works for a solo, push-to-main flow today. Revisit in Story 1.24 (deploy) where the production start command is defined.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-2-contracts-and-api-client.md`
+  summary: The AD-2 import rule lives only in apps/web; apps/mobile and any other client must get the same rule (preferably in the root ESLint config), covering other `@medusajs/*` UI packages too.
+  evidence: Rule is in apps/web/eslint.config.mjs only; the mobile app (next build run) would not inherit it.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-2-contracts-and-api-client.md`
+  summary: AGENTS.md still calls apps/web the "Next.js storefront" and has a run-on sentence in its overview.
+  evidence: Agent-context file; tidy with the next bmad-project-context update.
