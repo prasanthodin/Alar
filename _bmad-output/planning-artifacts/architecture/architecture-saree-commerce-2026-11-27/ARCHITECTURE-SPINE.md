@@ -5,7 +5,7 @@ purpose: build-substrate
 altitude: initiative
 paradigm: 'modular monolith on a commerce kernel, with ports and adapters at every external edge'
 scope: 'website, Android app, commerce, content, try-on worker, deployment and operations'
-status: draft
+status: final
 created: '2026-11-27'
 updated: '2026-11-27'
 binds: ['FR-1..FR-60', 'NFR-1..NFR-16']
