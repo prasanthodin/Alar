@@ -1,3 +1,4 @@
+import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, MathBN, MedusaError, Modules } from "@medusajs/framework/utils"
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
 import {
@@ -32,7 +33,7 @@ import {
 } from "../../lib/holds"
 import { findStandardShippingOptionId, standardDeliveryPaise } from "../../lib/shipping"
 import { shopError } from "../../lib/shop-errors"
-import { readStockLevel, shopStockLocationId } from "../../lib/stock"
+import { quantity, readStockLevel, shopStockLocationId } from "../../lib/stock"
 import { storeDesignsByProduct, type StoreDesign } from "../../lib/store-catalogue"
 import { SETTINGS_MODULE } from "../../modules/settings"
 import type SettingsModuleService from "../../modules/settings/service"
@@ -47,6 +48,8 @@ export type CheckoutCartLine = {
   unitPricePaise: number
   /** The name the cart has for it, when its Design cannot be read. */
   title: string
+  /** The inventory item of its Design's Variant, or null when the Design is not that Variant's (not lockable). */
+  inventoryItemId: string | null
 }
 
 export type CheckoutCart = {
@@ -58,46 +61,91 @@ export type CheckoutCart = {
 
 /**
  * Reads the Bag (the kernel cart) that checkout begins from: its lines and
- * the inventory items to lock. `bag.not_found` for an unknown, completed or
- * foreign cart (as the Bag route), `input.invalid` for an empty one. Reads only.
+ * their inventory items. `bag.not_found` for an unknown, completed or foreign
+ * cart (as the Bag route) and for one that belongs to another Shopper;
+ * `input.invalid` for an empty one.
  */
+export async function readCheckoutCart(
+  container: MedusaContainer,
+  input: { cartId: string; salesChannelIds: readonly string[]; customerId: string }
+): Promise<CheckoutCart> {
+  const cart = await loadCart(container, input.cartId, input.salesChannelIds)
+  if (cart.customer_id && cart.customer_id !== input.customerId) {
+    throw shopError("bag.not_found", `No Bag ${input.cartId}`, { cartId: input.cartId })
+  }
+  const items = (cart.items ?? []).filter((i): i is NonNullable<typeof i> => Boolean(i))
+  if (items.length === 0) {
+    throw shopError("input.invalid", "The Bag is empty", { issues: ["cartId: the Bag has no lines"] })
+  }
+  const designs = await storeDesignsByProduct(container, [...new Set(items.flatMap((i) => (i.product_id ? [i.product_id] : [])))])
+  const lines: CheckoutCartLine[] = items
+    .slice()
+    .sort((a, b) => new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime() || a.id.localeCompare(b.id))
+    .map((item) => {
+      const unitPricePaise = kernelAmountToPaise(item.unit_price)
+      if (!item.product_id || !item.variant_id || unitPricePaise === null) {
+        throw shopError("internal", `Bag line ${item.id} has no product, variant or shelf price`)
+      }
+      const design = designs.get(item.product_id)
+      return {
+        lineId: item.id,
+        variantId: item.variant_id,
+        productId: item.product_id,
+        quantity: MathBN.convert(item.quantity as never).toNumber(),
+        unitPricePaise,
+        title: item.product_title || item.title || item.variant_title || item.id,
+        inventoryItemId: design?.inventoryItemId && design.view.variantId === item.variant_id ? design.inventoryItemId : null,
+      }
+    })
+  const inventoryItemIds = [...new Set(lines.flatMap((l) => (l.inventoryItemId ? [l.inventoryItemId] : [])))]
+  return { cartId: cart.id, lines, inventoryItemIds }
+}
+
+/** Reads the Bag before the stock lock, for the inventory items to lock. Reads only. */
 export const loadCheckoutCartStep = createStep(
   "load-checkout-cart",
-  async (input: { cartId: string; salesChannelIds: string[] }, { container }) => {
-    const cart = await loadCart(container, input.cartId, input.salesChannelIds)
-    const items = (cart.items ?? []).filter((i): i is NonNullable<typeof i> => Boolean(i))
-    if (items.length === 0) {
-      throw shopError("input.invalid", "The Bag is empty", { issues: ["cartId: the Bag has no lines"] })
-    }
-    const lines: CheckoutCartLine[] = items
-      .slice()
-      .sort((a, b) => new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime() || a.id.localeCompare(b.id))
-      .map((item) => {
-        const unitPricePaise = kernelAmountToPaise(item.unit_price)
-        if (!item.product_id || !item.variant_id || unitPricePaise === null) {
-          throw shopError("internal", `Bag line ${item.id} has no product, variant or shelf price`)
-        }
-        return {
-          lineId: item.id,
-          variantId: item.variant_id,
-          productId: item.product_id,
-          quantity: MathBN.convert(item.quantity as never).toNumber(),
-          unitPricePaise,
-          title: item.product_title || item.title || item.variant_title || item.id,
-        }
-      })
-    const designs = await storeDesignsByProduct(container, [...new Set(lines.map((l) => l.productId))])
-    const inventoryItemIds = [
-      ...new Set(
-        lines.flatMap((l) => {
-          const design = designs.get(l.productId)
-          return design?.inventoryItemId && design.view.variantId === l.variantId ? [design.inventoryItemId] : []
-        })
-      ),
-    ]
-    return new StepResponse<CheckoutCart>({ cartId: cart.id, lines, inventoryItemIds })
+  async (input: { cartId: string; salesChannelIds: string[]; customerId: string }, { container }) => {
+    return new StepResponse<CheckoutCart>(await readCheckoutCart(container, input))
   }
 )
+
+/** A line that was added, changed or removed between two reads of the Bag, as a `cart.changed` line. */
+function lineChanged(line: CheckoutCartLine): ChangedLine {
+  return {
+    lineId: line.lineId,
+    variantId: line.variantId,
+    name: line.title,
+    reason: "line_changed",
+    quantity: line.quantity,
+    unitPricePaise: line.unitPricePaise,
+    currentPricePaise: null,
+    available: 0,
+  }
+}
+
+/**
+ * The lines that differ between the read the locks were taken from and the
+ * read under the lock: added, removed, or with another Variant, quantity,
+ * price or inventory item, or an inventory item that was not locked.
+ */
+export function cartDifferences(locked: CheckoutCart, now: CheckoutCart): ChangedLine[] {
+  const before = new Map(locked.lines.map((l) => [l.lineId, l]))
+  const after = new Map(now.lines.map((l) => [l.lineId, l]))
+  const same = (a: CheckoutCartLine, b: CheckoutCartLine) =>
+    a.variantId === b.variantId &&
+    a.productId === b.productId &&
+    a.quantity === b.quantity &&
+    a.unitPricePaise === b.unitPricePaise &&
+    a.inventoryItemId === b.inventoryItemId
+  const out: ChangedLine[] = []
+  for (const line of now.lines) {
+    const earlier = before.get(line.lineId)
+    const unlocked = line.inventoryItemId !== null && !locked.inventoryItemIds.includes(line.inventoryItemId)
+    if (!earlier || !same(earlier, line) || unlocked) out.push(lineChanged(line))
+  }
+  for (const line of locked.lines) if (!after.has(line.lineId)) out.push(lineChanged(line))
+  return out
+}
 
 /** One reservation a new Hold makes: a line's Pieces of one inventory item at the India location. */
 export type PlannedReservation = {
@@ -140,6 +188,9 @@ function onSale(design: StoreDesign | undefined, variantId: string, salesChannel
 /**
  * The checks of `begin-checkout`, run under the stock lock (Story 1.9). Reads only.
  *
+ * - The Bag is read again under the lock; a line added, changed or removed
+ *   since the read the locks were taken from is `cart.changed`
+ *   (`line_changed`).
  * - A live Hold on the cart: the same Shopper's, not expired, is answered
  *   with its Checkout (`existingCheckoutId`) and nothing else is done;
  *   anyone else's, or one whose time has run out, is `cart.locked`.
@@ -154,12 +205,12 @@ function onSale(design: StoreDesign | undefined, variantId: string, salesChannel
  *   and the reservations to make.
  */
 export const checkCheckoutStep = createStep("check-checkout", async (input: CheckCheckoutInput, { container }) => {
-  const { cart, customerId } = input
-  const live = await findLiveHold(container, cart.cartId)
+  const { customerId } = input
+  const live = await findLiveHold(container, input.cart.cartId)
   if (live) {
     const [owner] = await checkouts(container).listCheckouts({ id: live.checkout_id }, { take: 1 })
     if (!owner || (owner as unknown as CheckoutRow).customer_id !== customerId || holdExpired(live)) {
-      throw shopError("cart.locked", "This Bag is held for a checkout", { cartId: cart.cartId })
+      throw shopError("cart.locked", "This Bag is held for a checkout", { cartId: input.cart.cartId })
     }
     return new StepResponse<CheckedCheckout>({
       existingCheckoutId: live.checkout_id,
@@ -168,6 +219,18 @@ export const checkCheckoutStep = createStep("check-checkout", async (input: Chec
       reservations: [],
       shippingOptionId: null,
     })
+  }
+
+  // The Bag again, now under the lock: a line added or changed since the locks were chosen
+  // would be unlocked and unchecked, so any difference stops checkout.
+  const cart = await readCheckoutCart(container, {
+    cartId: input.cart.cartId,
+    salesChannelIds: input.salesChannelIds,
+    customerId,
+  })
+  const moved = cartDifferences(input.cart, cart)
+  if (moved.length) {
+    throw shopError("cart.changed", "The Bag changed while checkout was starting", { lines: moved })
   }
 
   const now = new Date()
@@ -307,10 +370,20 @@ export const createCheckoutStep = createStep(
   }
 )
 
-/** True for the database's refusal of a second live Hold on a cart (the partial unique index). */
-function isUniqueViolation(e: unknown): boolean {
-  const text = `${(e as { message?: unknown })?.message ?? ""} ${(e as { code?: unknown })?.code ?? ""}`
-  return /unique|duplicate|23505|already exists/i.test(text)
+/** The partial unique index that allows one live Hold per cart. */
+const LIVE_HOLD_INDEX = "IDX_hold_cart_id_live_unique"
+
+/**
+ * True only for the database's refusal of a second live Hold on a cart: the
+ * live-Hold index named in the error or its constraint (Postgres 23505), or
+ * the kernel's mapping of that violation ("Hold with cart_id: ... already exists").
+ */
+export function isLiveHoldViolation(e: unknown): boolean {
+  const err = (e ?? {}) as { message?: unknown; code?: unknown; constraint?: unknown }
+  const message = typeof err.message === "string" ? err.message : ""
+  if (message.includes(LIVE_HOLD_INDEX)) return true
+  if (err.code === "23505" && err.constraint === LIVE_HOLD_INDEX) return true
+  return /^Hold with cart_id: .*already exists/.test(message)
 }
 
 /**
@@ -331,7 +404,7 @@ export const createHoldStep = createStep(
         status: "live",
       })) as unknown as HoldRow
     } catch (e) {
-      if (isUniqueViolation(e)) throw shopError("cart.locked", "This Bag is held for a checkout", { cartId: input.cartId })
+      if (isLiveHoldViolation(e)) throw shopError("cart.locked", "This Bag is held for a checkout", { cartId: input.cartId })
       throw e
     }
     return new StepResponse({ id: created.id, expiresAt: expiresAt.toISOString() }, created.id)
@@ -363,8 +436,12 @@ export const reserveHoldStep = createStep(
   async (input: { holdId: string; checkoutId: string; reservations: PlannedReservation[] }, { container }) => {
     const inventory = container.resolve(Modules.INVENTORY)
     const made: MadeReservation[] = []
+    // Every reservation id as soon as it exists, so a failure right after creating one still removes it.
+    const created: string[] = []
+    let current: PlannedReservation | null = null
     try {
       for (const planned of input.reservations) {
+        current = planned
         const [reservation] = await inventory.createReservationItems([
           {
             inventory_item_id: planned.inventoryItemId,
@@ -380,19 +457,22 @@ export const reserveHoldStep = createStep(
             },
           },
         ])
+        if (reservation) created.push(reservation.id)
         const level = await readStockLevel(container, planned)
         made.push({ ...planned, reservationId: reservation!.id, stockedAfter: level.stocked, reservedAfter: level.reserved })
       }
     } catch (e) {
-      if (made.length) {
-        await inventory.deleteReservationItems(made.map((m) => m.reservationId)).catch((undo: unknown) => {
+      if (created.length) {
+        await inventory.deleteReservationItems(created).catch((undo: unknown) => {
           container
             .resolve(ContainerRegistrationKeys.LOGGER)
             .error(`checkout: could not remove the reservations of Hold ${input.holdId}: ${(undo as Error).message}`)
         })
       }
       if (isStockRefusal(e)) {
-        throw shopError("stock.unavailable", "Another Shopper is paying for these Pieces", { holdId: input.holdId })
+        throw shopError("stock.unavailable", "Another Shopper is paying for these Pieces", {
+          variantIds: current ? [current.variantId] : [],
+        })
       }
       throw e
     }
@@ -422,13 +502,111 @@ export const writeRecoveryFileStep = createStep(
   }
 )
 
+type VerifyCartRow = {
+  id: string
+  total?: unknown
+  shipping_total?: unknown
+  items?: ({ id: string; variant_id?: string | null; quantity: unknown; unit_price: unknown; tax_total?: unknown } | null)[] | null
+}
+
+/** A kernel amount (rupees, possibly with tiny decimals) to the nearest paisa. */
+function toPaise(amount: unknown): number {
+  if (amount === null || amount === undefined) return NaN
+  return Math.round(MathBN.mult(MathBN.convert(amount as never), 100).toNumber())
+}
+
+/**
+ * Reads the cart back after checkout has put the Shopper, the address and the
+ * shipping method on it and refreshed its prices and tax lines, and compares
+ * it with the snapshot (Story 1.9): a line added, removed or with another
+ * quantity, or a unit price that changed (the refresh re-prices lines), is
+ * `cart.changed`; a line's tax, the shipping charge or the total that is not
+ * the snapshot's, to the paisa, is `tax.kernel_mismatch`. So the cart Story
+ * 1.10 completes and the Checkout never disagree. Reads only.
+ */
+export const verifyCheckoutCartStep = createStep(
+  "verify-checkout-cart",
+  async (input: { cartId: string; snapshot: CheckoutSnapshot }, { container }) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data } = await query.graph({
+      entity: "cart",
+      fields: ["id", "total", "shipping_total", "items.id", "items.variant_id", "items.quantity", "items.unit_price", "items.tax_total"],
+      filters: { id: input.cartId },
+    })
+    const cart = data[0] as unknown as VerifyCartRow | undefined
+    if (!cart) throw shopError("bag.not_found", `No Bag ${input.cartId}`, { cartId: input.cartId })
+    const items = new Map((cart.items ?? []).flatMap((i) => (i ? [[i.id, i] as const] : [])))
+    const snapshotIds = new Set(input.snapshot.lines.map((l) => l.lineId))
+
+    const changed: ChangedLine[] = []
+    const mismatched: string[] = []
+    for (const line of input.snapshot.lines) {
+      const item = items.get(line.lineId)
+      const base = {
+        lineId: line.lineId,
+        variantId: line.variantId,
+        name: line.name,
+        quantity: line.quantity,
+        unitPricePaise: line.unitPricePaise,
+        available: 0,
+      }
+      if (!item || quantity(item.quantity) !== line.quantity) {
+        changed.push({ ...base, reason: "line_changed", currentPricePaise: null })
+        continue
+      }
+      const price = kernelAmountToPaise(item.unit_price)
+      if (price !== line.unitPricePaise) {
+        changed.push({ ...base, reason: "price_changed", currentPricePaise: price })
+        continue
+      }
+      if (toPaise(item.tax_total) !== line.taxTotalPaise) mismatched.push(line.lineId)
+    }
+    for (const [id, item] of items) {
+      if (snapshotIds.has(id)) continue
+      const price = kernelAmountToPaise(item.unit_price)
+      changed.push({
+        lineId: id,
+        variantId: item.variant_id || id,
+        name: id,
+        reason: "line_changed",
+        quantity: Math.max(1, quantity(item.quantity)),
+        unitPricePaise: price ?? 0,
+        currentPricePaise: null,
+        available: 0,
+      })
+    }
+    if (changed.length) {
+      throw shopError("cart.changed", "The Bag changed while checkout was starting", { lines: changed })
+    }
+    const shippingDiffers = toPaise(cart.shipping_total) !== input.snapshot.shippingPaise
+    const totalDiffers = toPaise(cart.total) !== input.snapshot.totalPaise
+    if (mismatched.length || shippingDiffers || totalDiffers) {
+      throw shopError("tax.kernel_mismatch", "The cart's tax or totals do not match the checkout's snapshot", {
+        lineIds: mismatched,
+        shipping: shippingDiffers,
+        total: totalDiffers,
+      })
+    }
+    return new StepResponse({ verified: true })
+  }
+)
+
 // ---------------------------------------------------------------------------
 // release-hold
 // ---------------------------------------------------------------------------
 
 export type HoldToRelease = { holdId: string; checkoutId: string | null; inventoryItemIds: string[] }
 
-/** Reads a Hold and the inventory items of its reservations (the stock locks to take). Reads only. */
+/**
+ * The lock key of a Hold itself, taken with its inventory items through the
+ * stock lock helper (`shop-stock:hold:<id>`), so two releases of one Hold run
+ * one after the other even when the second finds no reservations left.
+ */
+export function holdLockKey(holdId: string): string {
+  return `hold:${holdId}`
+}
+
+/** Reads a Hold and the inventory items of its reservations (the stock locks to take, with the Hold's own key). Reads only. */
 export const loadHoldStep = createStep("load-hold", async (input: { holdId: string }, { container }) => {
   const [hold] = await holds(container).listHolds({ id: input.holdId }, { take: 1 })
   const row = hold as unknown as HoldRow | undefined
@@ -436,7 +614,7 @@ export const loadHoldStep = createStep("load-hold", async (input: { holdId: stri
   return new StepResponse<HoldToRelease>({
     holdId: input.holdId,
     checkoutId: row?.checkout_id ?? null,
-    inventoryItemIds: [...new Set(reservations.map((r) => r.inventory_item_id))],
+    inventoryItemIds: [...new Set(reservations.map((r) => r.inventory_item_id)), holdLockKey(input.holdId)],
   })
 })
 

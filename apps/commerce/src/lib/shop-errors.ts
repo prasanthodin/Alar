@@ -54,16 +54,20 @@ export function shopError(code: ErrorCode, message: string, details?: Record<str
 /** Any response that can answer with the error envelope. */
 export type EnvelopeResponse = { status(code: number): { json(body: ApiError): unknown } }
 
+/** The most workflow layers looked through for a wrapped error. */
+const MAX_WRAPS = 5
+
 type Thrown = { code?: unknown; message?: unknown; details?: unknown; errors?: { error?: Thrown }[] }
 
 /** The shop error envelope inside a thrown error (a workflow may wrap it), or null when it has none. */
 export function shopErrorOf(e: unknown): ApiError | null {
+  // A workflow wraps a step's error in `errors[0].error`; a workflow run as a step of
+  // another wraps it again. Look through each layer, outermost first (a few at most).
   const candidates: Thrown[] = []
-  if (e && typeof e === "object") {
-    const t = e as Thrown
-    candidates.push(t)
-    const inner = t.errors?.[0]?.error
-    if (inner) candidates.push(inner)
+  let layer: Thrown | undefined = e && typeof e === "object" ? (e as Thrown) : undefined
+  while (layer && candidates.length < MAX_WRAPS) {
+    candidates.push(layer)
+    layer = layer.errors?.[0]?.error
   }
   for (const c of candidates) {
     const code = ErrorCode.safeParse(c.code)
@@ -87,8 +91,13 @@ type ErrorLogger = { error(message: string): void }
 
 /** The error a workflow failed with (it may be wrapped), or the error itself. */
 function innerError(e: unknown): unknown {
-  const inner = (e as Thrown | null)?.errors?.[0]?.error
-  return inner ?? e
+  let current = e
+  for (let i = 0; i < MAX_WRAPS; i++) {
+    const inner = (current as Thrown | null)?.errors?.[0]?.error
+    if (!inner) break
+    current = inner
+  }
+  return current
 }
 
 /**
@@ -129,9 +138,6 @@ export function errorDetail(e: unknown): string {
   }
   return String(e)
 }
-
-
-
 /** Answers with an envelope for a refused request. */
 export function sendEnvelope(res: EnvelopeResponse, error: ApiError): void {
   res.status(STATUS[error.code] ?? 400).json(error)

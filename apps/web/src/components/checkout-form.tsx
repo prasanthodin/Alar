@@ -38,11 +38,13 @@ const initial: CheckoutFormState = { error: null, fields: [], changed: [], value
  */
 export function CheckoutForm() {
   const [state, action, pending] = useActionState(beginCheckoutAction, initial)
-  const invalid = (name: string) => state.error === "input.invalid" && (state.fields.length === 0 || state.fields.includes(name))
+  // Only the fields the server or the client check named; an issue that names none (an empty Bag) marks none.
+  const invalid = (name: string) => state.error === "input.invalid" && state.fields.includes(name)
+  const changedLines = state.error === "cart.changed" ? state.changed : []
 
   return (
     <div className="flex flex-col gap-4">
-      {state.error === "cart.changed" && state.changed.length ? <ChangedLines lines={state.changed} /> : null}
+      {changedLines.length ? <ChangedLines lines={changedLines} /> : null}
       {/* Keyed by what she typed, so after a refused try the form (the state select too) shows it again. */}
       <form
         key={JSON.stringify(state.values)}
@@ -51,9 +53,11 @@ export function CheckoutForm() {
         noValidate
         data-testid="checkout-form"
       >
-        {state.error && state.error !== "cart.changed" ? (
+        {state.error && !changedLines.length ? (
           <Note tone="danger" testId="checkout-error">
-            {state.error === "input.invalid" ? t("checkout.inputInvalid") : errorText(state.error)}
+            {state.error === "input.invalid"
+              ? t(state.fields.length ? "checkout.inputInvalid" : "checkout.couldNotHold")
+              : errorText(state.error)}
           </Note>
         ) : null}
         {FIELDS.map((f) => (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { cartWriteSchema, lineWriteCartId } from "../bag-guard"
+import { bagCartGuard, cartWriteSchema, lineWriteCartId } from "../bag-guard"
 
 const item = { variant_id: "variant_01", quantity: 1 }
 
@@ -59,5 +59,29 @@ describe("lineWriteCartId", () => {
     expect(lineWriteCartId("GET", "/store/carts/cart_01/line-items")).toBeNull()
     expect(lineWriteCartId("POST", "/store/carts/cart_01/complete")).toBeNull()
     expect(lineWriteCartId("POST", "/store/shop/checkouts")).toBeNull()
+  })
+})
+
+describe("bagCartGuard", () => {
+  it("answers 404 bag.not_found for a line write whose cart id is not valid percent-encoding", async () => {
+    let status = 0
+    let body: unknown = null
+    const res = {
+      status(code: number) {
+        status = code
+        return { json: (b: unknown) => (body = b) }
+      },
+    }
+    let nextCalled = false
+    await bagCartGuard(
+      { method: "DELETE", originalUrl: "/store/carts/%E0%A4%A/line-items/cali_01", body: {} } as never,
+      res as never,
+      (() => {
+        nextCalled = true
+      }) as never
+    )
+    expect(status).toBe(404)
+    expect(body).toMatchObject({ code: "bag.not_found" })
+    expect(nextCalled).toBe(false)
   })
 })

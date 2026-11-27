@@ -25,7 +25,9 @@ function Line({ line }: { line: ChangedLine }) {
         ? line.available > 0
           ? tf("checkout.shortOfStock", { n: line.available })
           : t("checkout.noneLeft")
-        : t("checkout.unavailable")
+        : line.reason === "line_changed"
+          ? t("checkout.lineChanged")
+          : t("checkout.unavailable")
 
   const setTo = (quantity: number, label: string, testId: string) => (
     <form action={setQuantity}>

@@ -2,7 +2,7 @@
 title: 'Story 1.9: Begin checkout: snapshot and Hold'
 type: 'feature'
 created: '2026-11-27'
-status: 'in-review'
+status: 'done'
 route: 'dispatch'
 baseline_commit: 'e9eef3e'
 review_loop_iteration: 0
@@ -82,6 +82,7 @@ context:
 - An expired-but-unreleased Hold no longer locks the Bag; `POST /store/shop/checkouts` releases it (reason `expired`) before beginning again.
 - Module keys are `shopCheckout`/`shopHold` (tables `checkout`/`hold`). Routes accept a customer bearer token only.
 - Website: `?next=` return path on sign-in/sign-up/sign-out; checkout page lists changed lines with Accept/Change/Remove.
+- Review fixes: the cart is re-read under the lock (`line_changed` reason added) and read back after the tax refresh (`cart.changed` / `tax.kernel_mismatch`); a cart owned by another Shopper is `bag.not_found`; release-hold also locks `hold:<id>`; S3 client timeouts; Dockerfile build placeholders (with a test); the Bag rounds kernel totals once tax lines exist (`kernelTotalToPaise`), found by the e2e price-change step.
 
 ## Spec Change Log
 

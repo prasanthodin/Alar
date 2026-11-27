@@ -1,12 +1,12 @@
 import { formatRupees, type BagView, type CheckoutView } from "@shop/contracts"
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
-import { cancelCheckoutAction } from "@/app/actions"
+import { CancelCheckout } from "@/components/cancel-checkout"
 import { CheckoutForm } from "@/components/checkout-form"
 import { ClearStaleBag } from "@/components/clear-stale-bag"
 import { HeaderActions } from "@/components/header-actions"
 import { TopBar } from "@/components/top-bar"
-import { buttonClass, ButtonLink, Note } from "@/components/ui"
+import { ButtonLink, Note } from "@/components/ui"
 import { errorText, t, tf } from "@/lib/i18n"
 import { api, hasSession, readBag } from "@/lib/session"
 import { holdEndTime } from "@/lib/time"
@@ -78,12 +78,7 @@ function HeldCheckout({ checkout }: { checkout: CheckoutView }) {
           </p>
           <p className="text-body-sm text-text-muted">{a.mobile}</p>
         </section>
-        <form action={cancelCheckoutAction}>
-          <input type="hidden" name="checkoutId" value={checkout.id} />
-          <button type="submit" data-testid="checkout-cancel" className={`${buttonClass.outline} w-full lg:w-auto`}>
-            {t("checkout.cancel")}
-          </button>
-        </form>
+        <CancelCheckout checkoutId={checkout.id} />
       </div>
       <section aria-labelledby="checkout-summary" className="rounded-xl border border-border bg-surface p-4 lg:w-[380px] lg:shrink-0">
         <h2 id="checkout-summary" className="mb-3 font-heading text-h4">

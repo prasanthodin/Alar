@@ -43,7 +43,11 @@ const LINE_WRITES = [
   { method: "DELETE", pattern: "/store/carts/:id/line-items/:line_id" },
 ] as const
 
-/** The cart whose lines this request adds, changes or removes, or null when it is not such a write. */
+/**
+ * The cart whose lines this request adds, changes or removes, or null when it
+ * is not such a write. Throws URIError for a cart id that is not valid
+ * percent-encoding.
+ */
 export function lineWriteCartId(method: string, path: string): string | null {
   const p = normalisePath(path)
   if (!LINE_WRITES.some((w) => w.method === method.toUpperCase() && matchesPattern(w.pattern, p))) return null
@@ -92,7 +96,13 @@ function refuse(res: MedusaResponse, status: number, error: ApiError) {
 
 export async function bagCartGuard(req: MedusaRequest, res: MedusaResponse, next: MedusaNextFunction) {
   // `originalUrl` keeps the full path; the mount point strips it from `req.path`.
-  const lockedCart = lineWriteCartId(req.method, req.originalUrl)
+  let lockedCart: string | null
+  try {
+    lockedCart = lineWriteCartId(req.method, req.originalUrl)
+  } catch {
+    // A cart id that is not valid percent-encoding names no Bag.
+    return refuse(res, 404, { code: "bag.not_found", message: "No such Bag" })
+  }
   if (lockedCart) {
     // While a checkout holds the Bag's Pieces (Story 1.9), its lines cannot change.
     try {

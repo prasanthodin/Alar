@@ -167,10 +167,26 @@ test("sign in from the Bag, begin checkout, see the total and when the Hold ends
   await expect(page.getByTestId("checkout-error")).toHaveText(en["checkout.inputInvalid"])
   await expect(page.getByLabel(en["checkout.pincode"])).toHaveAttribute("aria-invalid", "true")
 
+  // The Owner changes the price meanwhile: checkout lists the changed line, nothing is held until she accepts it.
+  await ok(
+    await admin.post(`/admin/shop/designs/${design.id}/price`, { headers: { origin: ADMIN_ORIGIN }, data: { priceRupees: 3300 } }),
+    "change price"
+  )
   await page.getByLabel(en["checkout.pincode"]).fill(ADDRESS.pincode)
   await page.getByTestId("checkout-submit").click()
+  const changed = page.getByTestId("checkout-changed")
+  await expect(changed).toBeVisible()
+  const changedLine = changed.getByTestId("changed-line")
+  await expect(changedLine).toHaveAttribute("data-reason", "price_changed")
+  await expect(changedLine).toContainText(en["checkout.priceChanged"].replace("{now}", "₹3,300").replace("{was}", "₹3,150"))
+  await expect(page.getByTestId("checkout-held")).toHaveCount(0)
+  await changedLine.getByTestId("accept-price").click()
+  await expect(changedLine.getByTestId("accept-price")).toBeDisabled()
+  // What she typed is still there; she holds her items again.
+  await expect(page.getByLabel(en["checkout.pincode"])).toHaveValue(ADDRESS.pincode)
+  await page.getByTestId("checkout-submit").click()
   await expect(page.getByTestId("checkout-held")).toBeVisible()
-  await expect(page.getByTestId("checkout-total")).toHaveText("₹3,150")
+  await expect(page.getByTestId("checkout-total")).toHaveText("₹3,300")
   await expect(page.getByTestId("checkout-line")).toContainText(NAME)
   // The end of the Hold, from the server: 15 minutes from now, shown as a plain time.
   const ends = await page.getByTestId("checkout-hold-ends").innerText()

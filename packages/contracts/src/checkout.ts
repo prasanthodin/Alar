@@ -208,11 +208,12 @@ export function checkoutRecoveryKey(checkoutId: string): string {
 /**
  * Why a Bag line stops checkout (`cart.changed`): its price is not the
  * Design's price now (`price_changed`), fewer Pieces are left than it holds
- * (`short_of_stock`), or its Design is no longer on sale (`unavailable`).
- * Pieces held by other Shoppers do not count as short: that is
- * `stock.unavailable`.
+ * (`short_of_stock`), its Design is no longer on sale (`unavailable`), or
+ * the line was added, changed or removed while checkout was starting
+ * (`line_changed`). Pieces held by other Shoppers do not count as short:
+ * that is `stock.unavailable`.
  */
-export const ChangedLineReason = z.enum(["price_changed", "short_of_stock", "unavailable"])
+export const ChangedLineReason = z.enum(["price_changed", "short_of_stock", "unavailable", "line_changed"])
 export type ChangedLineReason = z.infer<typeof ChangedLineReason>
 
 /**

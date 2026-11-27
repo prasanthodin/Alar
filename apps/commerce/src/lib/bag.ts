@@ -1,7 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, MathBN } from "@medusajs/framework/utils"
 import { BagView, ShelfPrice, type BagLine } from "@shop/contracts"
-import { kernelAmountToExactPaise, kernelAmountToPaise } from "./designs"
+import { kernelAmountToPaise, kernelTotalToPaise } from "./designs"
 import { findLiveHold, holdExpired, reservedByHold } from "./holds"
 import { findIndiaRegionId, SHOP_REGION } from "./region"
 import { standardDeliveryPaise } from "./shipping"
@@ -35,6 +35,7 @@ export type CartRow = {
   currency_code: string
   region_id?: string | null
   sales_channel_id?: string | null
+  customer_id?: string | null
   completed_at?: Date | string | null
   item_total?: unknown
   items?: (ItemRow | null)[] | null
@@ -45,6 +46,7 @@ const CART_FIELDS = [
   "currency_code",
   "region_id",
   "sales_channel_id",
+  "customer_id",
   "completed_at",
   "item_total",
   "items.id",
@@ -101,8 +103,10 @@ export async function loadBag(
   const designs = await storeDesignsByProduct(container, productIds)
   // While a checkout holds this Bag's Pieces (Story 1.9), they are hers: count
   // them as available to her lines, though no other Shopper can have them.
+  // Only while the Hold locks the Bag: once it has expired the Bag can change, and the kernel no longer counts them as hers.
   const liveHold = await findLiveHold(container, cart.id)
-  const ownHeld = liveHold ? await reservedByHold(container, liveHold.id) : new Map<string, number>()
+  const locking = liveHold && !holdExpired(liveHold) ? liveHold : null
+  const ownHeld = locking ? await reservedByHold(container, locking.id) : new Map<string, number>()
 
   const lines: BagLine[] = items.map((item) => {
     if (!item.product_id || !item.variant_id) throw shopError("internal", `Bag line ${item.id} names no product or variant`)
@@ -130,12 +134,12 @@ export async function loadBag(
       // No MRP in Epic 1: the MRP is the price.
       mrp: price,
       quantity,
-      lineTotal: kernelAmountToExactPaise(item.total, `Bag line ${item.id} total`),
+      lineTotal: kernelTotalToPaise(item.total, `Bag line ${item.id} total`),
       stock: design ? design.available + (design.inventoryItemId ? (ownHeld.get(design.inventoryItemId) ?? 0) : 0) : 0,
     }
   })
 
-  const itemTotal = kernelAmountToExactPaise(cart.item_total, "The Bag's item total")
+  const itemTotal = kernelTotalToPaise(cart.item_total, "The Bag's item total")
   const totalMrp = lines.reduce((sum, l) => sum + l.mrp * l.quantity, 0)
   const discount = totalMrp - itemTotal
   if (discount < 0) {
@@ -152,9 +156,6 @@ export async function loadBag(
     delivery,
     total: itemTotal + delivery,
     count: lines.reduce((sum, l) => sum + l.quantity, 0),
-    hold:
-      liveHold && !holdExpired(liveHold)
-        ? { checkoutId: liveHold.checkout_id, expiresAt: new Date(liveHold.expires_at).toISOString() }
-        : null,
+    hold: locking ? { checkoutId: locking.checkout_id, expiresAt: new Date(locking.expires_at).toISOString() } : null,
   })
 }

@@ -131,6 +131,8 @@ function DesignPage({ design }: { design: DesignView }) {
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null)
   const variant = design.variants.find((v) => v.id === variantId) ?? design.variants[0]!
   const low = lowStockCount(variant.stock)
+  // Every available Piece is held by Shoppers who are paying (Story 1.9): unavailable for now, not sold out.
+  const held = design.availability === "held"
 
   // The gallery follows the chosen colour. The extra photos and the full view show the Design's
   // main colour, so they appear only when that colour is chosen.
@@ -231,7 +233,11 @@ function DesignPage({ design }: { design: DesignView }) {
                 )
               })}
             </View>
-            {variant.stock === 0 ? (
+            {variant.stock === 0 && held ? (
+              <View style={[styles.note, { backgroundColor: colors["tint-2"] }]}>
+                <Text style={[font("caption", 600), { color: colors["primary-text"] }]}>{t("common.heldNow")}</Text>
+              </View>
+            ) : variant.stock === 0 ? (
               <View style={[styles.note, { backgroundColor: colors["danger-tint"] }]}>
                 <Text style={[font("caption", 600), { color: colors.danger }]}>{t("common.soldOut")}</Text>
               </View>
@@ -280,7 +286,11 @@ function DesignPage({ design }: { design: DesignView }) {
         ) : null}
         {variant.stock === 0 ? (
           <View style={styles.soldOutBar}>
-            <Text style={[font("body-sm", 600), { color: colors.danger }]}>{t("product.soldOutBar")}</Text>
+            {held ? (
+              <Text style={[font("body-sm", 600), { color: colors["primary-text"] }]}>{t("product.heldBar")}</Text>
+            ) : (
+              <Text style={[font("body-sm", 600), { color: colors.danger }]}>{t("product.soldOutBar")}</Text>
+            )}
           </View>
         ) : (
           <View style={styles.buttons}>

@@ -132,9 +132,17 @@ export async function beginCheckoutAction(_prev: CheckoutFormState, form: FormDa
   }
 }
 
-/** Cancels the checkout: the Pieces go back to stock and the Bag can be changed again. */
-export async function cancelCheckoutAction(form: FormData): Promise<void> {
+/** What cancelling answers when it fails: the error to show on the checkout page. */
+export type CancelCheckoutState = { error: ErrorCode | null }
+
+/**
+ * Cancels the checkout: the Pieces go back to stock and the Bag can be
+ * changed again, then the Bag is shown. A failure stays on the checkout page
+ * and says so (the Bag is still held).
+ */
+export async function cancelCheckoutAction(_prev: CancelCheckoutState, form: FormData): Promise<CancelCheckoutState> {
   const res = await api().cancelCheckout(field(form, "checkoutId"))
-  if (!res.ok && res.error.code === "auth.unauthenticated") redirect("/sign-out?next=%2Fcheckout")
-  redirect("/bag")
+  if (res.ok) redirect("/bag")
+  if (res.error.code === "auth.unauthenticated") redirect("/sign-out?next=%2Fcheckout")
+  return { error: res.error.code }
 }

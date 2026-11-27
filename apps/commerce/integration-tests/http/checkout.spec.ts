@@ -10,7 +10,7 @@ import {
   linkSalesChannelsToApiKeyWorkflow,
   updateStoresWorkflow,
 } from "@medusajs/medusa/core-flows"
-import { GetBucketPolicyCommand, GetBucketVersioningCommand, S3Client } from "@aws-sdk/client-s3"
+import { GetBucketPolicyCommand, GetBucketVersioningCommand, ListObjectVersionsCommand, S3Client } from "@aws-sdk/client-s3"
 import {
   BagView,
   CartChangedDetails,
@@ -28,6 +28,7 @@ import { seedShopSettings } from "../../src/migration-scripts/shop-settings-seed
 import { seedShopStockLocation } from "../../src/migration-scripts/stock-location-seed"
 import { seedShopShipping } from "../../src/migration-scripts/stock-location-shipping"
 import { DESIGN_ATTRIBUTES_MODULE, type DesignAttributesModuleService } from "../../src/modules/design-attributes"
+import { STOCK_LEDGER_MODULE, type StockLedgerModuleService } from "../../src/modules/stock-ledger"
 
 jest.setTimeout(240 * 1000)
 
@@ -202,6 +203,20 @@ medusaIntegrationTestRunner({
       return { stocked: Number(l!.stocked_quantity), reserved: Number(l!.reserved_quantity) }
     }
     const logger = () => getContainer().resolve(ContainerRegistrationKeys.LOGGER) as unknown as Record<string, unknown>
+    const s3 = () =>
+      new S3Client({
+        endpoint: process.env.S3_ENDPOINT,
+        region: process.env.S3_REGION,
+        forcePathStyle: true,
+        credentials: { accessKeyId: process.env.S3_ACCESS_KEY_ID!, secretAccessKey: process.env.S3_SECRET_ACCESS_KEY! },
+      })
+    /** Every stored version (and delete marker) of the recovery files. */
+    const recoveryVersions = async () => {
+      const res = await s3().send(new ListObjectVersionsCommand({ Bucket: process.env.S3_DOCUMENTS_BUCKET!, Prefix: "checkouts/" }))
+      return [...(res.Versions ?? []), ...(res.DeleteMarkers ?? [])].map((v) => `${v.Key}@${v.VersionId}`).sort()
+    }
+    const expire = (holdId: string) =>
+      holds(getContainer()).updateHolds({ id: holdId, expires_at: new Date(Date.now() - 60_000) })
 
     beforeAll(async () => {
       const container = getContainer()
@@ -400,6 +415,57 @@ medusaIntegrationTestRunner({
         expect(await level(d.inventoryItemId)).toEqual({ stocked: 1, reserved: 0 })
       })
 
+      it("answers bag.not_found for a Bag that belongs to another Shopper, without moving it to her", async () => {
+        const d = await makeDesign(2)
+        const cartId = await newCart({ variantId: d.variantId })
+        const started = await begin(asha, cartId)
+        expect(started.status).toBe(201)
+        expect((await cancel(asha, started.data.checkout.id)).status).toBe(200)
+
+        const res = await begin(bina, cartId)
+        expect(res.status).toBe(404)
+        expect(res.data.code).toBe("bag.not_found")
+        const [cart] = await rows(`select customer_id from cart where id = ?`, [cartId])
+        expect(cart!.customer_id).toBe(asha.customerId)
+        expect((await holdsOf(cartId)).filter((h) => h.status === "live")).toHaveLength(0)
+      })
+
+      it("answers cart.changed (unavailable) for a line whose Design was unpublished, creating nothing", async () => {
+        const d = await makeDesign(2)
+        const cartId = await newCart({ variantId: d.variantId })
+        const lineId = (await bag(cartId)).lines[0]!.id
+        await getContainer().resolve(Modules.PRODUCT).updateProducts(d.id, { status: "draft" })
+
+        const res = await begin(asha, cartId)
+        expect(res.status).toBe(409)
+        expect(res.data.code).toBe("cart.changed")
+        expect(res.data.details.lines).toEqual([
+          expect.objectContaining({ lineId, reason: "unavailable", currentPricePaise: null, available: 0 }),
+        ])
+        expect(await holdsOf(cartId)).toHaveLength(0)
+        expect(await checkoutsOf(cartId)).toHaveLength(0)
+        expect(await level(d.inventoryItemId)).toEqual({ stocked: 2, reserved: 0 })
+      })
+
+      it("refuses with tax.kernel_mismatch when the refreshed cart's tax differs from the snapshot, creating nothing", async () => {
+        const d = await makeDesign(2)
+        const cartId = await newCart({ variantId: d.variantId })
+        // The kernel's tax lines come back at another rate than the money functions' bands.
+        const tax = getContainer().resolve(Modules.TAX)
+        const original = tax.getTaxLines.bind(tax)
+        jest.spyOn(tax, "getTaxLines").mockImplementation((async (...args: unknown[]) => {
+          const lines = (await (original as (...a: unknown[]) => Promise<{ rate: number }[]>)(...args)) ?? []
+          return lines.map((l) => ({ ...l, rate: 12 }))
+        }) as never)
+
+        const res = await begin(asha, cartId)
+        expect(res.status).toBe(400)
+        expect(res.data.code).toBe("tax.kernel_mismatch")
+        expect(await holdsOf(cartId)).toHaveLength(0)
+        expect(await checkoutsOf(cartId)).toHaveLength(0)
+        expect(await level(d.inventoryItemId)).toEqual({ stocked: 2, reserved: 0 })
+      })
+
       it("answers bag.not_found for an unknown cart", async () => {
         const res = await begin(asha, "cart_nope")
         expect(res.status).toBe(404)
@@ -425,9 +491,10 @@ medusaIntegrationTestRunner({
         const view = await bag(cartId)
         expect(view.lines.map((l) => [l.variantId, l.quantity])).toEqual([[d.variantId, 1]])
 
+        // The Bag is hers now: to another Shopper it is no Bag at all.
         const theirs = await begin(bina, cartId)
-        expect(theirs.status).toBe(409)
-        expect(theirs.data.code).toBe("cart.locked")
+        expect(theirs.status).toBe(404)
+        expect(theirs.data.code).toBe("bag.not_found")
         expect(await holdsOf(cartId)).toHaveLength(1)
       })
     })
@@ -501,6 +568,8 @@ medusaIntegrationTestRunner({
         const ok = await begin(asha, cartId)
         expect(ok.status).toBe(201)
         expect(ok.data.checkout.totalPaise).toBe(330000)
+        // With tax lines on the cart its totals come in unrounded decimals; the Bag still reads to the paisa.
+        expect(await bag(cartId)).toMatchObject({ total: 330000, lines: [{ lineTotal: 330000 }] })
       })
 
       it("lists a line now short of stock (sold elsewhere)", async () => {
@@ -567,6 +636,26 @@ medusaIntegrationTestRunner({
         // The failure is logged (by key and S3 error name), so the capture works, and no address is in it.
         expect(text).toContain(`could not be written (ServiceUnavailable)`)
         for (const word of SECRET_WORDS) expect(text).not.toContain(word)
+      })
+    })
+
+    describe("a failure after the recovery file", () => {
+      it("removes the file version it wrote, the reservation, the Hold and the Checkout when the stock-movement rows cannot be written", async () => {
+        const d = await makeDesign(1)
+        const cartId = await newCart({ variantId: d.variantId })
+        const before = await recoveryVersions()
+        jest
+          .spyOn(getContainer().resolve<StockLedgerModuleService>(STOCK_LEDGER_MODULE), "recordMany")
+          .mockRejectedValueOnce(new Error("ledger down"))
+
+        const res = await begin(asha, cartId)
+        expect(res.status).toBe(500)
+        expect(res.data.code).toBe("internal")
+        expect(await recoveryVersions()).toEqual(before)
+        expect(await holdsOf(cartId)).toHaveLength(0)
+        expect(await checkoutsOf(cartId)).toHaveLength(0)
+        expect(await level(d.inventoryItemId)).toEqual({ stocked: 1, reserved: 0 })
+        expect(await rows(`select * from reservation_item where inventory_item_id = ? and deleted_at is null`, [d.inventoryItemId])).toHaveLength(0)
       })
     })
 
@@ -638,6 +727,45 @@ medusaIntegrationTestRunner({
         expect(page.data.design.availability).toBe("available")
       })
 
+      it("a cancel after the Hold's expiry ends the Checkout and the Hold as expired, with an expired hold_released row", async () => {
+        const d = await makeDesign(1)
+        const cartId = await newCart({ variantId: d.variantId })
+        const id = (await begin(asha, cartId)).data.checkout.id as string
+        const [hold] = await holdsOf(cartId)
+        await expire(hold!.id as string)
+
+        const res = await cancel(asha, id)
+        expect(res.status).toBe(200)
+        expect(res.data.checkout.status).toBe("expired")
+        expect((await holdsOf(cartId))[0]).toMatchObject({ status: "expired" })
+        const released = (await movementsOf(d.variantId)).filter((m) => m.cause === "hold_released")
+        expect(released).toHaveLength(1)
+        expect(String(released[0]!.reason)).toContain("expired")
+        expect(await level(d.inventoryItemId)).toEqual({ stocked: 1, reserved: 0 })
+      })
+
+      it("ends a Hold once when a cancel and the job release it at the same moment", async () => {
+        const d = await makeDesign(1)
+        const cartId = await newCart({ variantId: d.variantId })
+        const id = (await begin(asha, cartId)).data.checkout.id as string
+        const [hold] = await holdsOf(cartId)
+        await expire(hold!.id as string)
+
+        const [cancelled] = await Promise.all([cancel(asha, id), releaseExpiredHolds(getContainer())])
+        expect(cancelled.status).toBe(200)
+        const [ended] = await holdsOf(cartId)
+        expect(ended).toMatchObject({ status: "expired" })
+        const endedAt = ended!.ended_at
+        const [checkout] = await checkoutsOf(cartId)
+        expect(checkout).toMatchObject({ status: "expired" })
+        expect((await movementsOf(d.variantId)).filter((m) => m.cause === "hold_released")).toHaveLength(1)
+        expect(await reservationsOf(hold!.id as string)).toHaveLength(0)
+        expect(await level(d.inventoryItemId)).toEqual({ stocked: 1, reserved: 0 })
+        // Nothing ended it a second time.
+        await releaseExpiredHolds(getContainer())
+        expect((await holdsOf(cartId))[0]!.ended_at).toEqual(endedAt)
+      })
+
       it("lets her begin again once her Hold has run out, releasing the old one first", async () => {
         const d = await makeDesign(1)
         const cartId = await newCart({ variantId: d.variantId })
@@ -650,6 +778,12 @@ medusaIntegrationTestRunner({
         const all = await holdsOf(cartId)
         expect(all.map((h) => h.status).sort()).toEqual(["expired", "live"])
         expect(await level(d.inventoryItemId)).toEqual({ stocked: 1, reserved: 1 })
+        const movements = await movementsOf(d.variantId)
+        const released = movements.filter((m) => m.cause === "hold_released")
+        expect(released).toHaveLength(1)
+        expect(released[0]).toMatchObject({ change: -1, actor: "system:release-hold" })
+        expect(String(released[0]!.reason)).toContain(hold!.id as string)
+        expect(movements.filter((m) => m.cause === "checkout_hold")).toHaveLength(2)
       })
     })
 

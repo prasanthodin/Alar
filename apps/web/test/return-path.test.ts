@@ -14,6 +14,16 @@ describe("safeReturnPath", () => {
   })
 })
 
+describe("safeReturnPath and pages that act on arrival", () => {
+  it("refuses /sign-out and /api, so a link cannot sign her out right after she signs in", () => {
+    for (const bad of ["/sign-out", "/sign-out?next=/checkout", "/sign-out/", "/api", "/api/health", "/api?x=1"]) {
+      expect(safeReturnPath(bad), bad).toBeNull()
+    }
+    expect(safeReturnPath("/sign-outlet")).toBe("/sign-outlet")
+    expect(safeReturnPath("/apiary")).toBe("/apiary")
+  })
+})
+
 describe("withReturnPath", () => {
   it("adds next only when there is one", () => {
     expect(withReturnPath("/sign-in", "/checkout")).toBe("/sign-in?next=%2Fcheckout")

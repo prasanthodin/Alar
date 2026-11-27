@@ -10,6 +10,11 @@ import { shopError } from "./shop-errors"
  * logged: errors carry the key and the S3 error name only.
  */
 
+/** How long to wait for a connection to the store, for each request, and how many tries (2 × 15 s, well under the lock's 120 s). */
+export const DOCUMENTS_CONNECTION_TIMEOUT_MS = 5_000
+export const DOCUMENTS_REQUEST_TIMEOUT_MS = 15_000
+export const DOCUMENTS_MAX_ATTEMPTS = 2
+
 let cached: { client: S3Client; bucket: string } | null = null
 
 function documentsClient(env: Env = readEnv()): { client: S3Client; bucket: string } {
@@ -20,6 +25,9 @@ function documentsClient(env: Env = readEnv()): { client: S3Client; bucket: stri
       region: env.S3_REGION,
       forcePathStyle: true,
       credentials: { accessKeyId: env.S3_ACCESS_KEY_ID, secretAccessKey: env.S3_SECRET_ACCESS_KEY },
+      // Writes run under the stock lock (120 s, not renewed): bound each request and the retries well inside it.
+      requestHandler: { connectionTimeout: DOCUMENTS_CONNECTION_TIMEOUT_MS, requestTimeout: DOCUMENTS_REQUEST_TIMEOUT_MS },
+      maxAttempts: DOCUMENTS_MAX_ATTEMPTS,
     }),
     bucket: env.S3_DOCUMENTS_BUCKET,
   }

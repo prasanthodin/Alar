@@ -13,6 +13,7 @@ import {
   createHoldStep,
   loadCheckoutCartStep,
   reserveHoldStep,
+  verifyCheckoutCartStep,
   writeRecoveryFileStep,
 } from "./steps/checkout-steps"
 import { recordStockMovementsStep, type StockMovementRowInput } from "./steps/stock-steps"
@@ -41,13 +42,15 @@ export const BEGIN_CHECKOUT_ACTOR = "system:begin-checkout"
  * payment starts here (Story 1.10).
  *
  * Under the stock lock on every inventory item in the Bag (sorted keys), it
- * re-checks the Bag: a changed price, a Design no longer on sale or a line
+ * reads the Bag again (a line added or changed since the locks were chosen
+ * is `cart.changed`) and re-checks it: a changed price, a Design no longer on sale or a line
  * short of stock is `cart.changed` with each changed line; Pieces held by
  * other Shoppers are `stock.unavailable`; the same Shopper's live Hold gives
  * back its Checkout and creates nothing; anyone else's is `cart.locked`.
  * Then it puts the Shopper, the address and the standard shipping method on
  * the cart and refreshes its tax lines (the shop's tax provider re-checks the
- * bands), snapshots the lines, unit prices, tax per line (money functions),
+ * bands), reads the cart back and compares it with the snapshot (a changed
+ * price is `cart.changed`, a different tax or total `tax.kernel_mismatch`), snapshots the lines, unit prices, tax per line (money functions),
  * shipping, total, address and Shopper id into a Checkout, creates its Hold
  * (length from `checkout.hold_minutes`), reserves each line's Pieces in the
  * kernel tagged with the Hold id, writes the snapshot as the recovery file
@@ -60,7 +63,11 @@ export const BEGIN_CHECKOUT_ACTOR = "system:begin-checkout"
  */
 export const beginCheckoutWorkflow = createWorkflow("begin-checkout", (input: BeginCheckoutWorkflowInput) => {
   const cart = loadCheckoutCartStep(
-    transform({ input }, ({ input }) => ({ cartId: input.cartId, salesChannelIds: input.salesChannelIds }))
+    transform({ input }, ({ input }) => ({
+      cartId: input.cartId,
+      salesChannelIds: input.salesChannelIds,
+      customerId: input.customerId,
+    }))
   )
 
   const locks = acquireStockLocksStep(
@@ -108,6 +115,10 @@ export const beginCheckoutWorkflow = createWorkflow("begin-checkout", (input: Be
     updateTaxLinesWorkflow.runAsStep({
       input: transform({ input }, ({ input }) => ({ cart_id: input.cartId, force_tax_calculation: true })),
     })
+    // The refreshed cart must agree with the snapshot: prices (cart.changed), tax and totals (tax.kernel_mismatch).
+    verifyCheckoutCartStep(
+      transform({ input, checked }, ({ input, checked }) => ({ cartId: input.cartId, snapshot: checked.snapshot! }))
+    )
 
     const checkout = createCheckoutStep(transform({ checked }, ({ checked }) => ({ snapshot: checked.snapshot! })))
     const hold = createHoldStep(

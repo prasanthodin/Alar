@@ -10,6 +10,17 @@ describe("shop errors", () => {
     expect(shopErrorOf(wrapped)).toEqual({ code: "design.unknown_tax_code", message: "x" })
   })
 
+  it("maps a tax refusal raised inside a nested workflow (wrapped twice) to 400 with its code", () => {
+    const json = vi.fn()
+    const res = { status: vi.fn(() => ({ json })) }
+    const nested = {
+      errors: [{ error: { errors: [{ error: { code: "tax.kernel_mismatch", message: "no rate", details: { lineId: "cali_1" } } }] } }],
+    }
+    sendShopErrorOrInternal(res, nested, { error: vi.fn() })
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(json).toHaveBeenCalledWith({ code: "tax.kernel_mismatch", message: "no rate", details: { lineId: "cali_1" } })
+  })
+
   it("answers with the status of the code", () => {
     const json = vi.fn()
     const res = { status: vi.fn(() => ({ json })) }

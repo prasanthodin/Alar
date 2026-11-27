@@ -22,7 +22,8 @@ COPY . .
 RUN pnpm install --frozen-lockfile --filter "@shop/commerce..."
 # Builds the workspace packages the kernel needs (the CommonJS build of
 # @shop/contracts), then the kernel. Build-time placeholders so the
-# configuration check passes during `medusa build`.
+# configuration check passes during `medusa build` (src/__tests__/dockerfile-env.test.ts
+# checks them against the env schema, so a newly required variable cannot be missed).
 # Nothing here is baked into the build output; the real values come at runtime.
 RUN DATABASE_URL=postgres://build:build@localhost:5432/build \
     REDIS_URL=redis://localhost:6379 \
@@ -31,6 +32,8 @@ RUN DATABASE_URL=postgres://build:build@localhost:5432/build \
     COOKIE_SECRET="$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')" \
     S3_ENDPOINT=http://localhost:4566 S3_BUCKET=build S3_REGION=us-east-1 \
     S3_FILE_URL=http://localhost:4566/build S3_ACCESS_KEY_ID=build S3_SECRET_ACCESS_KEY=build \
+    S3_DOCUMENTS_BUCKET=build-documents \
+    PREVIEW_TOKEN_SECRET="$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')" \
     pnpm --filter "@shop/commerce..." build
 
 FROM ${NODE_IMAGE} AS runtime

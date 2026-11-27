@@ -150,6 +150,25 @@ describe("beginCheckout", () => {
     }
   })
 
+  it("names the address fields of a server input.invalid, and none for an issue that is not about the address", async () => {
+    routes["POST /store/shop/checkouts"] = () =>
+      json(400, {
+        code: "input.invalid",
+        message: "bad",
+        details: { issues: ["address.pincode: A 6-digit pincode", "address.state: Invalid option"] },
+      })
+    expect(await client().beginCheckout(address)).toMatchObject({
+      ok: false,
+      error: { code: "input.invalid", details: { fields: ["pincode", "state"] } },
+    })
+    routes["POST /store/shop/checkouts"] = () =>
+      json(400, { code: "input.invalid", message: "empty", details: { issues: ["cartId: the Bag has no lines"] } })
+    expect(await client().beginCheckout(address)).toMatchObject({
+      ok: false,
+      error: { code: "input.invalid", details: { fields: [] } },
+    })
+  })
+
   it("maps a refused session to auth.unauthenticated and an unknown failure to internal", async () => {
     routes["POST /store/shop/checkouts"] = () => json(401, { type: "unauthorized", message: "Unauthorized" })
     expect(await client().beginCheckout(address)).toMatchObject({ ok: false, error: { code: "auth.unauthenticated" } })

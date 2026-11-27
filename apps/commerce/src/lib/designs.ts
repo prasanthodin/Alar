@@ -98,6 +98,22 @@ export function kernelAmountToExactPaise(amount: unknown, what: string): number 
   return paise.toNumber()
 }
 
+/**
+ * A kernel total in rupees as paise, rounded to the nearest paisa. Once a
+ * cart has tax lines (checkout, Story 1.9) the kernel works its totals out
+ * from the stored rate in unrounded decimals, which land within a hundredth
+ * of a paisa of the money functions' amounts (`docs/settings-and-tax.md`);
+ * anything further off, missing or negative is a fault (`internal`).
+ */
+export function kernelTotalToPaise(amount: unknown, what: string): number {
+  if (amount === null || amount === undefined) throw shopError("internal", `${what} is missing`)
+  const raw = MathBN.mult(MathBN.convert(amount as never), 100)
+  if (!raw.isFinite() || raw.isNegative()) throw shopError("internal", `${what} is not an amount of paise`)
+  const paise = Math.round(raw.toNumber())
+  if (Math.abs(raw.toNumber() - paise) > 0.01) throw shopError("internal", `${what} is not a whole number of paise`)
+  return paise
+}
+
 /** The fields a Design is read with (a kernel product and its linked attributes). */
 export const DESIGN_PRODUCT_FIELDS = [
   "id",

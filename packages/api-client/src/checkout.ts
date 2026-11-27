@@ -27,11 +27,30 @@ const CHECKOUT_CODES: readonly ErrorCode[] = [
 ]
 
 /**
- * Maps a failed checkout call: the shop's codes (with `details`, such as the
+ * The address fields a server `input.invalid` names: its `details.issues`
+ * are `"<path>: <message>"`, and `address.<field>` names a field. Issues that
+ * name no address field (an empty Bag) give none.
+ */
+export function addressFields(details: Record<string, unknown> | undefined): string[] {
+  const issues = Array.isArray(details?.issues) ? details.issues : []
+  const fields = issues.flatMap((issue) => {
+    if (typeof issue !== "string") return []
+    const m = /^address\.([A-Za-z]+)\b/.exec(issue)
+    return m ? [m[1]!] : []
+  })
+  return [...new Set(fields)]
+}
+
+/**
+ * Maps a failed checkout call: `input.invalid` gets `details.fields`, the
+ * address fields its issues name; the shop's codes (with `details`, such as the
  * changed lines of `cart.changed`) pass through; 401 is `auth.unauthenticated`
  * (signed out, or a session that ended); anything else follows `mapFailure`.
  */
 function checkoutFailure<T>(failure: KernelFailure): Result<T> {
+  if (failure.kind === "http" && failure.code === "input.invalid") {
+    return fail("input.invalid", failure.message, { ...failure.details, fields: addressFields(failure.details) })
+  }
   if (failure.kind === "http" && failure.code && (CHECKOUT_CODES as readonly string[]).includes(failure.code)) {
     return fail(failure.code as ErrorCode, failure.message, failure.details)
   }

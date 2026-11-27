@@ -5,6 +5,7 @@ import {
   cmToMetres,
   designFromProduct,
   kernelAmountToExactPaise,
+  kernelTotalToPaise,
   kernelAmountToPaise,
   metresToCm,
   type ProductRow,
@@ -154,5 +155,19 @@ describe("kernelAmountToExactPaise", () => {
     expect(() => kernelAmountToExactPaise(null, "The total")).toThrow(/missing/)
     expect(() => kernelAmountToExactPaise(31.505, "The total")).toThrow(/whole number of paise/)
     expect(() => kernelAmountToExactPaise(-1, "The total")).toThrow(/whole number of paise/)
+  })
+})
+
+describe("kernelTotalToPaise", () => {
+  it("rounds a total within a hundredth of a paisa, as the kernel gives it once a cart has tax lines", () => {
+    expect(kernelTotalToPaise(3299.99999999, "total")).toBe(330000)
+    expect(kernelTotalToPaise("3300.0000001", "total")).toBe(330000)
+    expect(kernelTotalToPaise(0, "total")).toBe(0)
+  })
+
+  it("refuses a missing, negative or not nearly whole amount of paise with internal", () => {
+    for (const bad of [null, undefined, -1, 3300.005]) {
+      expect(() => kernelTotalToPaise(bad, "total"), String(bad)).toThrow()
+    }
   })
 })
