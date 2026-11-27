@@ -45,3 +45,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-3-local-environment-compose.md`
   summary: Floci does not enforce bucket policies; every bucket is readable without credentials locally.
   evidence: Found during implementation. Story 1.9's private documents bucket must not rely on Floci for access control in tests; verify signed links against real S3 or a policy-enforcing emulator.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-4-kernel-route-allow-list.md`
+  summary: No browser test of the kept admin screens; a Medusa upgrade that adds a dashboard read would 403 silently.
+  evidence: The admin reads come from a one-off Playwright recording. Turn that recording into an admin e2e smoke when the admin stories (1.6, 1.7, 1.15) need the dashboard.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-4-kernel-route-allow-list.md`
+  summary: CI never builds the commerce image, so an image missing the CommonJS build of @shop/contracts would ship with CI green.
+  evidence: Every CI path builds contracts itself; only the manual compose smoke would catch it. Add an image build and start check in Story 1.24.
