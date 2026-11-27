@@ -44,7 +44,8 @@ export async function signOutAction(): Promise<void> {
 /** What a Bag change answers: the error to show, or the number of changes made so far. */
 export type BagActionState = { error: ErrorCode | null; done: number }
 
-function positiveInt(form: FormData, name: string): number {
+/** A form field as a whole number, or NaN (which api-client refuses as input.invalid). */
+function wholeNumber(form: FormData, name: string): number {
   const n = Number(field(form, name))
   return Number.isInteger(n) ? n : NaN
 }
@@ -64,7 +65,7 @@ export async function addToBagAction(prev: BagActionState, form: FormData): Prom
 
 /** Sets a line's quantity. A refused change leaves the line as it was. */
 export async function setBagQuantityAction(prev: BagActionState, form: FormData): Promise<BagActionState> {
-  const res = await api().setBagQuantity(field(form, "lineId"), positiveInt(form, "quantity"))
+  const res = await api().setBagQuantity(field(form, "lineId"), wholeNumber(form, "quantity"))
   if (!res.ok) {
     refresh()
     return { error: res.error.code, done: prev.done }
@@ -80,4 +81,13 @@ export async function removeFromBagAction(prev: BagActionState, form: FormData):
     return { error: res.error.code, done: prev.done }
   }
   return changed(prev)
+}
+
+/**
+ * Reads the Bag again from a server action, where cookies can be written: a
+ * stored Bag that no longer exists (or was bought) has its cookie cleared.
+ * Called by the page when it rendered such a Bag.
+ */
+export async function clearStaleBagAction(): Promise<void> {
+  await api().getBag()
 }

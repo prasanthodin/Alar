@@ -78,7 +78,9 @@ describe("catalogue schemas", () => {
       lineTotal: 630000,
       stock: 3,
     }
-    expect(BagLine.safeParse(line).success).toBe(true)
+    expect(BagLine.parse(line).buyable).toBe(true)
+    // A line whose Design is gone: no page, no photo, only removable.
+    expect(BagLine.parse({ ...line, handle: null, image: null, buyable: false, stock: 0 }).buyable).toBe(false)
     const { lineTotal: _l, ...noTotal } = line
     expect(BagLine.safeParse(noTotal).success).toBe(false)
   })

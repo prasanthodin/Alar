@@ -103,7 +103,10 @@ async function toStoreDesigns(container: MedusaContainer, rows: StoreProductRow[
   candidates.forEach(({ record }, i) => {
     const { view } = record
     if (view.pricePaise === null || view.photos.length === 0) {
-      logger.warn(`catalogue: Design ${view.id} has no price or no photo and is not shown`)
+      // A published Design should always have both; a draft (opened by its handle) often has neither.
+      const message = `catalogue: Design ${view.id} has no price or no photo and is not shown`
+      if (view.status === "published") logger.warn(message)
+      else logger.debug(message)
       return
     }
     out.push({

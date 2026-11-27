@@ -115,7 +115,11 @@ test.afterAll(async () => {
 async function screenshot(page: Page, name: string) {
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 900 })
-    // Wait for every photo on the page, so the picture shows what a Shopper sees.
+    // A full-page picture shows photos below the fold too, which a lazy photo only loads when scrolled to;
+    // load them all now, then wait for every one, so the picture shows what a Shopper sees.
+    await page.evaluate(() => {
+      for (const img of Array.from(document.images)) img.loading = "eager"
+    })
     await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete))
     // The development server's own indicator is not part of the page.
     await page.screenshot({
@@ -188,7 +192,10 @@ test("an unpublished Design is not found, except through the Admin's preview lin
     "preview"
   )
   const link = new URL(url)
-  await page.goto(`${link.pathname}${link.search}`)
+  const previewPage = await page.goto(`${link.pathname}${link.search}`)
+  // The token is in the address: never cached, never sent on as a referrer.
+  expect(previewPage?.headers()["referrer-policy"]).toBe("no-referrer")
+  expect(previewPage?.headers()["cache-control"]).toContain("no-store")
   await expect(page.getByTestId("design-name")).toHaveText(NAMES.draft)
   await expect(page.getByTestId("preview-note")).toBeVisible()
   await expect(page.getByTestId("add-to-bag")).toBeDisabled()
@@ -277,10 +284,69 @@ test("the Bag survives closing the browser: a lasting httpOnly cookie, the same 
   await reopened.close()
 })
 
-test("screenshots of home and the empty Bag", async ({ page }) => {
+test("when the stock falls below the Bag's quantity, the line says so and offers to change to what is left", async ({
+  page,
+}) => {
+  await page.goto(`/designs/${available.handle}`)
+  await page.getByTestId("add-to-bag").click()
+  await expect(page.getByTestId("bag-count")).toHaveText("1")
+  await page.getByTestId("add-to-bag").click()
+  await expect(page.getByTestId("bag-count")).toHaveText("2")
+
+  // The Owner takes one Piece out of stock meanwhile.
+  await ok(
+    await admin.post(`/admin/shop/designs/${available.id}/stock`, {
+      headers: { origin: ADMIN_ORIGIN },
+      data: { set: 1, reason: "End-to-end test: one piece sold elsewhere" },
+    }),
+    "lower stock"
+  )
+  try {
+    await page.goto("/bag")
+    const line = page.getByTestId("bag-line").filter({ hasText: NAMES.available })
+    await expect(line.getByTestId("bag-over-stock")).toContainText(en["bag.overStock"].replace("{n}", "1"))
+    await expect(line.getByTestId("bag-increase")).toBeDisabled()
+    await line.getByTestId("bag-set-to-stock").click()
+    await expect(line.getByTestId("bag-quantity")).toHaveText("1")
+    await expect(line.getByTestId("bag-over-stock")).toHaveCount(0)
+    await expect(page.getByTestId("bag-total")).toHaveText("₹3,150")
+  } finally {
+    await ok(
+      await admin.post(`/admin/shop/designs/${available.id}/stock`, {
+        headers: { origin: ADMIN_ORIGIN },
+        data: { set: 2, reason: "End-to-end test: stock back" },
+      }),
+      "restore stock"
+    )
+  }
+})
+
+test("the header offers Sign in and Create account at every width when signed out", async ({ page }) => {
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 844 })
+    await page.goto("/")
+    await expect(page.getByTestId("nav-sign-in")).toBeVisible()
+    await expect(page.getByTestId("nav-sign-up")).toBeVisible()
+    await expect(page.getByTestId("nav-account")).toHaveCount(0)
+  }
+  await page.getByTestId("nav-sign-up").click()
+  await expect(page).toHaveURL(/\/sign-up$/)
+})
+
+test("the header shows Account, not Sign in, to a signed-in Shopper", async ({ page }) => {
+  const email = `bag-e2e-${Date.now()}@example.com`
+  await page.goto("/sign-up")
+  await page.getByLabel(en["form.email"]).fill(email)
+  await page.getByLabel(en["form.password"]).fill("correct-horse-1")
+  await page.getByRole("button", { name: en["signUp.submit"] }).click()
+  await expect(page).toHaveURL(/\/account$/)
+  await page.goto("/")
+  await expect(page.getByTestId("nav-account")).toBeVisible()
+  await expect(page.getByTestId("nav-sign-in")).toHaveCount(0)
+})
+
+test("screenshots of home", async ({ page }) => {
   await page.goto("/")
   await expect(card(page, NAMES.available)).toBeVisible()
   await screenshot(page, "home")
-  await page.goto("/bag")
-  await expect(page.getByTestId("bag-empty")).toBeVisible()
 })

@@ -84,6 +84,20 @@ export function kernelAmountToPaise(amount: unknown): number | null {
   return parsed.success ? parsed.data : null
 }
 
+/**
+ * A kernel amount in rupees (major units) as exact paise, for totals and
+ * charges (not only shelf prices). A missing amount, or one that is not a
+ * whole non-negative number of paise, is a fault on the shop's side (`internal`).
+ */
+export function kernelAmountToExactPaise(amount: unknown, what: string): number {
+  if (amount === null || amount === undefined) throw shopError("internal", `${what} is missing`)
+  const paise = MathBN.mult(MathBN.convert(amount as never), 100)
+  if (!paise.isFinite() || !paise.isInteger() || paise.isNegative()) {
+    throw shopError("internal", `${what} is not a whole number of paise`)
+  }
+  return paise.toNumber()
+}
+
 /** The fields a Design is read with (a kernel product and its linked attributes). */
 export const DESIGN_PRODUCT_FIELDS = [
   "id",
@@ -170,9 +184,13 @@ export function designFromProduct(product: ProductRow): DesignRecord | null {
     createdAt: iso(product.created_at),
     updatedAt: iso(product.updated_at),
   })
+  // The handle is the Design's address on the website; a product without one is a fault.
+  if (!product.handle) {
+    throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, `Design ${product.id} has no handle`, "internal")
+  }
   return {
     view,
-    handle: product.handle ?? product.id,
+    handle: product.handle,
     attributesId: attrs.id,
     priceId: price?.id ?? null,
     salesChannelIds: (product.sales_channels ?? []).flatMap((c) => (c?.id ? [c.id] : [])),

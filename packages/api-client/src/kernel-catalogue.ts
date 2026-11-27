@@ -40,25 +40,26 @@ function memoryStore(): TokenStore {
 
 /**
  * Maps a failed Bag write: too many Pieces is `bag.stock_exceeded` (the
- * kernel refuses before changing the line, so it keeps its quantity); an
- * unknown cart or line is `bag.not_found`; a Variant that is unknown or not
- * published is `design.not_found`; anything else follows `mapFailure`.
+ * kernel refuses before changing the line, so it keeps its quantity); a
+ * Variant that is not the Variant of a published Design is `design.not_found`
+ * (the shop's cart guard decides this from the catalogue); an unknown cart or
+ * line is `bag.not_found`; anything else follows `mapFailure`.
  */
 function bagFailure<T>(failure: KernelFailure): Result<T> {
   if (failure.kind === "http") {
     if (failure.code === KERNEL_INSUFFICIENT_INVENTORY || failure.code === "bag.stock_exceeded") {
       return fail("bag.stock_exceeded", failure.message)
     }
+    if (failure.code === "design.not_found") return fail("design.not_found", failure.message)
+    if (failure.code === "input.invalid") return fail("input.invalid", failure.message)
     if (failure.status === 404) return fail("bag.not_found", failure.message)
-    if (failure.status === 400 && /not published|do not exist/i.test(failure.message)) {
-      return fail("design.not_found", failure.message)
-    }
   }
   return mapFailure(failure, "internal", [])
 }
 
 /** True when the kernel says the cart does not exist (so a new one may be made). */
-const cartGone = (failure: KernelFailure) => failure.kind === "http" && failure.status === 404
+const cartGone = (failure: KernelFailure) =>
+  failure.kind === "http" && failure.status === 404 && failure.code !== "design.not_found"
 
 /**
  * The catalogue and Bag on the real kernel (Story 1.8). Designs come from the
@@ -128,21 +129,31 @@ export function createKernelCatalogue(transport: Transport, bagStore: TokenStore
       if (!qty.ok) return qty
       const item = { variant_id: variantId, quantity: qty.data }
 
-      const existing = await storedCartId()
-      if (existing) {
-        const added = await transport.request({
+      const addTo = (cartId: string) =>
+        transport.request({
           method: "POST",
-          path: `/store/carts/${encodeURIComponent(existing)}/line-items`,
+          path: `/store/carts/${encodeURIComponent(cartId)}/line-items`,
           body: item,
           schema: KernelCartRef,
         })
-        if (added.ok) return readBag(added.data.cart.id)
-        if (!cartGone(added.failure)) return bagFailure(added.failure)
-        await bagStore.clear()
+
+      const existing = await storedCartId()
+      if (existing) {
+        // A stored Bag that is gone or was bought (completed) reads as bag.not_found
+        // and is forgotten; a new cart is started below.
+        const current = await readBag(existing)
+        if (current.ok) {
+          const added = await addTo(existing)
+          if (added.ok) return readBag(existing)
+          if (!cartGone(added.failure)) return bagFailure(added.failure)
+          await bagStore.clear()
+        } else if (current.error.code !== "bag.not_found") {
+          return current
+        }
       }
 
-      // No Bag yet (or it is gone): a new cart with this line. The kernel picks
-      // the India region and the publishable key's sales channel.
+      // No Bag yet (or it is gone): a new cart with this line. The shop's cart
+      // guard puts it in the India region and the publishable key's sales channel.
       const created = await transport.request({
         method: "POST",
         path: "/store/carts",
@@ -150,6 +161,15 @@ export function createKernelCatalogue(transport: Transport, bagStore: TokenStore
         schema: KernelCartRef,
       })
       if (!created.ok) return bagFailure(created.failure)
+
+      // Another add may have stored a Bag meanwhile (two first adds at once):
+      // keep that one, add the line to it, and leave the new cart unused.
+      const meanwhile = await storedCartId()
+      if (meanwhile && meanwhile !== created.data.cart.id) {
+        const added = await addTo(meanwhile)
+        if (added.ok) return readBag(meanwhile)
+        if (!cartGone(added.failure)) return bagFailure(added.failure)
+      }
       await bagStore.set(created.data.cart.id)
       return readBag(created.data.cart.id)
     },

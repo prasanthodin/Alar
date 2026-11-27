@@ -112,15 +112,19 @@ export type DesignView = z.infer<typeof DesignView>
  * One line of the Bag. `price` is the shelf price of one Piece and
  * `lineTotal` the line's tax-inclusive total, both computed by the server;
  * `stock` is the number of Pieces available now (the most the line can hold).
+ * `buyable` is false for a line whose Design is no longer on sale (unpublished
+ * or gone): it can only be removed, and it may have no page (`handle` null)
+ * and no photo (`image` null).
  */
 export const BagLine = z.object({
   id: Id,
   designId: Id,
-  handle: z.string().min(1),
+  handle: z.string().min(1).nullable(),
   variantId: Id,
   name: z.string().min(1),
   colourName: z.string().min(1),
-  image: ImageRef,
+  image: ImageRef.nullable(),
+  buyable: z.boolean().default(true),
   price: ShelfPrice,
   mrp: ShelfPrice,
   quantity: z.number().int().positive(),

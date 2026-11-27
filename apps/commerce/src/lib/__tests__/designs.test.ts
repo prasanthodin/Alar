@@ -1,11 +1,21 @@
 import { describe, expect, it } from "vitest"
-import { attributesFromRow, attributesToColumns, cmToMetres, designFromProduct, kernelAmountToPaise, metresToCm, type ProductRow } from "../designs"
+import {
+  attributesFromRow,
+  attributesToColumns,
+  cmToMetres,
+  designFromProduct,
+  kernelAmountToExactPaise,
+  kernelAmountToPaise,
+  metresToCm,
+  type ProductRow,
+} from "../designs"
 
 const photo = { fileId: "f0.jpg", url: "http://localhost:4566/catalog/f0.jpg", role: "close_up", position: 0 }
 
 function product(overrides: Partial<ProductRow> = {}): ProductRow {
   return {
     id: "prod_1",
+    handle: "arani-silk-saree-ab12",
     title: "Arani silk saree",
     description: null,
     status: "draft",
@@ -131,5 +141,18 @@ describe("designFromProduct", () => {
     expect(() =>
       designFromProduct(product({ design_attributes: { id: "dattr_1", photos: [{ ...photo, position: 3 }] } }))
     ).toThrow(/photos are not valid/)
+    // Never the product id in place of a missing handle.
+    expect(() => designFromProduct(product({ handle: null }))).toThrow(/has no handle/)
+  })
+})
+
+describe("kernelAmountToExactPaise", () => {
+  it("converts whole paise and refuses a missing, fractional or negative amount", () => {
+    expect(kernelAmountToExactPaise(3150, "total")).toBe(315000)
+    expect(kernelAmountToExactPaise(0, "total")).toBe(0)
+    expect(() => kernelAmountToExactPaise(undefined, "The total")).toThrow(/The total is missing/)
+    expect(() => kernelAmountToExactPaise(null, "The total")).toThrow(/missing/)
+    expect(() => kernelAmountToExactPaise(31.505, "The total")).toThrow(/whole number of paise/)
+    expect(() => kernelAmountToExactPaise(-1, "The total")).toThrow(/whole number of paise/)
   })
 })

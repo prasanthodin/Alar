@@ -112,14 +112,15 @@ describe("the website's address and readEnv", () => {
 
   it("readEnv throws naming the bad variable, never its value", () => {
     expect(readEnv(valid).PREVIEW_TOKEN_SECRET).toBe(valid.PREVIEW_TOKEN_SECRET)
-    expect(() => readEnv({ ...valid, PREVIEW_TOKEN_SECRET: "short-secret-value" })).toThrow(
-      "Missing or invalid environment variable: PREVIEW_TOKEN_SECRET"
-    )
+    let thrown: unknown = null
     try {
       readEnv({ ...valid, PREVIEW_TOKEN_SECRET: "short-secret-value" })
     } catch (e) {
-      expect(String(e)).not.toContain("short-secret-value")
+      thrown = e
     }
+    expect(thrown).toBeInstanceOf(Error)
+    expect(String(thrown)).toContain("Missing or invalid environment variable: PREVIEW_TOKEN_SECRET")
+    expect(String(thrown)).not.toContain("short-secret-value")
   })
 })
 

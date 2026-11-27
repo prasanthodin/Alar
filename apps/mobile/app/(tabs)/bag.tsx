@@ -22,7 +22,12 @@ function Line({ line }: { line: BagLine }) {
       onPress={() => router.push({ pathname: "/design/[id]", params: { id: line.designId } })}
       style={styles.line}
     >
-      <Photo image={line.image} style={styles.linePhoto} radius={radii.md} />
+      {line.image ? (
+        <Photo image={line.image} style={styles.linePhoto} radius={radii.md} />
+      ) : (
+        // A line whose Design is gone may have no photo: the neutral photo ground alone.
+        <View style={[styles.linePhoto, { borderRadius: radii.md, backgroundColor: colors["photo-ground"] }]} />
+      )}
       <View style={styles.lineText}>
         <Text style={font("body-strong")} numberOfLines={1}>
           {line.name}

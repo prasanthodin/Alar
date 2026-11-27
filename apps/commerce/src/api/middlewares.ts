@@ -1,4 +1,5 @@
 import { authenticate, configureStoreSearch, defineMiddlewares } from '@medusajs/framework/http'
+import { bagCartGuard } from '../lib/bag-guard'
 import { KERNEL_ROUTE_MATCHERS, kernelRouteGuard } from '../lib/kernel-route-guard'
 import { adminOriginGuard } from '../lib/origin-guard'
 import { photoUpload } from '../lib/photo-upload'
@@ -14,6 +15,14 @@ export default defineMiddlewares({
       matcher,
       middlewares: [kernelRouteGuard],
     })),
+    // The Bag's kernel cart writes (Story 1.8) take only the Variant and the
+    // quantity; a new cart is always made in the India region and the key's
+    // sales channel, and only Variants of published Designs are accepted.
+    // Global (no method), so it runs before the kernel's own body validation.
+    {
+      matcher: '/store/carts*',
+      middlewares: [bagCartGuard],
+    },
     // Shop admin routes (Story 1.6) accept only a signed-in admin's session
     // cookie (the dashboard's): no bearer token, no secret API key, no Shopper.
     // Because a cookie is sent cross-site, writes must also come from an

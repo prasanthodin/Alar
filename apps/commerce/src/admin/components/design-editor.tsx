@@ -322,17 +322,19 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
   const openPreview = async () => {
     if (!design) return
     const tab = window.open("", "_blank")
+    if (!tab) {
+      // Blocked: say so, and never take the Admin away from the panel.
+      toast.error(t("shopDesigns.preview.popupBlocked"))
+      return
+    }
     try {
       const { url } = await shopApi.preview(design.id)
-      if (tab) {
-        tab.opener = null
-        tab.location.href = url
-      } else {
-        window.location.assign(url)
-      }
+      tab.opener = null
+      tab.location.href = url
     } catch (e) {
-      tab?.close()
-      toast.error(e instanceof ShopApiError ? t("shopDesigns.preview.failed") : String(e))
+      tab.close()
+      const missing = e instanceof ShopApiError ? e.missing : []
+      toast.error(t(missing.length ? "shopDesigns.preview.needs" : "shopDesigns.preview.failed"))
     }
   }
 

@@ -292,7 +292,33 @@ medusaIntegrationTestRunner({
         })
         expect(shown.status).toBe(200)
         expect(shown.headers["cache-control"]).toBe("private, no-store")
+        expect(shown.headers["referrer-policy"]).toBe("no-referrer")
+        expect(res.headers["cache-control"]).toBe("private, no-store")
+        expect(res.headers["referrer-policy"]).toBe("no-referrer")
         expect(shown.data.design).toMatchObject({ id: draft.id, preview: { expiresAt }, availability: "available" })
+      })
+
+      it("a published Design opened with a valid token is shown as usual: no preview field, and it can be bought", async () => {
+        const token = signPreviewToken(available.id, readEnv().PREVIEW_TOKEN_SECRET).token
+        const res = await call("GET", `/store/shop/designs/${available.handle}?preview=${encodeURIComponent(token)}`, {
+          headers: store(),
+        })
+        expect(res.status).toBe(200)
+        expect(res.headers["referrer-policy"]).toBe("no-referrer")
+        expect("preview" in res.data.design).toBe(false)
+        expect(res.data.design.availability).toBe("available")
+        expect((await newCart(available.variantId)).status).toBe(200)
+      })
+
+      it("refuses a link for a Design the website cannot show yet, naming what is missing", async () => {
+        const created = await call("POST", "/admin/shop/designs", {
+          headers: asAdmin(),
+          data: { name: "Chettinad cotton saree", attributes: ATTRIBUTES, priceRupees: 1650 },
+        })
+        expect(created.status).toBe(201)
+        const res = await call("POST", `/admin/shop/designs/${created.data.design.id}/preview`, { headers: asAdmin() })
+        expect(res.status).toBe(400)
+        expect(res.data).toMatchObject({ code: "design.not_publishable", details: { missing: ["otherPhoto"] } })
       })
 
       it("refuses an expired, tampered or other Design's token with 404, and the route needs an admin", async () => {
@@ -335,6 +361,7 @@ medusaIntegrationTestRunner({
               name: "Arani silk saree",
               colourName: "Standard",
               image: { url: PHOTOS[1]!.url, alt: "Arani silk saree", isSample: false },
+              buyable: true,
               price: 315000,
               mrp: 315000,
               quantity: 1,
@@ -400,10 +427,115 @@ medusaIntegrationTestRunner({
         expect(reserved.status).toBe(400)
         expect(reserved.data).toMatchObject({ code: "insufficient_inventory" })
         expect((await newCart(soldOut.variantId)).data).toMatchObject({ code: "insufficient_inventory" })
-        const unpublished = await newCart(draft.variantId)
-        expect(unpublished.status).toBe(400)
-        expect(unpublished.data.message).toMatch(/not published/)
+        // Decided by the shop from its catalogue, before the kernel sees the request.
+        for (const variantId of [draft.variantId, "variant_nope"]) {
+          const res = await newCart(variantId)
+          expect(res.status).toBe(404)
+          expect(res.data).toMatchObject({ code: "design.not_found" })
+        }
+        const cartId = (await newCart(available.variantId)).data.cart.id as string
+        const add = await call("POST", `/store/carts/${cartId}/line-items`, {
+          headers: store(),
+          data: { variant_id: draft.variantId, quantity: 1 },
+        })
+        expect(add.status).toBe(404)
+        expect(add.data).toMatchObject({ code: "design.not_found" })
+        expect(Number((await dbConnection.raw(`select count(*) as n from cart`)).rows[0].n)).toBe(before + 1)
+      })
+
+      it("takes only the Variant and the quantity: every other cart field is refused with input.invalid", async () => {
+        const item = { variant_id: available.variantId, quantity: 1 }
+        const before = Number((await dbConnection.raw(`select count(*) as n from cart`)).rows[0].n)
+        for (const extra of [
+          { region_id: "reg_other" },
+          { currency_code: "usd" },
+          { sales_channel_id: "sc_other" },
+          { promo_codes: ["SALE"] },
+          { email: "asha@example.test" },
+          { shipping_address: { country_code: "de" } },
+          { billing_address: { country_code: "de" } },
+          { metadata: { a: 1 } },
+          { locale: "de-DE" },
+          { additional_data: { a: 1 } },
+        ]) {
+          const res = await call("POST", "/store/carts", { headers: store(), data: { items: [item], ...extra } })
+          expect(res.status).toBe(400)
+          expect(res.data).toMatchObject({ code: "input.invalid", details: { fields: [Object.keys(extra)[0]] } })
+        }
         expect(Number((await dbConnection.raw(`select count(*) as n from cart`)).rows[0].n)).toBe(before)
+
+        const cartId = (await newCart(available.variantId)).data.cart.id as string
+        const lineId = BagView.parse((await bag(cartId)).data.bag).lines[0]!.id
+        const add = await call("POST", `/store/carts/${cartId}/line-items`, {
+          headers: store(),
+          data: { ...item, metadata: { gift: true } },
+        })
+        expect(add.data).toMatchObject({ code: "input.invalid" })
+        const change = await call("POST", `/store/carts/${cartId}/line-items/${lineId}`, {
+          headers: store(),
+          data: { quantity: 1, metadata: { gift: true } },
+        })
+        expect(change.data).toMatchObject({ code: "input.invalid" })
+
+        // A new cart is always in the India region and the key's sales channel.
+        const row = await dbConnection.raw(`select region_id, sales_channel_id, currency_code from cart where id = ?`, [cartId])
+        const india = await dbConnection.raw(
+          `select r.id from region r join region_country c on c.region_id = r.id where c.iso_2 = 'in' and r.deleted_at is null`
+        )
+        expect(row.rows[0]).toEqual({
+          region_id: india.rows[0].id,
+          sales_channel_id: expect.stringMatching(/^sc_/),
+          currency_code: "inr",
+        })
+      })
+
+      it("reads a cart in another currency, or outside the key's sales channels, as bag.not_found", async () => {
+        const cartId = (await newCart(available.variantId)).data.cart.id as string
+        const carts = getContainer().resolve(Modules.CART)
+        await carts.updateCarts(cartId, { currency_code: "usd" })
+        expect((await bag(cartId)).data).toMatchObject({ code: "bag.not_found" })
+        await carts.updateCarts(cartId, { currency_code: "inr", sales_channel_id: "sc_other" })
+        expect((await bag(cartId)).data).toMatchObject({ code: "bag.not_found" })
+      })
+
+      it("shows a line whose Design is gone as not buyable, so it can be removed", async () => {
+        const cartId = (await newCart(available.variantId)).data.cart.id as string
+        await getContainer().resolve(Modules.PRODUCT).softDeleteProducts([available.id])
+        const res = await bag(cartId)
+        expect(res.status).toBe(200)
+        expect(BagView.parse(res.data.bag).lines[0]).toMatchObject({
+          designId: available.id,
+          name: "Arani silk saree",
+          buyable: false,
+          stock: 0,
+          lineTotal: 315000,
+        })
+      })
+
+      it("shows the delivery option's charge: at Rs 50 the Bag has delivery 5000 and a total of items + 5000", async () => {
+        const container = getContainer()
+        const id = await container.resolve<SettingsModuleService>(SETTINGS_MODULE).getValue(SHIPPING_OPTION_SETTING)
+        const { data } = await container.resolve(ContainerRegistrationKeys.QUERY).graph({
+          entity: "shipping_option",
+          fields: ["prices.id", "prices.currency_code"],
+          filters: { id },
+        })
+        const priceIds = (data[0] as unknown as { prices: { id: string; currency_code: string }[] }).prices
+          .filter((p) => p.currency_code === "inr")
+          .map((p) => p.id)
+        const setAmount = (rupees: number) =>
+          dbConnection.raw(
+            `update price set amount = ?, raw_amount = jsonb_build_object('value', ?::text, 'precision', 20) where id = any(?)`,
+            [rupees, String(rupees), priceIds]
+          )
+        await setAmount(50)
+        try {
+          const cartId = (await newCart(available.variantId, 2)).data.cart.id as string
+          const view = BagView.parse((await bag(cartId)).data.bag)
+          expect(view).toMatchObject({ totalMrp: 630000, discount: 0, delivery: 5000, total: 630000 + 5000 })
+        } finally {
+          await setAmount(0)
+        }
       })
 
       it("answers 404 bag.not_found for an unknown or completed cart", async () => {

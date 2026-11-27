@@ -49,6 +49,24 @@ test("the Owner creates a Design with two photos, sees what is missing, confirms
   await expect(page.getByText("Design saved as unpublished.")).toBeVisible()
   await expect(panel.getByRole("heading", { name: "Edit design" })).toBeVisible()
 
+  // Preview of the unpublished draft (Story 1.8): a new tab is sent to a signed link to the
+  // website's page for the Design. Only the link is checked; the website need not be running.
+  const previewAnswer = page.waitForResponse(
+    (r) => r.request().method() === "POST" && /\/admin\/shop\/designs\/[^/]+\/preview$/.test(new URL(r.url()).pathname)
+  )
+  const popup = page.waitForEvent("popup")
+  await panel.getByTestId("design-preview").click()
+  const answer = await previewAnswer
+  expect(answer.status()).toBe(200)
+  const { url, expiresAt } = (await answer.json()) as { url: string; expiresAt: string }
+  const link = new URL(url)
+  const website = process.env.STOREFRONT_URL ?? process.env.STORE_CORS?.split(",")[0] ?? "http://localhost:8000"
+  expect(link.origin).toBe(new URL(website).origin)
+  expect(link.pathname).toMatch(/^\/designs\/[^/]+$/)
+  expect(link.searchParams.get("preview")).toMatch(/^\d+\.[A-Za-z0-9_-]{43}$/)
+  expect(new Date(expiresAt).getTime()).toBeGreaterThan(Date.now())
+  await (await popup).close()
+
   // Publishing without a close-up or the confirmation is refused, naming both.
   await panel.getByRole("button", { name: "Publish", exact: true }).click()
   const missing = panel.getByTestId("publish-missing")
@@ -67,12 +85,6 @@ test("the Owner creates a Design with two photos, sees what is missing, confirms
   await panel.getByRole("button", { name: "Publish", exact: true }).click()
   await expect(panel.getByText("This design is published.")).toBeVisible()
 
-  // Preview (Story 1.8): a new tab opens the website's page for the Design through a signed link.
-  const popup = page.waitForEvent("popup")
-  await panel.getByTestId("design-preview").click()
-  const tab = await popup
-  await tab.waitForURL(/\/designs\/[^/?]+\?preview=\d+\.[A-Za-z0-9_-]{43}$/)
-  await tab.close()
 
   // Stock (Story 1.7): set it to 10 Pieces with a reason and see the row in the history.
   const stock = panel.getByTestId("design-stock")

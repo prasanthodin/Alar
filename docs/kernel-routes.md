@@ -64,6 +64,8 @@ Routes not in this table are not protected by the overlap test, though they are 
 | `POST /store/carts/:id/line-items/:line_id` | `setBagQuantity` |
 | `DELETE /store/carts/:id/line-items/:line_id` | `removeFromBag` |
 
+These kernel routes take far more than the Bag sends (a region, a currency, a sales channel, promotion codes, an email, addresses), so a shop middleware (`apps/commerce/src/lib/bag-guard.ts`) runs after the guard on `/store/carts*`: it accepts only the Variant and the quantity (400 `input.invalid` for any other field), puts a new cart in the India region and the key's sales channel, and accepts only Variants of published Designs (404 `design.not_found`).
+
 The Bag is read through the shop route `GET /store/shop/bag/:cartId`, so `GET /store/carts/:id` stays off the list, and so do the cart update, shipping-method, promotion and customer routes. Cart completion (`POST /store/carts/:id/complete`) stays never-allowed; `packages/contracts/src/kernel-routes.test.ts` checks that these four are the only cart writes, and the commerce integration test `catalogue-and-bag.spec.ts` checks completion and the other cart writes still get 403.
 
 ## What the list leaves out for now

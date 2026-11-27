@@ -250,11 +250,6 @@ export const AdminDesignResponse = z.object({
 })
 export type AdminDesignResponse = z.infer<typeof AdminDesignResponse>
 
-/**
- * The outcome of `POST /admin/shop/designs/:id/publish`. A refusal is the
- * error `design.not_publishable` (HTTP 400) whose `details` are
- * `NotPublishableDetails`; a success has `missing: []`.
- */
 /** A signed link that shows an unpublished Design as a Shopper would see it, until `expiresAt` (Story 1.8). */
 export const DesignPreviewLink = z.object({
   url: z.url({ protocol: /^https?$/ }),
@@ -262,6 +257,11 @@ export const DesignPreviewLink = z.object({
 })
 export type DesignPreviewLink = z.infer<typeof DesignPreviewLink>
 
+/**
+ * The outcome of `POST /admin/shop/designs/:id/publish`. A refusal is the
+ * error `design.not_publishable` (HTTP 400) whose `details` are
+ * `NotPublishableDetails`; a success has `missing: []`.
+ */
 export const PublishDesignResult = z.object({
   design: AdminDesignView,
   missing: z.array(PublishRequirement),

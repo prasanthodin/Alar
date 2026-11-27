@@ -8,7 +8,7 @@ export function t(key: MessageKey): string {
   return en[key]
 }
 
-/** Text with `{name}` placeholders filled in, e.g. tf("bag.onlyLeft", { n: 2 }). */
+/** Text with `{name}` placeholders filled in, e.g. tf("bag.onlyAvailable", { n: 2 }). */
 export function tf(key: MessageKey, vars: Record<string, string | number>): string {
   return t(key).replace(/\{(\w+)\}/g, (whole, name: string) => (name in vars ? String(vars[name]) : whole))
 }

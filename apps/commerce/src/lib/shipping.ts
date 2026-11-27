@@ -1,8 +1,9 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
-import { ContainerRegistrationKeys, MathBN } from "@medusajs/framework/utils"
-import { Paise, ShippingOptionId } from "@shop/contracts"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { ShippingOptionId } from "@shop/contracts"
 import { SETTINGS_MODULE } from "../modules/settings"
 import type SettingsModuleService from "../modules/settings/service"
+import { kernelAmountToExactPaise } from "./designs"
 import { shopError } from "./shop-errors"
 
 /** The setting that holds the standard shipping option's id, written by the shipping seed (Story 1.8). */
@@ -35,11 +36,6 @@ export async function standardDeliveryPaise(container: MedusaContainer, currency
     (p): p is NonNullable<PriceRow> => Boolean(p) && p!.currency_code === currencyCode
   )
   const price = prices.find((p) => !p.rules_count) ?? prices[0]
-  if (!price || price.amount === null || price.amount === undefined) {
-    throw shopError("internal", `The standard shipping option has no ${currencyCode} price`)
-  }
-  const paise = MathBN.mult(MathBN.convert(price.amount as never), 100)
-  const parsed = Paise.safeParse(paise.toNumber())
-  if (!paise.isInteger() || !parsed.success) throw shopError("internal", "The standard shipping option's price is not whole paise")
-  return parsed.data
+  if (!price) throw shopError("internal", `The standard shipping option has no ${currencyCode} price`)
+  return kernelAmountToExactPaise(price.amount, "The standard shipping option's price")
 }

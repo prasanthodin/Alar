@@ -2,7 +2,7 @@
 title: 'Story 1.8: Shopper opens the Design and puts it in her Bag'
 type: 'feature'
 created: '2026-11-27'
-status: 'in-review'
+status: 'done'
 baseline_commit: '4f26e4ab33497689f2cc11111e3fdc2190c0ef8b'
 route: 'dispatch'
 review_loop_iteration: 0
@@ -85,6 +85,9 @@ context:
 ## Spec Change Log
 
 ## Review Triage Log
+
+- Review (3 layers): patched — strict cart-write body with forced India region and key channel (new `lib/bag-guard.ts`); non-INR / foreign-region / foreign-channel carts read as `bag.not_found`; `BagLine.buyable`; gone or completed stored carts start a new cart; stale cookie cleared through a server action; over-stock line with "Change to N"; preview refuses unpublishable Designs and sends `no-store` and `no-referrer`; admin smoke previews the draft without navigating; header Sign in / Create account at every width and Account when signed in; catalogue reads through the public client and React `cache()`; added integration, api-client and e2e cases. Deferred items recorded in `deferred-work.md` (095f980).
+- Verification: the home screenshot timed out on a crowded catalogue because lazy photos below the fold never load; the screenshot helper now loads every photo eagerly before a full-page picture.
 
 ## Design Notes
 

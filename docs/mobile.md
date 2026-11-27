@@ -6,7 +6,7 @@ It has Home, Categories, a category listing, the Product page, the Bag and a Try
 
 ## Where the data comes from
 
-The app reads data only through `@shop/api-client` (AD-2); lint fails on any `@medusajs/*` import in `apps/mobile`. The client is created with `catalogueSource: "mock"`, so `listCategories`, `listDesigns`, `getDesign`, `getBag` and `addToBag` are answered by the mock inside `packages/api-client/src/mock/` and never call the kernel. The Bag lives in memory and empties when the app restarts. The kernel source arrives with Epic 2.
+The app reads data only through `@shop/api-client` (AD-2); lint fails on any `@medusajs/*` import in `apps/mobile`. The client is created with `catalogueSource: "mock"`, so `listCategories`, `listDesigns`, `getDesign`, `getBag` and `addToBag` are answered by the mock inside `packages/api-client/src/mock/` and never call the kernel. The Bag lives in memory and empties when the app restarts. Since Story 1.8 api-client defaults to the kernel source (`docs/catalogue-and-bag.md`), so the app must keep passing `mock` until it moves to the kernel.
 
 ## The photos are samples
 

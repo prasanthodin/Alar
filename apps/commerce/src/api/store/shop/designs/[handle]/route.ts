@@ -19,8 +19,11 @@ export async function GET(req: MedusaStoreRequest, res: MedusaResponse<{ design:
       previewToken: preview,
       previewSecret: readEnv().PREVIEW_TOKEN_SECRET,
     })
-    // A preview is for the Owner only: never stored by a shared cache.
-    if (previewInfo) res.set("Cache-Control", "private, no-store")
+    // A request with a token (even for a published Design) is never cached or sent on as a referrer.
+    if (preview !== undefined) {
+      res.set("Cache-Control", "private, no-store")
+      res.set("Referrer-Policy", "no-referrer")
+    }
     res.json({ design: toDesignView(design, previewInfo) })
   } catch (e) {
     sendShopErrorOrInternal(res, e, req.scope.resolve(ContainerRegistrationKeys.LOGGER))

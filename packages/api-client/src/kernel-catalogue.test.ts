@@ -104,6 +104,7 @@ function bagWith(quantity: number) {
         name: card.name,
         colourName: "Standard",
         image,
+        buyable: true,
         price: 315000,
         mrp: 315000,
         quantity,
@@ -187,15 +188,50 @@ describe("kernel catalogue: Bag", () => {
     expect(calls[0]!.headers.get("idempotency-key")).toBeTruthy()
   })
 
-  it("adds to the stored cart", async () => {
+  it("adds to the stored cart after checking it is still a Bag", async () => {
     routes["POST /store/carts/cart_01/line-items"] = () => json(200, cartRef())
     routes["GET /store/shop/bag/cart_01"] = () => json(200, { bag: bagWith(2) })
     const res = await client(memoryStore("cart_01")).api.addToBag("variant_01", 1)
     expect(res.ok && res.data.count).toBe(2)
-    expect(calls[0]!.body).toEqual({ variant_id: "variant_01", quantity: 1 })
+    expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([
+      "GET /store/shop/bag/cart_01",
+      "POST /store/carts/cart_01/line-items",
+      "GET /store/shop/bag/cart_01",
+    ])
+    expect(calls[1]!.body).toEqual({ variant_id: "variant_01", quantity: 1 })
+  })
+
+  it("starts a new cart when the stored one was bought (completed): the Bag route answers bag.not_found", async () => {
+    routes["GET /store/shop/bag/cart_done"] = () => json(404, { code: "bag.not_found", message: "No Bag cart_done" })
+    routes["POST /store/carts"] = () => json(200, cartRef("cart_new"))
+    routes["GET /store/shop/bag/cart_new"] = () => json(200, { bag: bagWith(1) })
+    const { api, bagStore } = client(memoryStore("cart_done"))
+    expect(await api.addToBag("variant_01")).toEqual({ ok: true, data: bagWith(1) })
+    expect(bagStore.value).toBe("cart_new")
+    // Never a write to the completed cart.
+    expect(calls.map((c) => `${c.method} ${c.path}`)).not.toContain("POST /store/carts/cart_done/line-items")
+  })
+
+  it("keeps a Bag another add stored while this one made a cart (two first adds at once)", async () => {
+    const bagStore = memoryStore()
+    routes["POST /store/carts"] = () => {
+      bagStore.value = "cart_first"
+      return json(200, cartRef("cart_second"))
+    }
+    routes["POST /store/carts/cart_first/line-items"] = () => json(200, cartRef("cart_first"))
+    routes["GET /store/shop/bag/cart_first"] = () => json(200, { bag: bagWith(2) })
+    const res = await client(bagStore).api.addToBag("variant_01")
+    expect(res.ok && res.data.count).toBe(2)
+    expect(bagStore.value).toBe("cart_first")
+    expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([
+      "POST /store/carts",
+      "POST /store/carts/cart_first/line-items",
+      "GET /store/shop/bag/cart_first",
+    ])
   })
 
   it("starts a new cart when the stored one is gone", async () => {
+    routes["GET /store/shop/bag/cart_old"] = () => json(200, { bag: bagWith(1) })
     routes["POST /store/carts/cart_old/line-items"] = () => json(404, { type: "not_found", message: "Cart id not found" })
     routes["POST /store/carts"] = () => json(200, cartRef("cart_new"))
     routes["GET /store/shop/bag/cart_new"] = () => json(200, { bag: bagWith(1) })
@@ -205,6 +241,7 @@ describe("kernel catalogue: Bag", () => {
   })
 
   it("maps the kernel's inventory refusal to bag.stock_exceeded on add and on create", async () => {
+    routes["GET /store/shop/bag/cart_01"] = () => json(200, { bag: bagWith(2) })
     routes["POST /store/carts/cart_01/line-items"] = insufficient
     routes["POST /store/carts"] = insufficient
     expect(await client(memoryStore("cart_01")).api.addToBag("variant_01", 3)).toMatchObject({
@@ -216,13 +253,14 @@ describe("kernel catalogue: Bag", () => {
     expect(fresh.bagStore.value).toBeNull()
   })
 
-  it("maps an unpublished or unknown Variant to design.not_found", async () => {
-    routes["POST /store/carts"] = () =>
-      json(400, {
-        type: "invalid_data",
-        message: "Variants variant_09 do not exist or belong to a product that is not published",
-      })
+  it("maps the shop's design.not_found (a Variant of no published Design) by its code, not the kernel's text", async () => {
+    routes["POST /store/carts"] = () => json(404, { code: "design.not_found", message: "No Design on sale has this Variant" })
     expect(await client().api.addToBag("variant_09")).toMatchObject({ ok: false, error: { code: "design.not_found" } })
+    routes["POST /store/carts"] = () =>
+      json(400, { type: "invalid_data", message: "Variants variant_09 do not exist or belong to a product that is not published" })
+    expect(await client().api.addToBag("variant_09")).toMatchObject({ ok: false, error: { code: "internal" } })
+    routes["POST /store/carts"] = () => json(400, { code: "input.invalid", message: "only the variant and quantity" })
+    expect(await client().api.addToBag("variant_09")).toMatchObject({ ok: false, error: { code: "input.invalid" } })
   })
 
   it("refuses a quantity that is not a whole number from 1 without calling the kernel", async () => {
@@ -290,6 +328,7 @@ describe("kernel catalogue: Bag", () => {
     expect(await client(memoryStore("cart_01")).api.getBag()).toMatchObject({ ok: false, error: { code: "internal" } })
     routes["POST /store/carts"] = () => json(429, { message: "slow down" })
     expect(await client().api.addToBag("variant_01")).toMatchObject({ ok: false, error: { code: "rate.limited" } })
+    routes["GET /store/shop/bag/cart_01"] = () => json(200, { bag: bagWith(1) })
     routes["POST /store/carts/cart_01/line-items"] = () => json(403, { code: "route.not_allowed", message: "no" })
     expect(await client(memoryStore("cart_01")).api.addToBag("variant_01")).toMatchObject({
       ok: false,

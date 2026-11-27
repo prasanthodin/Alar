@@ -5,7 +5,8 @@ import { HeaderActions } from "@/components/header-actions"
 import { TopBar } from "@/components/top-bar"
 import { ButtonLink, Note } from "@/components/ui"
 import { errorText, t, tf } from "@/lib/i18n"
-import { api } from "@/lib/session"
+import { ClearStaleBag } from "@/components/clear-stale-bag"
+import { readBag } from "@/lib/session"
 
 export const metadata: Metadata = { title: t("bag.title"), robots: { index: false } }
 
@@ -26,10 +27,11 @@ function Row({ label, value, testId, strong = false }: { label: string; value: s
  * The delivery charge is shown before checkout.
  */
 export default async function BagPage() {
-  const res = await api().getBag()
+  const { result: res, staleCookie } = await readBag()
 
   return (
     <>
+      {staleCookie ? <ClearStaleBag /> : null}
       <TopBar action={<HeaderActions />} />
       <main className="mx-auto flex max-w-content-max-web flex-col gap-4 px-gutter-phone py-4 lg:px-gutter-web lg:py-8">
         <h1 className="font-heading text-h2">{t("bag.title")}</h1>

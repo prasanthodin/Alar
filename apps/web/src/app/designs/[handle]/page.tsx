@@ -1,30 +1,42 @@
 import { formatRupees, type DesignDetails } from "@shop/contracts"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { cache } from "react"
 import { AddToBag } from "@/components/add-to-bag"
 import { HeaderActions } from "@/components/header-actions"
 import { Photo } from "@/components/photo"
 import { TopBar } from "@/components/top-bar"
 import { Note, StatusChip } from "@/components/ui"
 import { errorText, t, tf, type MessageKey } from "@/lib/i18n"
-import { api } from "@/lib/session"
+import { publicApi } from "@/lib/session"
 
 type Props = {
   params: Promise<{ handle: string }>
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
+/**
+ * One read per request, shared by the metadata and the page (React `cache`).
+ * The catalogue is the same for everyone, so it is read without the Shopper's cookies.
+ */
+const getDesign = cache((handle: string, preview: string | undefined) =>
+  publicApi().getDesign(handle, preview ? { preview } : {})
+)
+
 async function load({ params, searchParams }: Props) {
   const { handle } = await params
   const { preview } = await searchParams
-  return api().getDesign(handle, typeof preview === "string" ? { preview } : {})
+  return getDesign(handle, typeof preview === "string" ? preview : undefined)
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const res = await load(props)
   if (!res.ok) return { title: t("notFound.title") }
-  // A preview is not for search engines.
-  return { title: res.data.name, ...(res.data.preview ? { robots: { index: false } } : {}) }
+  // A preview is not for search engines, and its link (with the token) is never sent on as a referrer.
+  return {
+    title: res.data.name,
+    ...(res.data.preview ? { robots: { index: false, follow: false }, referrer: "no-referrer" as const } : {}),
+  }
 }
 
 /** The details a Shopper sees, in a fixed order; empty ones are left out. Never a Weaver. */

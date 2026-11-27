@@ -3,11 +3,12 @@ import { DesignCard } from "@/components/design-card"
 import { TopBar } from "@/components/top-bar"
 import { Note } from "@/components/ui"
 import { errorText, t } from "@/lib/i18n"
-import { api } from "@/lib/session"
+import { publicApi } from "@/lib/session"
 
 /** Home: the published Designs as a plain list of cards (Story 1.8). No filters or search in Epic 1. */
 export default async function HomePage() {
-  const res = await api().listDesigns()
+  // The catalogue is the same for everyone: read without the Shopper's cookies.
+  const res = await publicApi().listDesigns()
   return (
     <>
       <TopBar action={<HeaderActions />} />
