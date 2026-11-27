@@ -4,7 +4,7 @@
 
 *Notes for the builder (not shown to shoppers) are in italics like this.*
 
-*This notice is shown on its own screen before a shopper's first Try-on, and again whenever a new version is published. It is not combined with the terms of use or any other agreement. Part A is the screen. Part B opens from "Read more" and is also reachable from the account page at any time. The short version must stay under 120 words.*
+*This notice is shown on its own screen before a shopper's first Try-on, and again whenever a new version is published. It is not combined with the terms of use or any other agreement. Part A is the screen. Part B opens from "Read more" and is also reachable from the account page at any time. The short version must stay under 120 words once {{AI_SERVICE_LIST}} is filled in; as drafted it is about 115 words including the title, tick boxes and buttons, with the list counted as one word.*
 
 ---
 
@@ -14,13 +14,13 @@
 
 **Text:**
 
-To show you in this saree, we need your consent.
+We need your consent to show you in this saree.
 
 - **What:** one full-length photo of you.
 - **Why:** only to make AI-generated images of you in our sarees.
-- **Who receives it:** these AI services: {{AI_SERVICE_LIST}}.
+- **Who receives it:** AI services: {{AI_SERVICE_LIST}}.
 - **Where:** they may process it outside India.
-- **How long:** we delete your photo and images after 30 days without use, or at once if you ask.
+- **How long:** deleted after 30 days unused, or at once if you ask.
 - **Withdraw:** any time, in Account > Try-on consent. One tap.
 - **Complain:** {{GRIEVANCE_EMAIL}}, or the Data Protection Board of India.
 
