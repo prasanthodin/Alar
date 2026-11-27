@@ -23,6 +23,7 @@ export const ErrorCode = z.enum([
   "upload.invalid_file",
   "request.cross_origin",
   "bag.stock_exceeded",
+  "bag.not_found",
   "stock.below_reserved",
   "stock.invalid_quantity",
   "stock.lock_timeout",

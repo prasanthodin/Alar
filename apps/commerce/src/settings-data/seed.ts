@@ -22,6 +22,19 @@ export const SHOP_SETTINGS_SEED = {
   taxBands: {
     saree: [{ minTaxablePaise: 0, maxTaxablePaise: null, rateBp: 500 }],
   },
+  /**
+   * The one shipping option for India (Story 1.8), created once by the
+   * shipping seed: free delivery at launch (Rs 0). Later charges are changes
+   * to the option's price, not edits here.
+   */
+  shipping: {
+    fulfillmentSetName: "India delivery",
+    serviceZoneName: "India",
+    optionName: "Standard delivery",
+    optionTypeCode: "standard",
+    optionTypeLabel: "Standard",
+    amountPaise: 0,
+  },
   /** The kernel's region for India: rupees, tax-inclusive prices, the shop's tax provider. */
   region: {
     name: "India",

@@ -55,6 +55,14 @@ export const ALLOWED_KERNEL_ROUTES: readonly KernelRoute[] = [
   r("POST", "/store/customers"),
   r("GET", "/store/customers/me"),
 
+  // The Shopper's Bag (Story 1.8, packages/api-client): the kernel cart, anonymous,
+  // its id kept by the client. The Bag is read through the shop route
+  // GET /store/shop/bag/:cartId. Completion stays never-allowed.
+  r("POST", "/store/carts"),
+  r("POST", "/store/carts/:id/line-items"),
+  r("POST", "/store/carts/:id/line-items/:line_id"),
+  r("DELETE", "/store/carts/:id/line-items/:line_id"),
+
   // Admin sign-in and sign-out (dashboard). User identity only.
   r("GET", "/auth/user/providers"),
   r("POST", "/auth/user/emailpass"),

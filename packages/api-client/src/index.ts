@@ -4,14 +4,16 @@ import { createTransport, type ApiClientConfig } from "./client"
 import { createShop } from "./shop"
 
 export type { ApiClientConfig, TokenStore } from "./client"
-export type { CatalogueSource, ListDesignsInput } from "./catalogue"
+export type { CatalogueSource, GetDesignOptions, ListDesignsInput } from "./catalogue"
 export { DEFAULT_MOCK_ASSET_BASE_URL } from "./catalogue"
 export { ALL_CATEGORY_ID } from "./mock/catalogue-data"
 export type {
+  Availability,
   BagLine,
   BagView,
   CategoryView,
   DesignCard,
+  DesignDetails,
   DesignView,
   ImageRef,
   VariantView,
@@ -28,7 +30,7 @@ export type {
 export function createApiClient(config: ApiClientConfig) {
   const transport = createTransport(config)
   const auth = createAuth(transport, config.tokenStore)
-  const catalogue = createCatalogue(config)
+  const catalogue = createCatalogue(config, transport)
   const shop = createShop(transport)
   return {
     getShopPublic: shop.getShopPublic,
@@ -41,6 +43,8 @@ export function createApiClient(config: ApiClientConfig) {
     getDesign: catalogue.getDesign,
     getBag: catalogue.getBag,
     addToBag: catalogue.addToBag,
+    setBagQuantity: catalogue.setBagQuantity,
+    removeFromBag: catalogue.removeFromBag,
   }
 }
 

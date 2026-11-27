@@ -66,6 +66,7 @@ jobs:
       AUTH_CORS: http://localhost:9000
       JWT_SECRET: ci-only-jwt-secret
       COOKIE_SECRET: ci-only-cookie-secret
+      PREVIEW_TOKEN_SECRET: ci-only-preview-token-secret-0123456789
       # The kernel's event bus, workflow engine and locking run on Redis (Story 1.3).
       REDIS_URL: redis://localhost:6379
       # File storage on the floci service: the public `catalog` bucket, created

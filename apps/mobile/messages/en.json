@@ -106,6 +106,7 @@
   "error.upload.invalid_file": "That file was not uploaded. Use a JPEG, PNG or WebP photo within the size limit.",
   "error.request.cross_origin": "That request was refused because it did not come from this site.",
   "error.bag.stock_exceeded": "You already have every piece of this colour in your bag.",
+  "error.bag.not_found": "Your bag has changed. Open it again and try once more.",
   "error.stock.below_reserved": "This saree is held for another shopper right now. Try again in a few minutes.",
   "error.stock.invalid_quantity": "That quantity is not available.",
   "error.stock.lock_timeout": "We could not update this just now. Please try again.",

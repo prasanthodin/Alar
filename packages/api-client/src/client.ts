@@ -22,8 +22,13 @@ export type ApiClientConfig = {
   tokenStore: TokenStore
   /** Per-request time limit in ms. Defaults to REQUEST_TIMEOUT_MS. */
   timeoutMs?: number
-  /** Source of catalogue and Bag data. Only `mock` exists for now; the kernel source arrives with Epic 2. */
-  catalogueSource?: "mock"
+  /** Source of catalogue and Bag data: the kernel (default) or the in-memory mock of the early app shell. */
+  catalogueSource?: "mock" | "kernel"
+  /**
+   * Where the kernel source keeps the Bag's cart id, so the Bag survives a
+   * closed browser. The web keeps it in an httpOnly cookie. Defaults to memory.
+   */
+  bagStore?: TokenStore
   /** Base URL of the mock pictures, e.g. `/mock` or `http://192.168.1.5:8081/mock`. Defaults to `/mock`. */
   mockAssetBaseUrl?: string
 }

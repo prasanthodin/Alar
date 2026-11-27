@@ -1,5 +1,6 @@
 import { z } from "zod"
-import { Id } from "./common"
+import { Id, IsoDateTime } from "./common"
+import { Metres } from "./design"
 import { Paise, ShelfPrice } from "./money"
 
 /** A picture and its written description. `isSample` marks a placeholder that is not a photo of the item on sale. */
@@ -23,14 +24,29 @@ export const Rating = z.object({
 })
 export type Rating = z.infer<typeof Rating>
 
-/** A Design as a product card shows it. Prices are shelf prices in paise. */
+/**
+ * Whether a Design can be bought now, computed by the server from stocked −
+ * reserved Pieces at the India stock location (Story 1.8). A sold-out Design
+ * is still shown, with adding to the Bag disabled.
+ */
+export const Availability = z.enum(["available", "sold_out"])
+export type Availability = z.infer<typeof Availability>
+
+/**
+ * A Design as a product card shows it. Prices are tax-inclusive shelf prices
+ * in paise. There is no MRP in Epic 1, so the kernel sends `mrp` equal to
+ * `price` (no discount is shown). `handle` is the Design's address on the
+ * website (`/designs/<handle>`). Stories 1.28 and 2.15 extend this schema.
+ */
 export const DesignCard = z.object({
   id: Id,
+  handle: z.string().min(1),
   name: z.string().min(1),
   subtitle: z.string(),
   price: ShelfPrice,
   mrp: ShelfPrice,
   image: ImageRef,
+  availability: Availability,
   badge: z.string().min(1).optional(),
   rating: Rating.optional(),
 })
@@ -52,19 +68,55 @@ export const AttributeView = z.object({
 })
 export type AttributeView = z.infer<typeof AttributeView>
 
-/** A Design as its product page shows it. Never carries a Weaver. */
+/**
+ * A Design's typed details as the shop records them (Story 1.6). Clients take
+ * the labels and the wording ("6.2 m", "Included") from their translation
+ * files. Never carries a Weaver.
+ */
+export const DesignDetails = z.object({
+  fibre: z.string().nullable(),
+  weave: z.string().nullable(),
+  lengthM: Metres.nullable(),
+  widthM: Metres.nullable(),
+  blousePieceIncluded: z.boolean(),
+  care: z.string().nullable(),
+  countryOfOrigin: z.string().nullable(),
+})
+export type DesignDetails = z.infer<typeof DesignDetails>
+
+/**
+ * A preview of an unpublished Design, opened with a signed link from the
+ * Admin. `expiresAt` is when the link stops working.
+ */
+export const DesignPreview = z.object({ expiresAt: IsoDateTime })
+export type DesignPreview = z.infer<typeof DesignPreview>
+
+/**
+ * A Design as its product page shows it. Never carries a Weaver. The kernel
+ * sends `details` and an empty `attributes`; the mock sends ready-made
+ * `attributes` lines. `preview` is set only when an unpublished Design is
+ * opened with a valid preview token.
+ */
 export const DesignView = DesignCard.extend({
+  description: z.string().default(""),
   images: z.array(ImageRef).min(1),
   variants: z.array(VariantView).min(1),
   attributes: z.array(AttributeView),
+  details: DesignDetails.optional(),
   fullView: ImageRef.optional(),
+  preview: DesignPreview.optional(),
 })
 export type DesignView = z.infer<typeof DesignView>
 
-/** One line of the Bag. */
+/**
+ * One line of the Bag. `price` is the shelf price of one Piece and
+ * `lineTotal` the line's tax-inclusive total, both computed by the server;
+ * `stock` is the number of Pieces available now (the most the line can hold).
+ */
 export const BagLine = z.object({
   id: Id,
   designId: Id,
+  handle: z.string().min(1),
   variantId: Id,
   name: z.string().min(1),
   colourName: z.string().min(1),
@@ -72,13 +124,17 @@ export const BagLine = z.object({
   price: ShelfPrice,
   mrp: ShelfPrice,
   quantity: z.number().int().positive(),
+  lineTotal: Paise,
   stock: z.number().int().nonnegative(),
 })
 export type BagLine = z.infer<typeof BagLine>
 
 /**
  * The Shopper's Bag (the kernel's cart). The four price lines are always
- * present and in this order: totalMrp, discount, delivery, total.
+ * present and in this order: totalMrp, discount, delivery, total. Every
+ * amount is computed by the server; clients only format them. `delivery` is
+ * the charge of the shop's standard shipping option (Rs 0 in Epic 1), shown
+ * before checkout.
  */
 export const BagView = z.object({
   lines: z.array(BagLine),
@@ -89,6 +145,10 @@ export const BagView = z.object({
   count: z.number().int().nonnegative(),
 })
 export type BagView = z.infer<typeof BagView>
+
+/** A quantity of one Bag line: a whole number of Pieces, at least 1 (removing a line is its own call). */
+export const BagQuantity = z.number().int().positive().max(100_000)
+export type BagQuantity = z.infer<typeof BagQuantity>
 
 /** Default low-stock level until the Owner sets one (FR-3): at or below it the true count is shown. */
 export const LOW_STOCK_LEVEL = 3

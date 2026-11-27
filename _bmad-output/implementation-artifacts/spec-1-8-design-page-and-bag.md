@@ -2,7 +2,7 @@
 title: 'Story 1.8: Shopper opens the Design and puts it in her Bag'
 type: 'feature'
 created: '2026-11-27'
-status: 'in-progress'
+status: 'in-review'
 baseline_commit: '4f26e4ab33497689f2cc11111e3fdc2190c0ef8b'
 route: 'dispatch'
 review_loop_iteration: 0
@@ -61,18 +61,26 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] contracts and fixtures; api-client kernel source with mocked-fetch tests for every Bag call and error mapping
-- [ ] store routes, preview route and token helper (unit-tested: valid, expired, tampered), shipping seed
-- [ ] allow-list additions (only the cart routes used) with contract tests still guarding completion
-- [ ] website pages and actions
-- [ ] integration tests for the store routes (published only, availability incl. reserved, preview valid/expired, quantity cap, Bag totals equal the money functions)
-- [ ] web e2e `e2e/bag.spec.ts`: home shows a published Design, page shows price and attributes, add → change → remove, too-many refused, reopen keeps the Bag, sold-out disabled; screenshots of home, Design page and Bag at 390 and 1440 wide into `docs/screenshots/`
-- [ ] docs
+- [x] contracts and fixtures; api-client kernel source with mocked-fetch tests for every Bag call and error mapping
+- [x] store routes, preview route and token helper (unit-tested: valid, expired, tampered), shipping seed
+- [x] allow-list additions (only the cart routes used) with contract tests still guarding completion
+- [x] website pages and actions
+- [x] integration tests for the store routes (published only, availability incl. reserved, preview valid/expired, quantity cap, Bag totals equal the money functions)
+- [x] web e2e `e2e/bag.spec.ts`: home shows a published Design, page shows price and attributes, add → change → remove, too-many refused, reopen keeps the Bag, sold-out disabled; screenshots of home, Design page and Bag at 390 and 1440 wide into `docs/screenshots/`
+- [x] docs
 
 **Acceptance Criteria:**
 - Given the repository, when `pnpm lint && pnpm typecheck && pnpm test && pnpm build`, the commerce integration tests, the admin smoke and the web e2e run, then all pass and the name check passes.
 
 ## Implementation Notes
+
+- `mrp` stays required on `DesignCard`/`BagLine`; the kernel sends it equal to `price` (no MRP in Epic 1), so the mobile shell needed no change beyond one translation key.
+- `DesignView` gained `description` (default ""), typed `details` (labels and wording come from the client's translation file) and `preview.expiresAt`; the kernel sends `attributes: []`. `DesignCard` gained `handle` and `availability`; `BagLine` gained `handle` and `lineTotal`. New error code `bag.not_found`; new setting `shipping.standard_option_id`.
+- The kernel source lives in `packages/api-client/src/kernel-catalogue.ts` (imported by `catalogue.ts`); `catalogueSource` defaults to `kernel`, the app shell keeps `mock`. Cart calls are anonymous; the cart id is in `bagStore` (web: httpOnly cookie `shop_bag`, 30 days).
+- The Bag's delivery is read from the seeded option's price (id in the setting), not by adding a shipping method; no shipping address is set on the cart (taxes are computed at checkout, Story 1.9).
+- `STOREFRONT_URL` (optional, defaults to the first exact `STORE_CORS` origin) was added next to `PREVIEW_TOKEN_SECRET` so the preview link can name the website.
+- A Design without a price or photo is never shown, also not in preview; the Admin's Preview button is disabled until it has both.
+- Verification ran the website from a copy of `apps/web` built with `next build` on port 8002 (and `next dev` on 8001), because stopping the old server on :8000 was not permitted in this session; :8000 still serves the old build.
 
 ## Spec Change Log
 

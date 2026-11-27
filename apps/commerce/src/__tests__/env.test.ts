@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { envErrorMessage, loadEnvOrExit, parseEnv } from "../env"
+import { envErrorMessage, firstCorsOrigin, loadEnvOrExit, parseEnv, readEnv, storefrontUrl } from "../env"
 
 const valid = {
   DATABASE_URL: "postgres://commerce:pw@postgres:5432/commerce?sslmode=disable",
@@ -15,6 +15,7 @@ const valid = {
   S3_FILE_URL: "http://localhost:4566/catalog/",
   S3_ACCESS_KEY_ID: "key-id",
   S3_SECRET_ACCESS_KEY: "key-secret",
+  PREVIEW_TOKEN_SECRET: "a-preview-signing-key-of-32-chars-or-more",
 }
 
 function exitSpy() {
@@ -73,6 +74,10 @@ describe("parseEnv", () => {
     ["STORE_CORS", "http://localhost:8080/path"],
     ["ADMIN_CORS", "http://localhost:8080,,http://localhost:9000"],
     ["AUTH_CORS", "/unclosed(/"],
+    ["PREVIEW_TOKEN_SECRET", "only-31-characters-long-secret!"],
+    ["PREVIEW_TOKEN_SECRET", "                                        "],
+    ["STOREFRONT_URL", "localhost:8000"],
+    ["STOREFRONT_URL", "http://localhost:8000/shop"],
   ])("reports malformed %s", (name, value) => {
     expect(parseEnv({ ...valid, [name]: value })).toEqual({ ok: false, invalid: [name] })
   })
@@ -93,6 +98,28 @@ describe("parseEnv", () => {
   it("lists every bad variable once", () => {
     const result = parseEnv({ ...valid, DATABASE_URL: "nope", REDIS_URL: undefined })
     expect(result).toEqual({ ok: false, invalid: ["DATABASE_URL", "REDIS_URL"] })
+  })
+})
+
+describe("the website's address and readEnv", () => {
+  it("takes STOREFRONT_URL, else the first exact origin in STORE_CORS", () => {
+    const withUrl = parseEnv({ ...valid, STOREFRONT_URL: "https://shop.example.test/" })
+    expect(withUrl.ok && storefrontUrl(withUrl.env)).toBe("https://shop.example.test")
+    const fromCors = parseEnv({ ...valid, STORE_CORS: "/preview\\.example$/,http://localhost:8000" })
+    expect(fromCors.ok && storefrontUrl(fromCors.env)).toBe("http://localhost:8000")
+    expect(firstCorsOrigin("/only-regex/")).toBeNull()
+  })
+
+  it("readEnv throws naming the bad variable, never its value", () => {
+    expect(readEnv(valid).PREVIEW_TOKEN_SECRET).toBe(valid.PREVIEW_TOKEN_SECRET)
+    expect(() => readEnv({ ...valid, PREVIEW_TOKEN_SECRET: "short-secret-value" })).toThrow(
+      "Missing or invalid environment variable: PREVIEW_TOKEN_SECRET"
+    )
+    try {
+      readEnv({ ...valid, PREVIEW_TOKEN_SECRET: "short-secret-value" })
+    } catch (e) {
+      expect(String(e)).not.toContain("short-secret-value")
+    }
   })
 })
 

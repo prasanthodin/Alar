@@ -32,12 +32,17 @@ export const TimeZone = z.string().refine(isTimeZone, { message: "Not a known IA
 /** A kernel stock location id, e.g. `sloc_01J...`. */
 export const StockLocationId = z.string().regex(/^sloc_[A-Za-z0-9]{1,100}$/)
 
+/** A kernel shipping option id, e.g. `so_01J...`. */
+export const ShippingOptionId = z.string().regex(/^so_[A-Za-z0-9]{1,100}$/)
+
 /** The keys with a fixed name, and their schemas. */
 export const SETTING_SCHEMAS = {
   "shop.name": ShopName,
   "shop.time_zone": TimeZone,
   /** The shop's one stock location, India (Story 1.7), written by the stock seed. */
   "stock.location_id": StockLocationId,
+  /** The shop's standard shipping option for India (Story 1.8), written by the shipping seed. */
+  "shipping.standard_option_id": ShippingOptionId,
 } as const
 
 /** Prefix of the per-tax-code band keys: `tax.bands.<taxCode>` holds `TaxBands`. */

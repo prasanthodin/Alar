@@ -46,7 +46,7 @@ pnpm install
 
 # Kernel
 cp apps/commerce/.env.template apps/commerce/.env
-# set DATABASE_URL, REDIS_URL, JWT_SECRET, COOKIE_SECRET and the S3_* variables
+# set DATABASE_URL, REDIS_URL, JWT_SECRET, COOKIE_SECRET, PREVIEW_TOKEN_SECRET and the S3_* variables
 # (docker compose -f infra/compose.yaml up -d floci bucket-init starts the emulator)
 createdb commerce
 cd apps/commerce && pnpm exec medusa db:migrate   # migrations plus the starter's initial data seed

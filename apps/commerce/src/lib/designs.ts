@@ -87,6 +87,7 @@ export function kernelAmountToPaise(amount: unknown): number | null {
 /** The fields a Design is read with (a kernel product and its linked attributes). */
 export const DESIGN_PRODUCT_FIELDS = [
   "id",
+  "handle",
   "title",
   "description",
   "status",
@@ -106,6 +107,7 @@ export const DESIGN_PRODUCT_FIELDS = [
 type Price = { id: string; amount: unknown; currency_code: string; rules_count?: number | null }
 export type ProductRow = {
   id: string
+  handle?: string | null
   title: string
   description?: string | null
   status: string
@@ -125,6 +127,8 @@ export type ProductRow = {
 /** A Design as the workflows need it: the view plus the ids behind it. */
 export type DesignRecord = {
   view: AdminDesignView
+  /** The product's handle: the Design's address on the website. */
+  handle: string
   attributesId: string
   /** The kernel price of the one Variant in rupees, if it has one. */
   priceId: string | null
@@ -168,6 +172,7 @@ export function designFromProduct(product: ProductRow): DesignRecord | null {
   })
   return {
     view,
+    handle: product.handle ?? product.id,
     attributesId: attrs.id,
     priceId: price?.id ?? null,
     salesChannelIds: (product.sales_channels ?? []).flatMap((c) => (c?.id ? [c.id] : [])),

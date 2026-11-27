@@ -12,6 +12,7 @@ const STATUS: Partial<Record<ErrorCode, number>> = {
   "design.unknown_photo": 400,
   "request.cross_origin": 403,
   "design.not_found": 404,
+  "bag.not_found": 404,
   "design.already_published": 409,
   "design.not_draft": 409,
   "stock.invalid_quantity": 400,
@@ -21,6 +22,7 @@ const STATUS: Partial<Record<ErrorCode, number>> = {
 
 const KERNEL_TYPE: Partial<Record<ErrorCode, string>> = {
   "design.not_found": MedusaError.Types.NOT_FOUND,
+  "bag.not_found": MedusaError.Types.NOT_FOUND,
   "design.already_published": MedusaError.Types.NOT_ALLOWED,
   "design.not_draft": MedusaError.Types.NOT_ALLOWED,
   "stock.below_reserved": MedusaError.Types.NOT_ALLOWED,

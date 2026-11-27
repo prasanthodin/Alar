@@ -153,8 +153,29 @@ describe("mock catalogue", () => {
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 
-  it("fails without a catalogue source", async () => {
-    const res = await client({ catalogueSource: undefined }).listDesigns()
-    expect(res).toMatchObject({ ok: false, error: { code: "internal" } })
+  it("sets, refuses and removes Bag lines by line id", async () => {
+    const api = client()
+    const added = await api.addToBag("arani-silk-maroon", 2)
+    expect(added.ok && added.data.lines[0]).toMatchObject({ quantity: 2, lineTotal: 630000 })
+    const lineId = added.ok ? added.data.lines[0]!.id : ""
+
+    expect(await api.setBagQuantity(lineId, 4)).toMatchObject({ ok: false, error: { code: "bag.stock_exceeded" } })
+    expect((await api.getBag()).ok && (await api.getBag())).toMatchObject({ data: { count: 2 } })
+    expect(await api.setBagQuantity(lineId, 0)).toMatchObject({ ok: false, error: { code: "input.invalid" } })
+
+    const changed = await api.setBagQuantity(lineId, 3)
+    expect(changed.ok && changed.data).toMatchObject({ count: 3, total: 945000 })
+
+    const removed = await api.removeFromBag(lineId)
+    expect(removed.ok && removed.data).toMatchObject({ count: 0, lines: [] })
+    expect(await api.removeFromBag(lineId)).toMatchObject({ ok: false, error: { code: "bag.not_found" } })
+  })
+
+  it("marks a design with no pieces in any colour as sold out, and shows it", async () => {
+    const res = await client().listDesigns()
+    expect(res.ok).toBe(true)
+    if (!res.ok) return
+    expect(res.data.find((d) => d.id === "banarasi-silk")?.availability).toBe("sold_out")
+    expect(res.data.find((d) => d.id === "arani-silk")?.availability).toBe("available")
   })
 })

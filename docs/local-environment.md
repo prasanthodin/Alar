@@ -19,7 +19,7 @@ Needs Docker with Compose v2.
 ```bash
 cp infra/.env.template infra/.env
 # Fill in the secrets: POSTGRES_PASSWORD (URL-safe characters only:
-# A-Z a-z 0-9 . _ ~ -), JWT_SECRET, COOKIE_SECRET, S3_ACCESS_KEY_ID,
+# A-Z a-z 0-9 . _ ~ -), JWT_SECRET, COOKIE_SECRET, PREVIEW_TOKEN_SECRET, S3_ACCESS_KEY_ID,
 # S3_SECRET_ACCESS_KEY (openssl rand -hex 32 for each; any values work for the emulator keys).
 docker compose -f infra/compose.yaml up -d --build
 docker compose -f infra/compose.yaml ps        # every service "healthy", bucket-init "Exited (0)"

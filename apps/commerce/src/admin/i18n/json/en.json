@@ -124,7 +124,13 @@
       "not_an_image": "A file is not a JPEG, PNG or WebP photo that can be opened.",
       "unreadable": "The upload could not be read. Try again."
     },
-    "taxCodesFailed": "The tax codes could not be loaded."
+    "taxCodesFailed": "The tax codes could not be loaded.",
+    "preview": {
+      "button": "Preview",
+      "intro": "See this design as a shopper would, even before it is published. The preview link works for one hour.",
+      "needs": "A preview needs a price and at least one photo. Add them and save first.",
+      "failed": "The preview could not be opened. Please try again."
+    }
   },
   "shopStock": {
     "title": "Stock",

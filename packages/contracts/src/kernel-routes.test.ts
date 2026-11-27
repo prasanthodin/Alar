@@ -55,6 +55,33 @@ describe("route lists", () => {
     }
   })
 
+  it("contains the Story 1.8 Bag routes, and no other cart write", () => {
+    for (const [method, path] of [
+      ["POST", "/store/carts"],
+      ["POST", "/store/carts/cart_01/line-items"],
+      ["POST", "/store/carts/cart_01/line-items/cali_01"],
+      ["DELETE", "/store/carts/cart_01/line-items/cali_01"],
+    ] as const) {
+      expect(matchKernelRoute(method, path), `${method} ${path}`).toBeDefined()
+    }
+    const cartWrites = ALLOWED_KERNEL_ROUTES.filter((r) => r.pattern.startsWith("/store/carts") && r.method !== "GET")
+    expect(cartWrites.map(label)).toEqual([
+      "POST /store/carts",
+      "POST /store/carts/:id/line-items",
+      "POST /store/carts/:id/line-items/:line_id",
+      "DELETE /store/carts/:id/line-items/:line_id",
+    ])
+    for (const [method, path] of [
+      ["POST", "/store/carts/cart_01"],
+      ["POST", "/store/carts/cart_01/shipping-methods"],
+      ["POST", "/store/carts/cart_01/promotions"],
+      ["POST", "/store/carts/cart_01/customer"],
+      ["GET", "/store/carts/cart_01"],
+    ] as const) {
+      expect(matchKernelRoute(method, path), `${method} ${path}`).toBeUndefined()
+    }
+  })
+
   it.each([
     ["POST", "/store/carts/cart_01/complete"],
     ["POST", "/admin/inventory-items/iitem_01/location-levels/sloc_01"],

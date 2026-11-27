@@ -45,7 +45,7 @@ summary() {
 if [ ! -f infra/.env ]; then
   echo "infra/.env not found: creating it from infra/.env.template with random secrets"
   cp infra/.env.template infra/.env
-  for key in POSTGRES_PASSWORD JWT_SECRET COOKIE_SECRET S3_SECRET_ACCESS_KEY; do
+  for key in POSTGRES_PASSWORD JWT_SECRET COOKIE_SECRET PREVIEW_TOKEN_SECRET S3_SECRET_ACCESS_KEY; do
     sed -i "s|^$key=\$|$key=$(openssl rand -hex 24)|" infra/.env
   done
   sed -i "s|^S3_ACCESS_KEY_ID=\$|S3_ACCESS_KEY_ID=local-emulator|" infra/.env

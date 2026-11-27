@@ -3,6 +3,7 @@ import {
   AdminDesignStockResponse,
   AdminDesignResponse,
   ApiError,
+  DesignPreviewLink,
   NotPublishableDetails,
   PublishDesignResult,
   TaxCodeList,
@@ -90,6 +91,8 @@ export const shopApi = {
     call(AdminDesignResponse, `/admin/shop/designs/${encodeURIComponent(id)}/price`, json({ priceRupees })),
   publish: (id: string, trueColourConfirmed: boolean) =>
     call(PublishDesignResult, `/admin/shop/designs/${encodeURIComponent(id)}/publish`, json({ trueColourConfirmed })),
+  preview: (id: string) =>
+    call(DesignPreviewLink, `/admin/shop/designs/${encodeURIComponent(id)}/preview`, { method: "POST" }),
   getStock: (id: string, before?: string) =>
     call(
       AdminDesignStockResponse,

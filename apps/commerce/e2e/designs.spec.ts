@@ -67,6 +67,13 @@ test("the Owner creates a Design with two photos, sees what is missing, confirms
   await panel.getByRole("button", { name: "Publish", exact: true }).click()
   await expect(panel.getByText("This design is published.")).toBeVisible()
 
+  // Preview (Story 1.8): a new tab opens the website's page for the Design through a signed link.
+  const popup = page.waitForEvent("popup")
+  await panel.getByTestId("design-preview").click()
+  const tab = await popup
+  await tab.waitForURL(/\/designs\/[^/?]+\?preview=\d+\.[A-Za-z0-9_-]{43}$/)
+  await tab.close()
+
   // Stock (Story 1.7): set it to 10 Pieces with a reason and see the row in the history.
   const stock = panel.getByTestId("design-stock")
   await expect(stock.getByTestId("stock-stocked")).toHaveText("0")

@@ -1,3 +1,4 @@
+import { MedusaError } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
 
 /**
@@ -58,6 +59,16 @@ const secret = z
   .min(8)
   .refine((value) => !PLACEHOLDER_SECRETS.has(value.toLowerCase()))
 
+/** A signing key: at least 32 characters after trimming, and not a known placeholder. */
+const signingKey = z
+  .string()
+  .trim()
+  .min(32)
+  .refine((value) => !PLACEHOLDER_SECRETS.has(value.toLowerCase()))
+
+/** A site origin (scheme, host, optional port), without a path or a trailing slash. */
+const origin = httpUrl.refine((value) => new URL(value).origin === value.replace(/\/+$/, "")).transform((value) => value.replace(/\/+$/, ""))
+
 /** S3 bucket naming rules: 3 to 63 lowercase letters, digits, dots and hyphens. */
 const bucketName = nonEmpty.regex(/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/)
 
@@ -80,6 +91,12 @@ export const envSchema = z.object({
   S3_FILE_URL: httpUrl.transform((value) => value.replace(/\/+$/, "")),
   S3_ACCESS_KEY_ID: nonEmpty,
   S3_SECRET_ACCESS_KEY: nonEmpty,
+  // Signs the Admin's preview links of unpublished Designs (Story 1.8). Its own key,
+  // never JWT_SECRET or COOKIE_SECRET. Generate with: openssl rand -hex 32
+  PREVIEW_TOKEN_SECRET: signingKey,
+  // The website's public origin, where preview links point. Optional: defaults to the
+  // first exact origin in STORE_CORS.
+  STOREFRONT_URL: origin.optional(),
 })
 
 export type Env = z.infer<typeof envSchema>
@@ -108,6 +125,34 @@ export function parseEnv(source: Record<string, string | undefined>): EnvResult 
     ...new Set(result.error.issues.map((issue) => String(issue.path[0] ?? ""))),
   ].filter(Boolean)
   return { ok: false, invalid }
+}
+
+/** The first exact origin in a CORS list (regex entries are skipped), or null. */
+export function firstCorsOrigin(cors: string): string | null {
+  return cors.split(",").find((entry) => !(entry.startsWith("/") && entry.endsWith("/"))) ?? null
+}
+
+let cachedEnv: Env | null = null
+
+/**
+ * The checked environment, for code that runs after `medusa-config.ts` has
+ * loaded (routes, workflows). Throws naming the bad variables, never their values.
+ */
+export function readEnv(source: Record<string, string | undefined> = process.env): Env {
+  if (source === process.env && cachedEnv) return cachedEnv
+  const result = parseEnv(source)
+  if (!result.ok) {
+    throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, result.invalid.map(envErrorMessage).join("; "), "internal")
+  }
+  if (source === process.env) cachedEnv = result.env
+  return result.env
+}
+
+/** Where the website is: STOREFRONT_URL, else the first exact origin in STORE_CORS. */
+export function storefrontUrl(env: Env): string {
+  const url = env.STOREFRONT_URL ?? firstCorsOrigin(env.STORE_CORS)
+  if (!url) throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, envErrorMessage("STOREFRONT_URL"), "internal")
+  return url
 }
 
 export function envErrorMessage(name: string) {

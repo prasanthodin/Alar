@@ -186,7 +186,8 @@ medusaIntegrationTestRunner({
       it.each([
         ["GET", "/store/collections"],
         ["GET", "/store/products"],
-        ["POST", "/store/carts"],
+        ["GET", "/store/shipping-options"],
+        ["POST", "/store/carts/cart_01/shipping-methods"],
         ["GET", "/store/regions"],
         ["POST", "/auth/user/emailpass/register"],
       ] as const)("refuses %s %s with route.not_allowed", async (method, url) => {

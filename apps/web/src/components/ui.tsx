@@ -32,3 +32,47 @@ export function Card({ children }: { children: React.ReactNode }) {
     </div>
   )
 }
+
+const chipTone = {
+  success: "bg-success-tint text-success",
+  danger: "bg-danger-tint text-danger",
+  lavender: "bg-tint-2 text-primary-text",
+}
+
+/** A status chip: 22px, small radius, overline text on its tint (DESIGN.md). */
+export function StatusChip({ tone, children }: { tone: keyof typeof chipTone; children: React.ReactNode }) {
+  return (
+    <span
+      className={`inline-flex h-status-chip items-center rounded-xs px-2 text-overline uppercase ${chipTone[tone]}`}
+    >
+      {children}
+    </span>
+  )
+}
+
+const noteTone = {
+  info: "bg-tint-1 text-text",
+  success: "bg-success-tint text-success",
+  danger: "border border-danger-line bg-danger-tint text-danger",
+}
+
+/** A note: rounded, 10 × 12px padding, caption-sized text; lavender for information, red for a problem. */
+export function Note({
+  tone,
+  children,
+  testId,
+}: {
+  tone: keyof typeof noteTone
+  children: React.ReactNode
+  testId?: string
+}) {
+  return (
+    <p
+      role={tone === "danger" ? "alert" : "status"}
+      data-testid={testId}
+      className={`rounded-md px-3 py-2 text-body-sm ${noteTone[tone]}`}
+    >
+      {children}
+    </p>
+  )
+}

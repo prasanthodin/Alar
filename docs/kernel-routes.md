@@ -53,6 +53,19 @@ Only the shop's workflows may do these. `NEVER_ALLOWED_KERNEL_ROUTES` holds exac
 
 Routes not in this table are not protected by the overlap test, though they are still refused while they are off the allowed list.
 
+## The Bag's cart routes (Story 1.8)
+
+`packages/api-client` writes the Shopper's Bag (the kernel cart) through four kernel routes, anonymously (`docs/catalogue-and-bag.md`):
+
+| Route | Used by |
+| --- | --- |
+| `POST /store/carts` | `addToBag` when there is no Bag yet: a cart with the first line |
+| `POST /store/carts/:id/line-items` | `addToBag` |
+| `POST /store/carts/:id/line-items/:line_id` | `setBagQuantity` |
+| `DELETE /store/carts/:id/line-items/:line_id` | `removeFromBag` |
+
+The Bag is read through the shop route `GET /store/shop/bag/:cartId`, so `GET /store/carts/:id` stays off the list, and so do the cart update, shipping-method, promotion and customer routes. Cart completion (`POST /store/carts/:id/complete`) stays never-allowed; `packages/contracts/src/kernel-routes.test.ts` checks that these four are the only cart writes, and the commerce integration test `catalogue-and-bag.spec.ts` checks completion and the other cart writes still get 403.
+
 ## What the list leaves out for now
 
 - Admins are created only with `medusa user` (admin self-registration is refused), and an invite cannot be accepted: the invite routes are not on the list.
@@ -62,7 +75,7 @@ Routes not in this table are not protected by the overlap test, though they are 
 
 ## Admin screens
 
-The allowed reads are the ones the kept admin screens request. They were found by recording the dashboard's own requests (Playwright, an admin made with `medusa user`) on: sign-in, Orders (list and detail), Products (list and detail), Customers (list and detail), and Settings (store, profile, users, regions, tax regions, return reasons, sales channels, product types, product tags, locations). No `/admin` write is on the list; the only allowed writes are the Shopper sign-up and sign-in routes and admin sign-in and sign-out (`POST /auth/user/emailpass`, `POST|DELETE /auth/session`).
+The allowed reads are the ones the kept admin screens request. They were found by recording the dashboard's own requests (Playwright, an admin made with `medusa user`) on: sign-in, Orders (list and detail), Products (list and detail), Customers (list and detail), and Settings (store, profile, users, regions, tax regions, return reasons, sales channels, product types, product tags, locations). No `/admin` write is on the list; the only allowed writes are the Shopper sign-up and sign-in routes, the Bag's cart routes (below) and admin sign-in and sign-out (`POST /auth/user/emailpass`, `POST|DELETE /auth/session`).
 
 | Screen | Status |
 | --- | --- |

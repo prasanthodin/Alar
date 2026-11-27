@@ -255,6 +255,13 @@ export type AdminDesignResponse = z.infer<typeof AdminDesignResponse>
  * error `design.not_publishable` (HTTP 400) whose `details` are
  * `NotPublishableDetails`; a success has `missing: []`.
  */
+/** A signed link that shows an unpublished Design as a Shopper would see it, until `expiresAt` (Story 1.8). */
+export const DesignPreviewLink = z.object({
+  url: z.url({ protocol: /^https?$/ }),
+  expiresAt: IsoDateTime,
+})
+export type DesignPreviewLink = z.infer<typeof DesignPreviewLink>
+
 export const PublishDesignResult = z.object({
   design: AdminDesignView,
   missing: z.array(PublishRequirement),

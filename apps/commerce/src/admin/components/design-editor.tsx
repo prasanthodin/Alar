@@ -315,6 +315,27 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
     }
   }
 
+  // Preview: the website shows the Design as a Shopper would see it, for an hour,
+  // once it has a price and a photo. The tab is opened on the click itself (so no
+  // popup blocker stops it) and sent to the signed link when it arrives.
+  const previewable = !!design && design.pricePaise !== null && design.photos.length > 0
+  const openPreview = async () => {
+    if (!design) return
+    const tab = window.open("", "_blank")
+    try {
+      const { url } = await shopApi.preview(design.id)
+      if (tab) {
+        tab.opener = null
+        tab.location.href = url
+      } else {
+        window.location.assign(url)
+      }
+    } catch (e) {
+      tab?.close()
+      toast.error(e instanceof ShopApiError ? t("shopDesigns.preview.failed") : String(e))
+    }
+  }
+
   const fieldError = (key: keyof FieldErrors) =>
     errors[key] ? (
       <Text size="xsmall" className="text-ui-fg-error" id={`design-${key}-error`}>
@@ -606,6 +627,20 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
                   </Button>
                 </>
               )}
+              <div className="border-ui-border-base flex flex-col gap-y-2 border-t pt-4">
+                <Text size="small" className="text-ui-fg-subtle">
+                  {t(previewable ? "shopDesigns.preview.intro" : "shopDesigns.preview.needs")}
+                </Text>
+                <Button
+                  variant="secondary"
+                  className="w-fit"
+                  disabled={busy || dirty || !previewable}
+                  onClick={openPreview}
+                  data-testid="design-preview"
+                >
+                  {t("shopDesigns.preview.button")}
+                </Button>
+              </div>
             </section>
           ) : (
             missingList
