@@ -98,6 +98,11 @@ clothing later.
   (a large fashion marketplace app) very closely, especially the home
   screen: address bar, search, category tabs and thumbnails, banner
   carousel, collections, product grid. The bottom navigation is Alar's own.
+- Sizes must be compact, like the reference app: no oversized buttons or
+  text; everything at the right size.
+- The product is not only for sarees. It will expand to all garment
+  categories (men's wear, shirts and others), so the interface and
+  everything else must be future-ready and not saree-specific.
 
 ## AI controls the admin must have (founder, 2026-11-27)
 - Image-model routing is admin-managed: which model serves try-on, with the

@@ -5,15 +5,16 @@
   "launch": { "view": "canvas" },
   "pages": [],
   "boards": {
-    "Main.dc.html": { "x": 0, "y": 0, "w": 390, "h": 1500, "title": "Home", "radius": 32 },
-    "Listing.dc.html": { "x": 470, "y": 0, "w": 390, "h": 1100, "title": "Category listing", "radius": 32 },
-    "Product.dc.html": { "x": 940, "y": 0, "w": 390, "h": 2300, "title": "Saree page", "radius": 32 },
-    "Consent.dc.html": { "x": 1410, "y": 0, "w": 390, "h": 844, "title": "Try-on consent", "radius": 32 },
-    "Theme.dc.html": { "x": 1880, "y": 0, "w": 1040, "h": 844, "title": "Theme", "radius": 16 }
+    "Main.dc.html": { "x": 0, "y": 0, "w": 390, "h": 1340, "title": "Home", "radius": 32 },
+    "Listing.dc.html": { "x": 470, "y": 0, "w": 390, "h": 1010, "title": "Category listing", "radius": 32 },
+    "Product.dc.html": { "x": 940, "y": 0, "w": 390, "h": 2120, "title": "Saree page", "radius": 32 },
+    "Shirt.dc.html": { "x": 1410, "y": 0, "w": 390, "h": 1080, "title": "Shirt page (later category)", "radius": 32 },
+    "Consent.dc.html": { "x": 1880, "y": 0, "w": 390, "h": 844, "title": "Try-on consent", "radius": 32 },
+    "Theme.dc.html": { "x": 2350, "y": 0, "w": 1040, "h": 844, "title": "Theme", "radius": 16 }
   },
-  "order": ["Main.dc.html", "Listing.dc.html", "Product.dc.html", "Consent.dc.html", "Theme.dc.html"],
+  "order": ["Main.dc.html", "Listing.dc.html", "Product.dc.html", "Shirt.dc.html", "Consent.dc.html", "Theme.dc.html"],
   "notes": {
-    "heading": { "x": 0, "y": -300, "text": "Alar: lavender theme, shopping screens", "kind": "title1", "maxW": 2920 }
+    "heading": { "x": 0, "y": -300, "text": "Alar: lavender theme, shopping screens", "kind": "title1", "maxW": 3390 }
   },
   "designSystems": []
 }
