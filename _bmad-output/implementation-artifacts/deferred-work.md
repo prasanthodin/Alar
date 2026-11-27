@@ -72,3 +72,27 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-8-design-page-and-bag.md`
   summary: The store catalogue reads every Design, product and inventory level on each request, with no paging or shared cache.
   evidence: Fine for about 100 Designs; Epic 2's catalogue read (filters, search, counts) must add paging and caching.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-9-begin-checkout-hold.md`
+  summary: Sweep orphaned Hold reservations (external_id hold_* with no live Hold) left by a failed inline undo, a failed compensation or a crash.
+  evidence: Undo failures in reserveHoldStep are only logged and the expiry job iterates Hold rows, so such reservations stay counted as held; frequency unverified (needs a delete failing after a failure).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-9-begin-checkout-hold.md`
+  summary: Define retention, encryption at rest and final-status versioning for Checkout recovery files in the documents bucket.
+  evidence: checkouts/<id>.json holds name, mobile and address, is never updated or removed, and the bucket is versioned with no lifecycle rule; Floci cannot enforce SSE or lifecycle.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-9-begin-checkout-hold.md`
+  summary: Add a per-customer cap on live Holds and a cooldown or rate limit on begin checkout.
+  evidence: One account with several carts, or re-beginning after each expiry, can keep the last Pieces unavailable indefinitely.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-9-begin-checkout-hold.md`
+  summary: Make the release-expired-holds job resilient and tested: a failing Hold must not block the others, and persistent failures must not starve the 100-Hold batch.
+  evidence: The per-Hold try/catch has no test, and failures are retried oldest-first each run.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-9-begin-checkout-hold.md`
+  summary: Test release-hold compensation (restoreReservationItems and the end-hold undo).
+  evidence: No integration test injects a failure after reservations are removed.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-9-begin-checkout-hold.md`
+  summary: Admin smoke: show a Hold row's 'held for shoppers after' label in the stock history.
+  evidence: The admin smoke has no Shopper or checkout fixture yet.

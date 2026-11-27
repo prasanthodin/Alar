@@ -87,6 +87,42 @@ context:
 
 ## Review Triage Log
 
+Iteration 0 (blind, edge-case, verification-gap layers). Verdicts after reading the code at each location.
+
+| # | Finding | Verdict | Route | Evidence |
+|---|---------|---------|-------|----------|
+| 1 | Cart lines read before the stock lock; check reuses the stale read (blind, edge x2) | high | patch | `loadCheckoutCartStep` runs before `acquireStockLocksStep`; `checkCheckoutStep` uses that `cart`; the cart guard only refuses once a Hold row exists. |
+| 2 | Snapshot taken before the cart is refreshed (customer transfer re-prices, shipping, tax lines); nothing compares (blind, edge) | medium | patch | Order in `begin-checkout.ts`: check → transfer/update/shipping/tax → create; no read-back; `tax.kernel_mismatch` never raised. |
+| 3 | Cart owned by another registered Shopper is silently transferred (blind) | medium | patch | `loadCart` checks region/currency/channel only; `transferCartCustomerWorkflow` reassigns. |
+| 4 | Reservation made just before `readStockLevel` throws is orphaned (edge) | low | patch | id pushed to `made` only after the level read; catch removes `made` only. |
+| 5 | Inline undo failure only logged; no sweeper for orphaned Hold reservations (blind, edge) | medium (unverified frequency) | defer | Needs failure of a delete after a failure; sweeper is new surface. |
+| 6 | Release race: second release after soft-delete takes no lock and ends the Hold again (edge x3) | medium | patch | `loadHoldStep` derives lock keys from reservations read before the lock; zero reservations → no lock; status check not atomic. |
+| 7 | Documents S3 client has no timeout/retry bound under the 120 s lock (blind) | medium | patch | `documentsClient()` builds `S3Client` with defaults. |
+| 8 | Recovery file PII retention, encryption at rest, final status (blind) | medium | defer | Retention policy is a product decision; Floci has no SSE/lifecycle; status versioning belongs with Story 1.10's order write. |
+| 9 | No per-customer cap or cooldown on Holds (blind) | medium | defer | Rate limiting is not in this story's intent; abuse policy needed. |
+| 10 | Failed cancel silently redirects to /bag (blind, edge) | medium | patch | `cancelCheckoutAction` handles only `auth.unauthenticated`. |
+| 11 | `stock.unavailable` details differ (`holdId` vs `variantIds`) (blind) | low | patch | Two raise sites, two shapes. |
+| 12 | Repeat begin with a different address returns the old Checkout silently (blind) | false | reject | The frozen intent says a second begin returns the existing Checkout. |
+| 13 | Dockerfile build placeholders lack required `S3_DOCUMENTS_BUCKET` (verification-gap, other) | high | patch | `env.ts` requires it; `Dockerfile` build stage sets the other S3 placeholders only; no CI image build. |
+| 14 | Cancel of an expired-unreleased Hold: `expired` end state untested (verification-gap) | medium | patch | gap pre-verified; no cancel-after-expiry case. |
+| 15 | Job's per-Hold try/catch untested; a batch of 100 persistent failures starves others (verification-gap, edge) | medium | defer | Needs failure injection; pair with the orphan sweeper. |
+| 16 | `cart.changed` reason `unavailable` untested (verification-gap) | medium | patch | gap pre-verified. |
+| 17 | Tax refusals through the route untested (verification-gap) | medium | patch | gap pre-verified; nested-workflow unwrapping not observed. |
+| 18 | Admin "held for shoppers after" label untested (verification-gap) | low | defer | Admin smoke has no checkout fixture yet. |
+| 19 | Website `cart.changed` flow untested (verification-gap) | medium | patch | gap pre-verified. |
+| 20 | Missing tests: failure after the file write; release-hold compensation; hold_released after re-begin; logs on every row (blind) | medium | patch (file-write failure, hold_released assertion); defer (release compensation); reject (logs on every row: two paths cover the logging code) | |
+| 21 | Hold end time hard-codes Asia/Kolkata and shows no date (blind) | low | reject | India-only shop; a 15-minute Hold; fix adds a setting read and a branch. |
+| 22 | `shop-errors.ts` stray blank lines; STATUS tax entries without KERNEL_TYPE (blind) | low | patch (blank lines); reject (entries are what lets tax codes reach the Shopper) | |
+| 23 | `isUniqueViolation` matches any "unique/duplicate" message (blind) | low | patch | Direct correction to the index name. |
+| 24 | Own expired Hold between route release and check → `cart.locked` (edge) | low | reject | Window of milliseconds; route releases expired Holds first. |
+| 25 | `bag.ts` adds own held Pieces after the Hold expired (edge) | low | patch | Direct condition. |
+| 26 | `decodeURIComponent` URIError → bare 500 in the cart guard (edge) | low | patch | Introduced in this diff. |
+| 27 | Server `input.invalid` has `issues`, not `fields`; every field marked (edge) | low | patch | `invalid()` marks all when `fields` is empty. |
+| 28 | `cart.changed` with unparseable details shows nothing (edge) | low | patch | Note hidden for `cart.changed`. |
+| 29 | `next=/sign-out` accepted as a return path (edge) | low | patch | `safeReturnPath` allows any local path. |
+| 30 | Mobile shows a held Design as sold out (edge) | low | patch | Mobile branches on stock only. |
+| 31 | Bag unlocks when the Hold has expired but is not yet released (edge claim) | false | reject | An expired Hold is over; its reservations go within a minute and begin releases it first; finding 25 covers the stock count. |
+
 ## Design Notes
 
 Story 1.10 adds the payment step and the Order id to the recovery file; keep the snapshot shape extensible. Story 1.5's deferred note: refresh tax lines when the snapshot is taken. Floci does not enforce bucket policies (Story 1.3 note): test privacy by the absence of a public policy and by never building public URLs for `documents`. Session: Node 24 at `/opt/node24/bin`; host PostgreSQL 5432, Redis 6379; Floci on 4566 (compose stack); kernel on :9000; website on :8000 (restart it after building, or use your own port if not permitted). Do not commit.
