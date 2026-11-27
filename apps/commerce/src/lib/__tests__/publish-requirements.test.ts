@@ -28,6 +28,8 @@ const complete: PublishCheckView = {
   pricePaise: 315000,
   photos: [photo(0, "close_up"), photo(1, "other")],
   trueColourConfirmed: true,
+  hasSalesChannel: true,
+  hasShippingProfile: true,
 }
 
 const withAttrs = (attrs: Partial<PublishCheckView["attributes"]>): PublishCheckView => ({
@@ -61,6 +63,8 @@ describe("publishRequirements", () => {
       pricePaise: null,
       photos: [],
       trueColourConfirmed: false,
+      hasSalesChannel: false,
+      hasShippingProfile: false,
     }
     expect(publishRequirements(empty, [], NOW)).toEqual([
       "fibre",
@@ -71,7 +75,14 @@ describe("publishRequirements", () => {
       "fabricCloseUpPhoto",
       "otherPhoto",
       "trueColourConfirmation",
+      "salesChannel",
+      "shippingProfile",
     ])
+  })
+
+  it("needs a sales channel and a shipping profile, so the kernel can sell and ship it", () => {
+    expect(publishRequirements({ ...complete, hasSalesChannel: false }, SEEDED, NOW)).toEqual(["salesChannel"])
+    expect(publishRequirements({ ...complete, hasShippingProfile: false }, SEEDED, NOW)).toEqual(["shippingProfile"])
   })
 
   it("needs a photo besides the close-up", () => {

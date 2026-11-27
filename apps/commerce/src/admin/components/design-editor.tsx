@@ -1,7 +1,34 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Badge, Button, Checkbox, Drawer, Heading, IconButton, Input, Label, Switch, Text, Textarea, toast } from "@medusajs/ui"
-import type { AdminDesignView, DesignPhoto, PublishRequirement } from "@shop/contracts"
+import { useQuery } from "@tanstack/react-query"
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Drawer,
+  Heading,
+  IconButton,
+  Input,
+  Label,
+  Select,
+  Switch,
+  Text,
+  Textarea,
+  toast,
+} from "@medusajs/ui"
+import {
+  MAX_DESIGN_PHOTOS,
+  MAX_PRICE_RUPEES,
+  Metres,
+  shelfPriceFromRupees,
+  UPLOAD_MAX_BYTES,
+  UPLOAD_MAX_FILES,
+  UPLOAD_MAX_MEGABYTES,
+  type AdminDesignView,
+  type DesignPhoto,
+  type DesignPhotoInput,
+  type PublishRequirement,
+} from "@shop/contracts"
 import { ShopApiError, shopApi } from "../lib/shop-api"
 
 /** The form as typed: text fields as strings, empty meaning "not given". */
@@ -21,6 +48,11 @@ type Form = {
   photos: DesignPhoto[]
 }
 
+type FieldErrors = Partial<Record<"name" | "lengthM" | "widthM" | "priceRupees", string>>
+
+/** The Select's value for "no tax code" (a Select item cannot have an empty value). */
+const NO_TAX_CODE = "__none"
+
 const EMPTY: Form = {
   name: "",
   description: "",
@@ -31,7 +63,7 @@ const EMPTY: Form = {
   blousePieceIncluded: false,
   care: "",
   countryOfOrigin: "",
-  taxCode: "saree",
+  taxCode: "",
   stitched: false,
   priceRupees: "",
   photos: [],
@@ -57,24 +89,19 @@ function formOf(design: AdminDesignView): Form {
 }
 
 const text = (v: string) => (v.trim() === "" ? null : v.trim())
-const number = (v: string) => (v.trim() === "" ? null : Number(v))
-
-function attributesOf(form: Form) {
-  return {
-    fibre: text(form.fibre),
-    weave: text(form.weave),
-    lengthM: number(form.lengthM),
-    widthM: number(form.widthM),
-    blousePieceIncluded: form.blousePieceIncluded,
-    care: text(form.care),
-    countryOfOrigin: text(form.countryOfOrigin),
-    taxCode: text(form.taxCode),
-    stitched: form.stitched,
-  }
-}
 
 /** Photos renumbered 0, 1, 2, ... in their current order. */
 const renumber = (photos: DesignPhoto[]) => photos.map((p, i) => ({ ...p, position: i }))
+
+/** Photos as a request names them: file, role and place (the kernel derives the address). */
+const photoInputs = (photos: DesignPhoto[]): DesignPhotoInput[] =>
+  renumber(photos).map(({ fileId, role, position }) => ({ fileId, role, position }))
+
+/** The files, roles and order of a photo list, to compare two lists. */
+const photoKey = (photos: DesignPhoto[]) => JSON.stringify(photos.map((p) => [p.fileId, p.role]))
+
+/** The form without the price, to tell whether anything but the price changed. */
+const withoutPrice = (f: Form) => JSON.stringify({ ...f, priceRupees: "" })
 
 type Props = {
   /** The Design to edit, or null to create one. */
@@ -89,59 +116,133 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
   const { t, i18n } = useTranslation()
   const initial = useMemo(() => (design ? formOf(design) : EMPTY), [design])
   const [form, setForm] = useState<Form>(initial)
+  const [errors, setErrors] = useState<FieldErrors>({})
   const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
-  const [missing, setMissing] = useState<PublishRequirement[]>([])
+  const [photosConfirmed, setPhotosConfirmed] = useState(false)
+  const [missing, setMissing] = useState<{ items: PublishRequirement[]; onSave: boolean }>({ items: [], onSave: false })
   const fileInput = useRef<HTMLInputElement>(null)
+  const taxCodes = useQuery({ queryKey: ["shop-tax-codes"], queryFn: shopApi.listTaxCodes })
+  const limits = { maxFiles: MAX_DESIGN_PHOTOS, maxMb: UPLOAD_MAX_MEGABYTES }
 
+  // A different Design (or a new one just created) starts from its saved values.
   useEffect(() => {
     setForm(initial)
+    setErrors({})
     setConfirmed(false)
-  }, [initial])
+    setPhotosConfirmed(false)
+    setMissing({ items: [], onSave: false })
+  }, [design?.id])
 
   const dirty = JSON.stringify(form) !== JSON.stringify(initial)
+  const photosChanged = photoKey(form.photos) !== photoKey(initial.photos)
+  const needsReconfirm = design?.status === "published" && photosChanged
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }))
 
   const errorText = (e: unknown) => {
+    if (e instanceof ShopApiError && e.uploadReason) {
+      return t(`shopDesigns.uploadReasons.${e.uploadReason}`, limits)
+    }
     const code = e instanceof ShopApiError ? e.error.code : "unknown"
     const key = `shopDesigns.errors.${code}`
     return i18n.exists(key) ? t(key) : t("shopDesigns.errors.unknown")
   }
 
+  /** Checks the form in the browser; returns the values to send, or null after marking the bad fields. */
+  const validate = () => {
+    const next: FieldErrors = {}
+    if (!form.name.trim()) next.name = t("shopDesigns.validation.name")
+    const price = shelfPriceFromRupees(form.priceRupees.trim() === "" ? undefined : Number(form.priceRupees))
+    if (!price.ok) next.priceRupees = t("shopDesigns.validation.price", { max: MAX_PRICE_RUPEES })
+    const metres = (key: "lengthM" | "widthM") => {
+      const raw = form[key].trim()
+      if (raw === "") {
+        if (initial[key] !== "") next[key] = t("shopDesigns.validation.metresRequired")
+        return null
+      }
+      const parsed = Metres.safeParse(Number(raw))
+      if (!parsed.success) {
+        next[key] = t("shopDesigns.validation.metres")
+        return null
+      }
+      return parsed.data
+    }
+    const lengthM = metres("lengthM")
+    const widthM = metres("widthM")
+    setErrors(next)
+    if (Object.keys(next).length > 0 || !price.ok) {
+      toast.error(t("shopDesigns.validation.fix"))
+      return null
+    }
+    return {
+      priceRupees: price.data / 100,
+      attributes: {
+        fibre: text(form.fibre),
+        weave: text(form.weave),
+        lengthM,
+        widthM,
+        blousePieceIncluded: form.blousePieceIncluded,
+        care: text(form.care),
+        countryOfOrigin: text(form.countryOfOrigin),
+        taxCode: text(form.taxCode),
+        stitched: form.stitched,
+      },
+    }
+  }
+
+  /** Shows the missing items of a refusal, or a notice for any other error. */
+  const refused = (e: unknown, onSave: boolean) => {
+    if (e instanceof ShopApiError && e.missing.length > 0) setMissing({ items: e.missing, onSave })
+    else toast.error(errorText(e))
+  }
+
   const save = async () => {
+    const values = validate()
+    if (!values) return
     setBusy(true)
+    setMissing({ items: [], onSave: false })
     try {
-      let saved: AdminDesignView
       if (!design) {
-        saved = (
-          await shopApi.createDesign({
-            name: form.name,
-            description: form.description,
-            attributes: attributesOf(form),
-            photos: renumber(form.photos),
-            priceRupees: Number(form.priceRupees),
-          })
-        ).design
+        const { design: created } = await shopApi.createDesign({
+          name: form.name,
+          description: form.description,
+          attributes: values.attributes,
+          photos: photoInputs(form.photos),
+          priceRupees: values.priceRupees,
+        })
         toast.success(t("shopDesigns.editor.created"))
-      } else {
+        onChanged(created)
+        return
+      }
+      let saved = design
+      if (withoutPrice(form) !== withoutPrice(initial)) {
         saved = (
           await shopApi.updateDesign(design.id, {
             name: form.name,
             description: form.description,
-            attributes: attributesOf(form),
-            photos: renumber(form.photos),
+            attributes: values.attributes,
+            photos: photoInputs(form.photos),
+            ...(needsReconfirm ? { trueColourConfirmed: photosConfirmed } : {}),
           })
         ).design
-        if (form.priceRupees !== initial.priceRupees) {
-          saved = (await shopApi.setPrice(design.id, Number(form.priceRupees))).design
-        }
-        toast.success(t("shopDesigns.editor.saved"))
+        // Saved: the page shows it at once, even if the price below is refused.
+        onChanged(saved)
       }
-      setMissing([])
-      onChanged(saved)
+      if (form.priceRupees !== initial.priceRupees) {
+        try {
+          saved = (await shopApi.setPrice(design.id, values.priceRupees)).design
+          onChanged(saved)
+        } catch (e) {
+          if (saved !== design) toast.error(t("shopDesigns.editor.priceFailed"))
+          throw e
+        }
+      }
+      setForm(formOf(saved))
+      setPhotosConfirmed(false)
+      toast.success(t("shopDesigns.editor.saved"))
     } catch (e) {
-      toast.error(errorText(e))
+      refused(e, true)
     } finally {
       setBusy(false)
     }
@@ -149,9 +250,22 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
 
   const upload = async (files: FileList | null) => {
     if (!files || files.length === 0) return
+    const chosen = [...files]
+    const reset = () => {
+      if (fileInput.current) fileInput.current.value = ""
+    }
+    if (form.photos.length + chosen.length > MAX_DESIGN_PHOTOS || chosen.length > UPLOAD_MAX_FILES) {
+      toast.error(t("shopDesigns.photos.tooMany", limits))
+      return reset()
+    }
+    const large = chosen.find((f) => f.size > UPLOAD_MAX_BYTES)
+    if (large) {
+      toast.error(t("shopDesigns.photos.tooLarge", { ...limits, name: large.name }))
+      return reset()
+    }
     setUploading(true)
     try {
-      const { files: stored } = await shopApi.uploadPhotos([...files])
+      const { files: stored } = await shopApi.uploadPhotos(chosen)
       setForm((f) => ({
         ...f,
         photos: renumber([
@@ -164,7 +278,7 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
       toast.error(errorText(e))
     } finally {
       setUploading(false)
-      if (fileInput.current) fileInput.current.value = ""
+      reset()
     }
   }
 
@@ -188,30 +302,37 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
   const publish = async () => {
     if (!design) return
     setBusy(true)
+    setMissing({ items: [], onSave: false })
     try {
       const result = await shopApi.publish(design.id, confirmed)
-      setMissing([])
       toast.success(t("shopDesigns.publishing.published"))
       onChanged(result.design)
     } catch (e) {
-      if (e instanceof ShopApiError && e.missing.length > 0) setMissing(e.missing)
-      else toast.error(errorText(e))
+      refused(e, false)
     } finally {
       setBusy(false)
     }
   }
 
-  const field = (key: "name" | "fibre" | "weave" | "care" | "countryOfOrigin" | "taxCode", hint?: string) => (
+  const fieldError = (key: keyof FieldErrors) =>
+    errors[key] ? (
+      <Text size="xsmall" className="text-ui-fg-error" id={`design-${key}-error`}>
+        {errors[key]}
+      </Text>
+    ) : null
+
+  const field = (key: "name" | "fibre" | "weave" | "care" | "countryOfOrigin") => (
     <div className="flex flex-col gap-y-1">
       <Label htmlFor={`design-${key}`} size="small" weight="plus">
         {t(`shopDesigns.fields.${key}`)}
       </Label>
-      <Input id={`design-${key}`} value={form[key]} onChange={(e) => set(key, e.target.value)} />
-      {hint ? (
-        <Text size="xsmall" className="text-ui-fg-subtle">
-          {hint}
-        </Text>
-      ) : null}
+      <Input
+        id={`design-${key}`}
+        value={form[key]}
+        aria-invalid={key === "name" && !!errors.name}
+        onChange={(e) => set(key, e.target.value)}
+      />
+      {key === "name" ? fieldError("name") : null}
     </div>
   )
   const metres = (key: "lengthM" | "widthM") => (
@@ -226,8 +347,10 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
         min="0"
         step="0.01"
         value={form[key]}
+        aria-invalid={!!errors[key]}
         onChange={(e) => set(key, e.target.value)}
       />
+      {fieldError(key)}
     </div>
   )
   const toggle = (key: "blousePieceIncluded" | "stitched") => (
@@ -238,6 +361,24 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
       </Label>
     </div>
   )
+
+  // The codes with a band now, plus the Design's own code if it no longer has one.
+  const codeOptions = [...new Set([...(taxCodes.data?.taxCodes ?? []), ...(initial.taxCode ? [initial.taxCode] : [])])]
+
+  const missingList = missing.items.length > 0 ? (
+    <div role="alert" className="bg-ui-bg-subtle rounded-md p-3" data-testid="publish-missing">
+      <Text size="small" weight="plus">
+        {t(missing.onSave ? "shopDesigns.publishing.refusedSave" : "shopDesigns.publishing.refused")}
+      </Text>
+      <ul className="list-disc pl-5">
+        {missing.items.map((m) => (
+          <li key={m} data-requirement={m}>
+            <Text size="small">{t(`shopDesigns.missing.${m}`)}</Text>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ) : null
 
   return (
     <Drawer open onOpenChange={(open) => (open ? undefined : onClose())}>
@@ -271,7 +412,30 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
               {field("care")}
               {field("countryOfOrigin")}
             </div>
-            {field("taxCode", t("shopDesigns.fields.taxCodeHint"))}
+            <div className="flex flex-col gap-y-1">
+              <Label htmlFor="design-taxCode" size="small" weight="plus">
+                {t("shopDesigns.fields.taxCode")}
+              </Label>
+              <Select
+                value={form.taxCode === "" ? undefined : form.taxCode}
+                onValueChange={(v) => set("taxCode", v === NO_TAX_CODE ? "" : v)}
+              >
+                <Select.Trigger id="design-taxCode" aria-label={t("shopDesigns.fields.taxCode")}>
+                  <Select.Value placeholder={t("shopDesigns.fields.taxCodePlaceholder")} />
+                </Select.Trigger>
+                <Select.Content>
+                  <Select.Item value={NO_TAX_CODE}>{t("shopDesigns.fields.taxCodeNone")}</Select.Item>
+                  {codeOptions.map((code) => (
+                    <Select.Item key={code} value={code}>
+                      {code}
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select>
+              <Text size="xsmall" className={taxCodes.isError ? "text-ui-fg-error" : "text-ui-fg-subtle"}>
+                {taxCodes.isError ? t("shopDesigns.taxCodesFailed") : t("shopDesigns.fields.taxCodeHint")}
+              </Text>
+            </div>
             <div className="flex flex-col gap-y-3">
               {toggle("blousePieceIncluded")}
               {toggle("stitched")}
@@ -291,15 +455,17 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
                 min="1"
                 step="1"
                 value={form.priceRupees}
+                aria-invalid={!!errors.priceRupees}
                 onChange={(e) => set("priceRupees", e.target.value)}
               />
+              {fieldError("priceRupees")}
             </div>
           </section>
 
           <section className="flex flex-col gap-y-4">
             <Heading level="h3">{t("shopDesigns.editor.photos")}</Heading>
             <Text size="small" className="text-ui-fg-subtle">
-              {t("shopDesigns.photos.hint")}
+              {t("shopDesigns.photos.hint", limits)}
             </Text>
             <div className="flex items-center gap-x-3">
               <Label htmlFor="design-photos" size="small" weight="plus">
@@ -311,7 +477,7 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
                 type="file"
                 multiple
                 accept="image/jpeg,image/png,image/webp"
-                disabled={uploading}
+                disabled={uploading || form.photos.length >= MAX_DESIGN_PHOTOS}
                 onChange={(e) => upload(e.target.files)}
                 className="txt-compact-small"
               />
@@ -373,6 +539,23 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
                 ))}
               </ol>
             )}
+            {needsReconfirm ? (
+              <div className="flex flex-col gap-y-1">
+                <Text size="small" className="text-ui-fg-subtle">
+                  {t("shopDesigns.photos.reconfirmHint")}
+                </Text>
+                <div className="flex items-start gap-x-2">
+                  <Checkbox
+                    id="design-photos-true-colour"
+                    checked={photosConfirmed}
+                    onCheckedChange={(v) => setPhotosConfirmed(v === true)}
+                  />
+                  <Label htmlFor="design-photos-true-colour" size="small">
+                    {t("shopDesigns.photos.reconfirm")}
+                  </Label>
+                </div>
+              </div>
+            ) : null}
           </section>
 
           {design ? (
@@ -392,6 +575,7 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
                       })}
                     </Text>
                   ) : null}
+                  {missingList}
                 </div>
               ) : (
                 <>
@@ -408,20 +592,7 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
                       {t("shopDesigns.publishing.confirm")}
                     </Label>
                   </div>
-                  {missing.length > 0 ? (
-                    <div role="alert" className="bg-ui-bg-subtle rounded-md p-3" data-testid="publish-missing">
-                      <Text size="small" weight="plus">
-                        {t("shopDesigns.publishing.refused")}
-                      </Text>
-                      <ul className="list-disc pl-5">
-                        {missing.map((m) => (
-                          <li key={m} data-requirement={m}>
-                            <Text size="small">{t(`shopDesigns.missing.${m}`)}</Text>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
+                  {missingList}
                   {dirty ? (
                     <Text size="small" className="text-ui-fg-subtle">
                       {t("shopDesigns.publishing.saveFirst")}
@@ -433,7 +604,9 @@ export const DesignEditor = ({ design, onClose, onChanged }: Props) => {
                 </>
               )}
             </section>
-          ) : null}
+          ) : (
+            missingList
+          )}
         </Drawer.Body>
         <Drawer.Footer>
           <Button variant="secondary" onClick={onClose}>

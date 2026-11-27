@@ -4,10 +4,13 @@ import {
   ApiError,
   NotPublishableDetails,
   PublishDesignResult,
+  TaxCodeList,
+  UploadRefusalDetails,
   UploadResult,
   type DesignAttributesInput,
-  type DesignPhoto,
+  type DesignPhotoInput,
   type PublishRequirement,
+  type UploadRefusalReason,
   type UpdateDesignInput,
 } from "@shop/contracts"
 
@@ -19,7 +22,7 @@ export type CreateDesignRequest = {
   name: string
   description: string
   attributes: DesignAttributesInput
-  photos: DesignPhoto[]
+  photos: DesignPhotoInput[]
   priceRupees: number
 }
 
@@ -42,6 +45,13 @@ export class ShopApiError extends Error {
     if (this.error.code !== "design.not_publishable") return []
     const parsed = NotPublishableDetails.safeParse(this.error.details)
     return parsed.success ? parsed.data.missing : []
+  }
+
+  /** Which upload limit an `upload.invalid_file` refusal hit, or null. */
+  get uploadReason(): UploadRefusalReason | null {
+    if (this.error.code !== "upload.invalid_file") return null
+    const parsed = UploadRefusalDetails.safeParse(this.error.details)
+    return parsed.success ? parsed.data.reason : null
   }
 }
 
@@ -66,6 +76,7 @@ const json = (body: unknown): RequestInit => ({ method: "POST", body: JSON.strin
 
 export const shopApi = {
   listDesigns: () => call(AdminDesignList, "/admin/shop/designs"),
+  listTaxCodes: () => call(TaxCodeList, "/admin/shop/tax-codes"),
   getDesign: (id: string) => call(AdminDesignResponse, `/admin/shop/designs/${encodeURIComponent(id)}`),
   createDesign: (input: CreateDesignRequest) =>
     call(AdminDesignResponse, "/admin/shop/designs", json(input)),

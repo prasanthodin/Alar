@@ -2,7 +2,7 @@
 title: 'Story 1.6: Owner creates and publishes one Design'
 type: 'feature'
 created: '2026-11-27'
-status: 'in-review'
+status: 'done'
 baseline_commit: '6080993140e6d0d81edc2c8537f5d88bb53e5114'
 route: 'dispatch'
 review_loop_iteration: 0

@@ -39,6 +39,18 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      # The AWS emulator of infra/compose.yaml: Design photo uploads (Story 1.6)
+      # go to its `catalog` bucket in the integration tests and the admin smoke.
+      floci:
+        image: floci/floci:2.5.0
+        ports:
+          - 4566:4566
+        options: >-
+          --health-cmd "/usr/local/bin/healthcheck.sh"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+          --health-start-period 10s
 
     env:
       # The forbidden product name: read from the FORBIDDEN_NAME repository variable,
@@ -56,8 +68,8 @@ jobs:
       COOKIE_SECRET: ci-only-cookie-secret
       # The kernel's event bus, workflow engine and locking run on Redis (Story 1.3).
       REDIS_URL: redis://localhost:6379
-      # File storage settings the kernel checks at start; nothing uploads in CI,
-      # so no emulator runs here (scripts/compose-smoke.sh covers file storage).
+      # File storage on the floci service: the public `catalog` bucket, created
+      # by infra/init/create-buckets.mjs before the integration tests.
       S3_ENDPOINT: http://localhost:4566
       S3_BUCKET: catalog
       S3_REGION: us-east-1
@@ -66,6 +78,9 @@ jobs:
       S3_SECRET_ACCESS_KEY: ci-only
       NEXT_PUBLIC_MEDUSA_BACKEND_URL: http://localhost:9000
       NEXT_PUBLIC_BASE_URL: http://localhost:8000
+      # The admin smoke's admin, made with `medusa user` (throwaway, CI only).
+      ADMIN_E2E_EMAIL: owner-e2e@example.test
+      ADMIN_E2E_PASSWORD: ci-only-owner-e2e-pass
 
     steps:
       - uses: actions/checkout@v4
@@ -103,6 +118,12 @@ jobs:
       # after it does: migrate (the starter's initial data seed runs as a
       # migration script), start the kernel and read the seeded publishable key,
       # which the build checks for and the running website uses. See docs/starter.md.
+      - name: Create the catalog bucket
+        working-directory: apps/commerce
+        env:
+          CATALOG_BUCKET: catalog
+        run: node ../../infra/init/create-buckets.mjs
+
       - name: Migrate and seed the kernel database
         working-directory: apps/commerce
         run: pnpm exec medusa db:migrate
@@ -130,6 +151,21 @@ jobs:
           done
           cat "$RUNNER_TEMP/commerce.log"
           exit 1
+
+      # Admins exist only through `medusa user` (Story 1.4).
+      - name: Create the admin smoke's admin
+        working-directory: apps/commerce
+        run: pnpm exec medusa user -e "$ADMIN_E2E_EMAIL" -p "$ADMIN_E2E_PASSWORD"
+
+      - name: Install Playwright's Chromium
+        run: pnpm --filter @shop/commerce exec playwright install --with-deps chromium
+
+      # Signs in to the kernel's dashboard, creates a Design with two photos,
+      # sees what is missing, confirms and publishes (Story 1.6).
+      - name: Admin smoke (Designs)
+        env:
+          ADMIN_E2E_BASE_URL: http://localhost:9000
+        run: pnpm --filter @shop/commerce exec playwright test --trace off
 
       - name: Request log has one JSON line per request with the request id
         run: |
@@ -173,9 +209,7 @@ jobs:
           cat "$RUNNER_TEMP/web.log"
           exit 1
 
-      - name: Install Playwright's Chromium
-        run: pnpm --filter @shop/web exec playwright install --with-deps chromium
-
+      # Chromium was installed for the admin smoke (the same Playwright version).
       - name: End-to-end test
         env:
           E2E_BASE_URL: http://localhost:8000

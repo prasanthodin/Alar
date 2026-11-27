@@ -1,8 +1,14 @@
 import { ProductStatus } from "@medusajs/framework/utils"
 import { createWorkflow, transform, WorkflowResponse } from "@medusajs/framework/workflows-sdk"
-import { updateProductsWorkflow } from "@medusajs/medusa/core-flows"
+import { acquireLockStep, releaseLockStep, updateProductsWorkflow } from "@medusajs/medusa/core-flows"
 import type { PublishCheckView } from "../lib/publish-requirements"
-import { checkDesignPublishableStep, loadDesignStep, updateDesignAttributesStep } from "./steps/design-steps"
+import {
+  checkDesignIsDraftStep,
+  checkDesignPublishableStep,
+  designLockKey,
+  loadDesignStep,
+  updateDesignAttributesStep,
+} from "./steps/design-steps"
 
 export type PublishDesignWorkflowInput = {
   /** The Design's kernel product id. */
@@ -14,22 +20,30 @@ export type PublishDesignWorkflowInput = {
 }
 
 /**
- * The only way a Design is published (kernel status `published`). Refuses
+ * The only way a Design is published (kernel status `draft` to `published`).
+ * A Design that is not a draft is refused (`design.already_published`,
+ * `design.not_draft`) and nothing changes. Refuses
  * with `design.not_publishable`, naming every missing item, unless the Design
  * has a fibre, a length and a width, a tax code with a band in effect now
  * that fits its price, a valid shelf price, a fabric close-up photo, at least
- * one other photo, and the Owner's true-colour confirmation in this request.
+ * one other photo, a sales channel and a shipping profile, and the Owner's
+ * true-colour confirmation in this request.
  * A refusal changes nothing. The confirmation is stored with the time and
  * the admin user id; if publishing then fails it is restored.
  */
 export const publishDesignWorkflow = createWorkflow("publish-design", (input: PublishDesignWorkflowInput) => {
+  const lock = transform({ input }, ({ input }) => ({ key: designLockKey(input.id), timeout: 10, ttl: 60 }))
+  acquireLockStep(lock)
   const design = loadDesignStep({ id: input.id })
+  checkDesignIsDraftStep({ design })
 
   const view = transform({ design, input }, ({ design, input }): PublishCheckView => ({
     attributes: design.view.attributes,
     photos: design.view.photos,
     pricePaise: design.view.pricePaise,
     trueColourConfirmed: input.trueColourConfirmed,
+    hasSalesChannel: design.salesChannelIds.length > 0,
+    hasShippingProfile: design.shippingProfileId !== null,
   }))
   const checked = checkDesignPublishableStep({ view, required: true })
 
@@ -44,6 +58,7 @@ export const publishDesignWorkflow = createWorkflow("publish-design", (input: Pu
     update: { status: ProductStatus.PUBLISHED },
   }))
   updateProductsWorkflow.runAsStep({ input: publish })
+  releaseLockStep(lock)
 
   return new WorkflowResponse(transform({ design }, ({ design }) => ({ id: design.view.id })))
 })

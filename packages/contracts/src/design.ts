@@ -86,27 +86,38 @@ export type DesignPhoto = z.infer<typeof DesignPhoto>
 export const MAX_DESIGN_PHOTOS = 12
 
 /**
- * A Design's photos in order: positions are 0, 1, 2, ... in array order, each
- * file appears once and at most one photo is the fabric close-up.
+ * A photo as a request names it: the uploaded file's id, its role and place.
+ * A `url` sent with it is ignored: the kernel checks the file exists in the
+ * `catalog` bucket and stores the public address it derives itself.
  */
-export const DesignPhotos = z
-  .array(DesignPhoto)
-  .max(MAX_DESIGN_PHOTOS)
-  .superRefine((photos, ctx) => {
-    photos.forEach((photo, i) => {
-      if (photo.position !== i) {
-        ctx.addIssue({ code: "custom", message: "Positions must be 0, 1, 2, ... in order", path: [i, "position"] })
-      }
-    })
-    const ids = new Set(photos.map((p) => p.fileId))
-    if (ids.size !== photos.length) {
-      ctx.addIssue({ code: "custom", message: "A file can be used once per Design" })
-    }
-    if (photos.filter((p) => p.role === "close_up").length > 1) {
-      ctx.addIssue({ code: "custom", message: "At most one photo is the fabric close-up" })
+export const DesignPhotoInput = DesignPhoto.extend({
+  url: DesignPhoto.shape.url.optional(),
+})
+export type DesignPhotoInput = z.infer<typeof DesignPhotoInput>
+
+/** Positions 0, 1, 2, ... in array order, each file once, at most one close-up. */
+function checkPhotoOrder(photos: readonly { fileId: string; role: PhotoRole; position: number }[], ctx: z.RefinementCtx) {
+  photos.forEach((photo, i) => {
+    if (photo.position !== i) {
+      ctx.addIssue({ code: "custom", message: "Positions must be 0, 1, 2, ... in order", path: [i, "position"] })
     }
   })
+  const ids = new Set(photos.map((p) => p.fileId))
+  if (ids.size !== photos.length) {
+    ctx.addIssue({ code: "custom", message: "A file can be used once per Design" })
+  }
+  if (photos.filter((p) => p.role === "close_up").length > 1) {
+    ctx.addIssue({ code: "custom", message: "At most one photo is the fabric close-up" })
+  }
+}
+
+/** A Design's stored photos in order (see `checkPhotoOrder`). */
+export const DesignPhotos = z.array(DesignPhoto).max(MAX_DESIGN_PHOTOS).superRefine(checkPhotoOrder)
 export type DesignPhotos = z.infer<typeof DesignPhotos>
+
+/** A Design's photos as a request sends them, in order. */
+export const DesignPhotosInput = z.array(DesignPhotoInput).max(MAX_DESIGN_PHOTOS).superRefine(checkPhotoOrder)
+export type DesignPhotosInput = z.infer<typeof DesignPhotosInput>
 
 /** The highest price a Design may have, in whole rupees (Rs 1 crore). */
 export const MAX_PRICE_RUPEES = 10_000_000
@@ -144,7 +155,7 @@ export const CreateDesignInput = z.strictObject({
   name,
   description: description.default(""),
   attributes: DesignAttributesInput.prefault({}),
-  photos: DesignPhotos.default([]),
+  photos: DesignPhotosInput.default([]),
   priceRupees: z.number(),
 })
 export type CreateDesignInput = z.infer<typeof CreateDesignInput>
@@ -159,7 +170,7 @@ export const UpdateDesignInput = z
     name: name.optional(),
     description: description.optional(),
     attributes: DesignAttributesPatch.optional(),
-    photos: DesignPhotos.optional(),
+    photos: DesignPhotosInput.optional(),
     trueColourConfirmed: z.boolean().optional(),
   })
   .refine((v) => Object.values(v).some((field) => field !== undefined), { message: "Nothing to change" })
@@ -181,7 +192,8 @@ export type PublishDesignInput = z.infer<typeof PublishDesignInput>
  * What `publish-design` needs, in the order the page lists them:
  * `taxCode` when no tax code is set, `taxBand` when the code has no band now
  * or no band fits the price, `otherPhoto` for at least one photo besides the
- * close-up.
+ * close-up, `salesChannel` and `shippingProfile` for a product the kernel
+ * can sell and ship (the store's default sales channel and shipping profile).
  */
 export const PublishRequirement = z.enum([
   "fibre",
@@ -193,6 +205,8 @@ export const PublishRequirement = z.enum([
   "fabricCloseUpPhoto",
   "otherPhoto",
   "trueColourConfirmation",
+  "salesChannel",
+  "shippingProfile",
 ])
 export type PublishRequirement = z.infer<typeof PublishRequirement>
 
@@ -276,6 +290,45 @@ export const UPLOAD_MAX_BYTES = 10 * 1024 * 1024
 
 /** The most files in one upload. */
 export const UPLOAD_MAX_FILES = MAX_DESIGN_PHOTOS
+
+/** The most megabytes one photo may have, for messages. */
+export const UPLOAD_MAX_MEGABYTES = UPLOAD_MAX_BYTES / (1024 * 1024)
+
+/**
+ * Why an upload was refused (`details.reason` of `upload.invalid_file`):
+ * `too_large` (a file over `UPLOAD_MAX_BYTES`), `too_many_files` (more than
+ * `UPLOAD_MAX_FILES`), `unexpected_field` (a field other than the files),
+ * `no_file`, `not_an_image` (not a JPEG, PNG or WebP image that decodes, or
+ * its stated type differs) or `unreadable` (a broken multipart body).
+ */
+export const UploadRefusalReason = z.enum([
+  "too_large",
+  "too_many_files",
+  "unexpected_field",
+  "no_file",
+  "not_an_image",
+  "unreadable",
+])
+export type UploadRefusalReason = z.infer<typeof UploadRefusalReason>
+
+/** `details` of the `upload.invalid_file` error. */
+export const UploadRefusalDetails = z.object({
+  reason: UploadRefusalReason,
+  file: z.string().optional(),
+})
+export type UploadRefusalDetails = z.infer<typeof UploadRefusalDetails>
+
+/** The developer message of an upload refusal, with the limits filled in. */
+export function uploadRefusalMessage(reason: UploadRefusalReason): string {
+  const limits = `at most ${UPLOAD_MAX_FILES} JPEG, PNG or WebP photos of ${UPLOAD_MAX_MEGABYTES} MB or less each`
+  return `The upload was refused (${reason}): send ${limits} in the field \`files\``
+}
+
+/** `GET /admin/shop/tax-codes`: the tax codes with a band in effect now, in order. */
+export const TaxCodeList = z.object({
+  taxCodes: z.array(TaxCode),
+})
+export type TaxCodeList = z.infer<typeof TaxCodeList>
 
 /** A stored photo: the file id to reference from a Design and its public address. */
 export const UploadedFile = z.object({

@@ -1,7 +1,14 @@
 import { randomBytes } from "node:crypto"
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
-import { taxBandsKey, taxForShelfPrice, type DesignPhoto, type PublishRequirement } from "@shop/contracts"
+import {
+  taxBandsKey,
+  taxForShelfPrice,
+  type DesignPhoto,
+  type DesignPhotoInput,
+  type PublishRequirement,
+} from "@shop/contracts"
+import { catalogFileUrl } from "../../lib/catalog-files"
 import { loadDesign, type DesignAttributesColumns, type DesignRecord } from "../../lib/designs"
 import { bandsInEffect, publishRequirements, type PublishCheckView } from "../../lib/publish-requirements"
 import { shopError } from "../../lib/shop-errors"
@@ -16,6 +23,55 @@ import type SettingsModuleService from "../../modules/settings/service"
 export const loadDesignStep = createStep("load-design", async (input: { id: string }, { container }) => {
   return new StepResponse<DesignRecord>(await loadDesign(container, input.id))
 })
+
+/** The per-Design lock key: price, edit and publish of one Design run one at a time. */
+export function designLockKey(id: string): string {
+  return `shop-design:${id}`
+}
+
+/**
+ * Checks each photo's file exists in the `catalog` bucket (through the
+ * kernel's file module) and returns the photos with the public address the
+ * kernel derives, ignoring any address the request sent. An unknown file is
+ * refused with `design.unknown_photo`. No photos given (undefined) passes as null.
+ */
+export const resolveDesignPhotosStep = createStep(
+  "resolve-design-photos",
+  async (input: { photos?: DesignPhotoInput[] | null }, { container }) => {
+    if (!input.photos) return new StepResponse<DesignPhoto[] | null>(null)
+    const files = container.resolve(Modules.FILE)
+    const resolved: DesignPhoto[] = []
+    for (const photo of input.photos) {
+      let found = false
+      try {
+        const stream = (await files.getDownloadStream(photo.fileId)) as { destroy?: () => void } | undefined
+        stream?.destroy?.()
+        found = true
+      } catch {
+        found = false
+      }
+      if (!found) {
+        throw shopError("design.unknown_photo", `No uploaded file ${photo.fileId}`, { fileId: photo.fileId })
+      }
+      resolved.push({ fileId: photo.fileId, url: catalogFileUrl(photo.fileId), role: photo.role, position: photo.position })
+    }
+    return new StepResponse<DesignPhoto[] | null>(resolved)
+  }
+)
+
+/**
+ * Refuses to publish a Design that is not a draft: `design.already_published`
+ * for a published one, `design.not_draft` for any other status. Changes nothing.
+ */
+export const checkDesignIsDraftStep = createStep(
+  "check-design-is-draft",
+  async (input: { design: DesignRecord }) => {
+    const { status, id } = input.design.view
+    if (status === "published") throw shopError("design.already_published", `Design ${id} is already published`, { id })
+    if (status !== "draft") throw shopError("design.not_draft", `Design ${id} is ${status}, not a draft`, { id, status })
+    return new StepResponse(true)
+  }
+)
 
 /**
  * Refuses a tax code that has no bands in settings (`tax.bands.<code>`) with

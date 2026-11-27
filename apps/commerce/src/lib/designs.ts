@@ -98,11 +98,13 @@ export const DESIGN_PRODUCT_FIELDS = [
   "variants.prices.amount",
   "variants.prices.currency_code",
   "variants.prices.rules_count",
+  "sales_channels.id",
+  "shipping_profile.id",
   "design_attributes.*",
 ]
 
 type Price = { id: string; amount: unknown; currency_code: string; rules_count?: number | null }
-type ProductRow = {
+export type ProductRow = {
   id: string
   title: string
   description?: string | null
@@ -110,6 +112,8 @@ type ProductRow = {
   created_at: Date | string
   updated_at: Date | string
   variants?: ({ id: string; created_at?: Date | string; prices?: (Price | null)[] | null } | null)[] | null
+  sales_channels?: ({ id: string } | null)[] | null
+  shipping_profile?: { id: string } | null
   design_attributes?: (Partial<DesignAttributesColumns> & {
     id: string
     photos?: unknown
@@ -124,11 +128,18 @@ export type DesignRecord = {
   attributesId: string
   /** The kernel price of the one Variant in rupees, if it has one. */
   priceId: string | null
+  /** The product's sales channels and shipping profile: without them the kernel cannot sell or ship it. */
+  salesChannelIds: string[]
+  shippingProfileId: string | null
 }
 
 const iso = (d: Date | string) => new Date(d).toISOString()
 
-/** A kernel product with its attributes as a Design, or null when the product is not a Design. */
+/**
+ * A kernel product with its attributes as a Design, or null when the product
+ * is not a Design. A product status outside `DesignStatus` or stored photos
+ * that fail the contract are faults on the shop's side (`internal`).
+ */
 export function designFromProduct(product: ProductRow): DesignRecord | null {
   const attrs = product.design_attributes
   const variant = (product.variants ?? []).filter((v): v is NonNullable<typeof v> => Boolean(v))[0]
@@ -136,12 +147,15 @@ export function designFromProduct(product: ProductRow): DesignRecord | null {
   const prices = (variant.prices ?? []).filter((p): p is Price => Boolean(p) && p!.currency_code === DESIGN_CURRENCY)
   const price = prices.find((p) => !p.rules_count) ?? prices[0] ?? null
   const status = DesignStatus.safeParse(product.status)
+  if (!status.success) {
+    throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, `Design ${product.id} has an unknown status`, "internal")
+  }
   const view = AdminDesignView.parse({
     id: product.id,
     variantId: variant.id,
     name: product.title,
     description: product.description ?? "",
-    status: status.success ? status.data : "draft",
+    status: status.data,
     pricePaise: price ? kernelAmountToPaise(price.amount) : null,
     attributes: attributesFromRow(attrs),
     photos: photosFromRow(attrs.photos),
@@ -152,7 +166,13 @@ export function designFromProduct(product: ProductRow): DesignRecord | null {
     createdAt: iso(product.created_at),
     updatedAt: iso(product.updated_at),
   })
-  return { view, attributesId: attrs.id, priceId: price?.id ?? null }
+  return {
+    view,
+    attributesId: attrs.id,
+    priceId: price?.id ?? null,
+    salesChannelIds: (product.sales_channels ?? []).flatMap((c) => (c?.id ? [c.id] : [])),
+    shippingProfileId: product.shipping_profile?.id ?? null,
+  }
 }
 
 /** Reads one Design by its product id; `design.not_found` when there is no such Design. */
@@ -168,7 +188,11 @@ export async function loadDesign(container: MedusaContainer, id: string): Promis
   return record
 }
 
-/** Every Design, newest first. */
+/**
+ * Every Design, newest first. A Design that cannot be read (a fault, such as
+ * stored photos that fail the contract) is logged and left out, so one bad
+ * row does not hide the others; reading it alone still fails.
+ */
 export async function listDesigns(container: MedusaContainer): Promise<AdminDesignView[]> {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const { data: rows } = await query.graph({
@@ -186,6 +210,14 @@ export async function listDesigns(container: MedusaContainer): Promise<AdminDesi
     fields: DESIGN_PRODUCT_FIELDS,
     filters: { id: ids },
   })
-  const byId = new Map(data.map((p) => [p.id, designFromProduct(p as unknown as ProductRow)]))
-  return ids.map((id) => byId.get(id)?.view).filter((v): v is AdminDesignView => Boolean(v))
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  const byId = new Map<string, AdminDesignView | null>()
+  for (const p of data) {
+    try {
+      byId.set(p.id, designFromProduct(p as unknown as ProductRow)?.view ?? null)
+    } catch {
+      logger.error(`designs: Design ${p.id} cannot be read and is left out of the list`)
+    }
+  }
+  return ids.map((id) => byId.get(id)).filter((v): v is AdminDesignView => Boolean(v))
 }

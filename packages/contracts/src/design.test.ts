@@ -15,6 +15,13 @@ import {
   PublishDesignInput,
   shelfPriceFromRupees,
   UpdateDesignInput,
+  UPLOAD_MAX_FILES,
+  UPLOAD_MAX_MEGABYTES,
+  uploadRefusalMessage,
+  UploadRefusalDetails,
+  DesignPhotosInput,
+  PublishRequirement,
+  TaxCodeList,
 } from "./index"
 
 const photo = (i: number, role: "close_up" | "other" = "other") => ({
@@ -44,7 +51,16 @@ const complete = {
 
 describe("design error codes", () => {
   it("are stable codes in the error enum", () => {
-    for (const code of ["design.unknown_tax_code", "design.not_publishable", "design.not_found", "upload.invalid_file"]) {
+    for (const code of [
+      "design.unknown_tax_code",
+      "design.not_publishable",
+      "design.not_found",
+      "design.already_published",
+      "design.not_draft",
+      "design.unknown_photo",
+      "upload.invalid_file",
+      "request.cross_origin",
+    ]) {
       expect(ErrorCode.safeParse(code).success).toBe(true)
     }
   })
@@ -208,5 +224,31 @@ describe("AdminDesignView", () => {
     const parsed = AdminDesignView.parse(view)
     expect("metadata" in parsed).toBe(false)
     expect(AdminDesignView.safeParse({ ...view, pricePaise: 315050 }).success).toBe(false)
+  })
+})
+
+describe("photo inputs, uploads and tax codes", () => {
+  it("lets a request name photos without an address (the kernel derives it)", () => {
+    const input = [{ fileId: "a.jpg", role: "close_up", position: 0 }]
+    expect(DesignPhotosInput.safeParse(input).success).toBe(true)
+    expect(DesignPhotos.safeParse(input).success).toBe(false)
+    expect(DesignPhotosInput.safeParse([{ fileId: "a.jpg", role: "other", position: 1 }]).success).toBe(false)
+  })
+
+  it("fills the limits into the upload refusal message", () => {
+    const message = uploadRefusalMessage("too_large")
+    expect(message).toContain(`${UPLOAD_MAX_FILES} JPEG`)
+    expect(message).toContain(`${UPLOAD_MAX_MEGABYTES} MB`)
+    expect(UploadRefusalDetails.safeParse({ reason: "too_many_files" }).success).toBe(true)
+    expect(UploadRefusalDetails.safeParse({ reason: "too_big" }).success).toBe(false)
+  })
+
+  it("includes the sales channel and shipping profile in the publish requirements", () => {
+    expect(PublishRequirement.options.slice(-2)).toEqual(["salesChannel", "shippingProfile"])
+  })
+
+  it("TaxCodeList holds tax codes only", () => {
+    expect(TaxCodeList.safeParse({ taxCodes: ["saree", "shirt_5"] }).success).toBe(true)
+    expect(TaxCodeList.safeParse({ taxCodes: ["Saree!"] }).success).toBe(false)
   })
 })

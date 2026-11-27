@@ -33,7 +33,10 @@ test("the Owner creates a Design with two photos, sees what is missing, confirms
   await panel.getByLabel("Width (metres)").fill("1.14")
   await panel.getByLabel("Care").fill("Dry clean only")
   await panel.getByLabel("Country of origin").fill("India")
-  await panel.getByLabel("Tax code").fill("saree")
+  // Tax codes come from the settings (codes with a band now); nothing is chosen for the Owner.
+  await expect(panel.getByLabel("Tax code")).toContainText("Choose a tax code")
+  await panel.getByLabel("Tax code").click()
+  await page.getByRole("option", { name: "saree", exact: true }).click()
   await panel.getByLabel("Blouse piece included").click()
   await panel.getByLabel(/Price in rupees/).fill("3150")
   await panel.locator('input[type="file"]').setInputFiles([

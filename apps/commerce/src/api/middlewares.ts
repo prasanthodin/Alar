@@ -1,5 +1,6 @@
 import { authenticate, configureStoreSearch, defineMiddlewares } from '@medusajs/framework/http'
 import { KERNEL_ROUTE_MATCHERS, kernelRouteGuard } from '../lib/kernel-route-guard'
+import { adminOriginGuard } from '../lib/origin-guard'
 import { photoUpload } from '../lib/photo-upload'
 
 export default defineMiddlewares({
@@ -15,9 +16,11 @@ export default defineMiddlewares({
     })),
     // Shop admin routes (Story 1.6) accept only a signed-in admin's session
     // cookie (the dashboard's): no bearer token, no secret API key, no Shopper.
+    // Because a cookie is sent cross-site, writes must also come from an
+    // ADMIN_CORS origin (request.cross_origin otherwise).
     {
       matcher: '/admin/shop*',
-      middlewares: [authenticate('user', ['session'])],
+      middlewares: [authenticate('user', ['session']), adminOriginGuard],
     },
     // Design photos: multipart, at most 12 files of 10 MB (upload.invalid_file otherwise).
     {

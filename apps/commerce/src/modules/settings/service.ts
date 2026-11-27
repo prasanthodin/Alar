@@ -1,12 +1,16 @@
 import type { Logger } from "@medusajs/framework/types"
 import { MedusaError, MedusaService } from "@medusajs/framework/utils"
 import {
+  isSettingKey,
   IsoDateTime,
   parseSettingValue,
   startOfBusinessDay,
+  TAX_BANDS_KEY_PREFIX,
   type BusinessDate,
   type SettingKey,
   type SettingValueOf,
+  type TaxBands,
+  type TaxBandsKey,
 } from "@shop/contracts"
 import { SettingValue } from "./models/setting-value"
 
@@ -147,6 +151,22 @@ export default class SettingsModuleService extends MedusaService({ SettingValue 
       }
       return { value: parsed.data, effectiveFrom: new Date(row.effective_from).toISOString() }
     })
+  }
+
+  /** The tax codes whose `tax.bands.<code>` value in effect at `at` (default now) has at least one band, sorted. */
+  async listTaxCodes(at: Date | string = new Date()): Promise<string[]> {
+    const when = toInstant(at, "at")
+    const rows = await this.listSettingValues(
+      { key: { $like: `${TAX_BANDS_KEY_PREFIX}%` }, effective_from: { $lte: when } },
+      { select: ["key"] }
+    )
+    const codes: string[] = []
+    for (const key of [...new Set(rows.map((r) => r.key))].sort()) {
+      if (!isSettingKey(key)) continue
+      const bands = (await this.getValue(key as TaxBandsKey, when)) as TaxBands
+      if (bands.length > 0) codes.push(key.slice(TAX_BANDS_KEY_PREFIX.length))
+    }
+    return codes
   }
 
   /** True when `key` has any value, at any time. */

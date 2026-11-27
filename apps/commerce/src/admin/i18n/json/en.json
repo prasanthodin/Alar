@@ -31,7 +31,8 @@
       "saving": "Saving",
       "created": "Design saved as unpublished.",
       "saved": "Design saved.",
-      "priceSaved": "Price saved."
+      "priceSaved": "Price saved.",
+      "priceFailed": "The other changes were saved, but the price was not."
     },
     "fields": {
       "name": "Name",
@@ -44,21 +45,27 @@
       "care": "Care",
       "countryOfOrigin": "Country of origin",
       "taxCode": "Tax code",
-      "taxCodeHint": "The tax code in the shop settings, for example saree.",
+      "taxCodeHint": "The tax codes that have a tax rate in the shop settings.",
       "stitched": "Stitched",
-      "priceRupees": "Price in rupees (whole rupees, tax included)"
+      "priceRupees": "Price in rupees (whole rupees, tax included)",
+      "taxCodePlaceholder": "Choose a tax code",
+      "taxCodeNone": "No tax code"
     },
     "photos": {
       "add": "Upload photos",
       "uploading": "Uploading",
-      "hint": "JPEG, PNG or WebP, up to 10 MB each. Mark one photo as the fabric close-up.",
+      "hint": "JPEG, PNG or WebP, up to {{maxMb}} MB each and {{maxFiles}} photos in all. Mark one photo as the fabric close-up. Location and camera details are removed from each photo.",
       "none": "No photos yet.",
       "closeUp": "Fabric close-up",
       "alt": "Photo {{n}}",
       "moveUp": "Move photo {{n}} up",
       "moveDown": "Move photo {{n}} down",
       "remove": "Remove photo {{n}}",
-      "uploaded": "Photos uploaded. Save the design to keep them."
+      "uploaded": "Photos uploaded. Save the design to keep them.",
+      "tooMany": "A design holds at most {{maxFiles}} photos. Remove some before adding more.",
+      "tooLarge": "{{name}} is larger than {{maxMb}} MB.",
+      "reconfirm": "I confirm the new photos show the saree's true colour.",
+      "reconfirmHint": "This design is published, so new photos need your confirmation again."
     },
     "publishing": {
       "intro": "Publishing puts the design in the shop. Everything below must be present.",
@@ -68,7 +75,8 @@
       "isPublished": "This design is published.",
       "confirmedAt": "True colour confirmed on {{at}}.",
       "saveFirst": "Save your changes before publishing.",
-      "refused": "This design cannot be published yet. Missing:"
+      "refused": "This design cannot be published yet. Missing:",
+      "refusedSave": "These changes were not saved, because the published design would be missing:"
     },
     "missing": {
       "fibre": "Fibre",
@@ -79,7 +87,9 @@
       "shelfPrice": "A price in whole rupees",
       "fabricCloseUpPhoto": "A fabric close-up photo",
       "otherPhoto": "At least one photo besides the close-up",
-      "trueColourConfirmation": "Your confirmation that the photos show the true colour"
+      "trueColourConfirmation": "Your confirmation that the photos show the true colour",
+      "salesChannel": "A sales channel (the store's default sales channel)",
+      "shippingProfile": "A shipping profile (the store's default shipping profile)"
     },
     "errors": {
       "input.invalid": "Some fields are not valid. Check them and try again.",
@@ -87,9 +97,29 @@
       "design.unknown_tax_code": "That tax code has no tax rate in the shop settings. Use a tax code that has one, such as saree.",
       "design.not_found": "This design no longer exists.",
       "design.not_publishable": "This design cannot be published yet.",
-      "upload.invalid_file": "That file was not uploaded. Use JPEG, PNG or WebP photos of 10 MB or less.",
+      "upload.invalid_file": "That upload was refused.",
       "tax.no_band": "No tax rate fits this price, so a published design cannot have it.",
-      "unknown": "Something went wrong. Try again."
-    }
+      "unknown": "Something went wrong. Try again.",
+      "design.already_published": "This design is already published.",
+      "design.not_draft": "Only an unpublished design can be published.",
+      "design.unknown_photo": "A photo could not be found in the shop's storage. Remove it and upload it again.",
+      "request.cross_origin": "The request was refused because it did not come from this admin. Reload the page and try again."
+    },
+    "validation": {
+      "name": "Enter a name.",
+      "price": "Enter a price in whole rupees, from 1 to {{max}}.",
+      "metres": "Enter metres above 0 and up to 100, with at most two decimals.",
+      "metresRequired": "Enter the measurement in metres; a saved value cannot be left empty.",
+      "fix": "Check the fields marked in red."
+    },
+    "uploadReasons": {
+      "too_large": "A photo is larger than {{maxMb}} MB.",
+      "too_many_files": "At most {{maxFiles}} photos can be uploaded at once.",
+      "unexpected_field": "The upload contained something other than photos.",
+      "no_file": "No photo was chosen.",
+      "not_an_image": "A file is not a JPEG, PNG or WebP photo that can be opened.",
+      "unreadable": "The upload could not be read. Try again."
+    },
+    "taxCodesFailed": "The tax codes could not be loaded."
   }
 }

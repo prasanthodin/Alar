@@ -356,7 +356,8 @@ medusaIntegrationTestRunner({
         ["POST", "/webhooks/anything"],
         ["GET", "/internal/anything"],
       ] as const)("does not refuse %s %s with route.not_allowed", async (method, url) => {
-        const headers = url.startsWith("/admin") ? asAdmin() : store()
+        // Shop admin writes must also name an admin origin (Story 1.6, request.cross_origin).
+        const headers = url.startsWith("/admin") ? { ...asAdmin(), origin: "http://localhost:9000" } : store()
         const res = await call(method, url, { headers, data: {} })
         expect(res.data?.code).not.toBe("route.not_allowed")
         expect(res.status).toBe(404)

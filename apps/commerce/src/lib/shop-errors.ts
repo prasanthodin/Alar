@@ -9,11 +9,17 @@ const STATUS: Partial<Record<ErrorCode, number>> = {
   "design.unknown_tax_code": 400,
   "design.not_publishable": 400,
   "upload.invalid_file": 400,
+  "design.unknown_photo": 400,
+  "request.cross_origin": 403,
   "design.not_found": 404,
+  "design.already_published": 409,
+  "design.not_draft": 409,
 }
 
 const KERNEL_TYPE: Partial<Record<ErrorCode, string>> = {
   "design.not_found": MedusaError.Types.NOT_FOUND,
+  "design.already_published": MedusaError.Types.NOT_ALLOWED,
+  "design.not_draft": MedusaError.Types.NOT_ALLOWED,
 }
 
 /**

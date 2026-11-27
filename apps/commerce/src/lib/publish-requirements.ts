@@ -13,6 +13,10 @@ import {
  */
 export type PublishCheckView = Pick<AdminDesignView, "attributes" | "pricePaise" | "photos"> & {
   trueColourConfirmed: boolean
+  /** The kernel product is in a sales channel (the store's default). */
+  hasSalesChannel: boolean
+  /** The kernel product has a shipping profile. */
+  hasShippingProfile: boolean
 }
 
 /** One dated value of a tax code's bands (`tax.bands.<code>`), as the settings module lists them. */
@@ -42,6 +46,8 @@ export function bandsInEffect(values: readonly DatedTaxBands[], now: Date): TaxB
  * - `fabricCloseUpPhoto`: no photo is marked as the fabric close-up.
  * - `otherPhoto`: no photo besides the close-up.
  * - `trueColourConfirmation`: the Owner has not confirmed the true colour.
+ * - `salesChannel`, `shippingProfile`: the kernel product has none, so it
+ *   could be published but not sold or shipped.
  *
  * `bands` are all dated values of the Design's tax code; the one in effect at
  * `now` is used. Pure: the caller reads the settings and the clock.
@@ -73,5 +79,7 @@ export function publishRequirements(
   if (photos.length - closeUps < 1) missing.push("otherPhoto")
 
   if (!view.trueColourConfirmed) missing.push("trueColourConfirmation")
+  if (!view.hasSalesChannel) missing.push("salesChannel")
+  if (!view.hasShippingProfile) missing.push("shippingProfile")
   return missing
 }

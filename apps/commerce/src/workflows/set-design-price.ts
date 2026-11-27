@@ -1,7 +1,7 @@
 import { createWorkflow, transform, when, WorkflowResponse } from "@medusajs/framework/workflows-sdk"
-import { updateProductVariantsWorkflow } from "@medusajs/medusa/core-flows"
+import { acquireLockStep, releaseLockStep, updateProductVariantsWorkflow } from "@medusajs/medusa/core-flows"
 import { DESIGN_CURRENCY } from "../lib/designs"
-import { checkDesignPriceSellableStep, loadDesignStep, recordPriceChangeStep } from "./steps/design-steps"
+import { checkDesignPriceSellableStep, designLockKey, loadDesignStep, recordPriceChangeStep } from "./steps/design-steps"
 
 export type SetDesignPriceWorkflowInput = {
   /** The Design's kernel product id. */
@@ -20,11 +20,15 @@ export type SetDesignPriceWorkflowInput = {
  * the history row fails, the kernel price is restored.
  */
 export const setDesignPriceWorkflow = createWorkflow("set-design-price", (input: SetDesignPriceWorkflowInput) => {
+  // The read of the old price, the compare and both writes happen under the
+  // Design's lock, so concurrent changes never record a stale old price.
+  const lock = transform({ input }, ({ input }) => ({ key: designLockKey(input.id), timeout: 10, ttl: 60 }))
+  acquireLockStep(lock)
   const design = loadDesignStep({ id: input.id })
-  checkDesignPriceSellableStep({ design, pricePaise: input.pricePaise })
 
   const changed = transform({ design, input }, ({ design, input }) => design.view.pricePaise !== input.pricePaise)
   when("design-price-changed", { changed }, ({ changed }) => changed).then(() => {
+    checkDesignPriceSellableStep({ design, pricePaise: input.pricePaise })
     const variantUpdate = transform({ design, input }, ({ design, input }) => ({
       selector: { id: design.view.variantId },
       update: {
@@ -47,6 +51,7 @@ export const setDesignPriceWorkflow = createWorkflow("set-design-price", (input:
     }))
     recordPriceChangeStep(priceRow)
   })
+  releaseLockStep(lock)
 
   return new WorkflowResponse(transform({ design }, ({ design }) => ({ id: design.view.id })))
 })
