@@ -40,9 +40,35 @@ clothing later.
 
 ## Decided
 - Own inventory (the business holds the stock); not a marketplace.
+- Backend: Medusa (commerce) + Payload (CMS), TypeScript on Postgres, plus a
+  separate try-on worker. Accepted by the founder on 2026-11-27 from the
+  technical research recommendation, subject to the one-week spike it
+  recommends (Razorpay provider, stock hold for one-of-a-kind pieces, Payload
+  block rendered in the app with preview).
+
+## AI controls the admin must have (founder, 2026-11-27)
+- Image-model routing is admin-managed: which model serves try-on, with the
+  ability to switch models without a code release.
+- OpenRouter is the preferred way to reach image models over one API.
+- Prompts sent to the models are admin-editable.
+- In general every AI setting is customisable and controllable from admin.
+- Repeated emphasis: everything is to be built to production level.
+
+Notes from a quick check of OpenRouter's public docs (search extracts, not
+read in full; verify before the architecture relies on them):
+- OpenRouter has a unified image API; reference images are passed as input
+  references, honoured only by models that support image input, with limits
+  that vary by model. Its model list endpoint reports which parameters each
+  model supports.
+- OpenRouter documents a zero-data-retention routing option, but nothing
+  found says which image models qualify. Shopper photos would pass through
+  OpenRouter and the model provider, which matters for consent and retention.
+- Self-hosted or fine-tuned models and dedicated try-on APIs (for example
+  FASHN) are not reached through OpenRouter, so the try-on worker should
+  treat OpenRouter as the default provider behind an interface, not the only
+  one.
 
 ## Not yet decided
-- Backend stack, CMS and commerce core (for technical research to recommend).
 - Where sarees are sourced; price band; launch region and languages.
 - Cash on delivery or prepaid only.
 - Which shipping provider.
