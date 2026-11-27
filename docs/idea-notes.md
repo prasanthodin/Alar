@@ -83,6 +83,14 @@ clothing later.
 - Follow how iPhone and Android interfaces are evolving now; the founder
   names glass-style backgrounds as the current direction.
 - Overall: modern, unique, attractive.
+- Design choices confirmed by the founder on 2026-11-27, after the UX
+  research: glass effects only on navigation bars and floating controls,
+  never over saree photos or as page backgrounds; a deep lavender for buttons
+  and text with light lavender tints for surfaces and accents; carousels the
+  shopper swipes, with no auto-rotation; depth shown by tinted surfaces and
+  fine borders, with no shadows.
+- Epics marked final on 2026-11-27 with one check open: 20 oversized stories
+  in later epics are split when each epic is about to be built.
 
 ## AI controls the admin must have (founder, 2026-11-27)
 - Image-model routing is admin-managed: which model serves try-on, with the
