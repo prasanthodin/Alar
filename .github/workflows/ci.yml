@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: commerce
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # The forbidden product name: read from the FORBIDDEN_NAME repository variable,
+      # with a default in this CI workflow only; never in application or package code.
+      FORBIDDEN_NAME: ${{ vars.FORBIDDEN_NAME || 'alar' }}
+      MEDUSA_DISABLE_TELEMETRY: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+      TURBO_TELEMETRY_DISABLED: "1"
+      # Throwaway values for the CI database and kernel only.
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/commerce
+      STORE_CORS: http://localhost:8000
+      ADMIN_CORS: http://localhost:9000
+      AUTH_CORS: http://localhost:9000
+      JWT_SECRET: ci-only-jwt-secret
+      COOKIE_SECRET: ci-only-cookie-secret
+      NEXT_PUBLIC_MEDUSA_BACKEND_URL: http://localhost:9000
+      NEXT_PUBLIC_DEFAULT_REGION: dk
+      NEXT_PUBLIC_BASE_URL: http://localhost:8000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable pnpm through corepack
+        run: corepack enable
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Name check
+        run: node scripts/check-forbidden-name.mjs
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type-check
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      # The storefront's build reads regions from the kernel, so the kernel is
+      # migrated (the starter's initial data seed runs as a migration script)
+      # and started before the build. See docs/starter.md.
+      - name: Migrate and seed the kernel database
+        working-directory: apps/commerce
+        run: pnpm exec medusa db:migrate
+
+      - name: Start the kernel
+        working-directory: apps/commerce
+        run: |
+          nohup pnpm dev > "$RUNNER_TEMP/commerce.log" 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:9000/health > /dev/null; then
+              echo "Kernel is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat "$RUNNER_TEMP/commerce.log"
+          exit 1
+
+      - name: Read the seeded publishable key
+        run: |
+          key=$(psql "$DATABASE_URL" -At -c "select token from api_key where type = 'publishable' and revoked_at is null and deleted_at is null order by created_at limit 1")
+          test -n "$key"
+          echo "NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=$key" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: pnpm build
+
+      - name: Kernel log
+        if: failure()
+        run: cat "$RUNNER_TEMP/commerce.log" || true

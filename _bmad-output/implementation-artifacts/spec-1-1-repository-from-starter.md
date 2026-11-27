@@ -2,7 +2,7 @@
 title: 'Story 1.1: Create the repository from the starter and reshape it'
 type: 'chore'
 created: '2026-11-27'
-status: 'in-progress'
+status: 'in-review'
 baseline_commit: 'e5fa923c4d3018497e366781f7a3fcb04fcb6a51'
 route: 'dispatch'
 review_loop_iteration: 0
@@ -52,14 +52,14 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] repository root -- copy the starter files listed in the Code Map and rename the two apps -- agreed layout
-- [ ] `package.json`, `turbo.json`, `pnpm-workspace.yaml`, both app `package.json` files -- rename to `@shop/*`, add `typecheck` and `test`, pin Node 24 -- one command set for CI
-- [ ] `scripts/check-forbidden-name.mjs` -- read `FORBIDDEN_NAME` from the environment (exit 2 if unset), scan tracked files under `apps/` and `packages/` case-insensitively, skip paths in an in-file allow-list for content and settings data, print offenders and exit 1 -- NFR-12 name check
-- [ ] `scripts/check-forbidden-name.test.mjs` -- node:test cases for the three matrix rows using a temporary directory -- prove the check
-- [ ] `.github/workflows/ci.yml` -- on every push: Node 24, pnpm via corepack, PostgreSQL service for commerce build, install, lint, typecheck, test, build, name check with `FORBIDDEN_NAME: ${{ vars.FORBIDDEN_NAME || 'alar' }}` -- CI gate
-- [ ] `apps/commerce`, `apps/web` -- fix any lint or type errors exposed under TypeScript 6 and Node 24 without changing behaviour -- green build
-- [ ] `docs/starter.md` -- record starter URL, commit, date and the reshaping done -- traceability
-- [ ] `infra/README.md` -- one paragraph: compose file arrives in Story 1.3 -- the directory exists
+- [x] repository root -- copy the starter files listed in the Code Map and rename the two apps -- agreed layout
+- [x] `package.json`, `turbo.json`, `pnpm-workspace.yaml`, both app `package.json` files -- rename to `@shop/*`, add `typecheck` and `test`, pin Node 24 -- one command set for CI
+- [x] `scripts/check-forbidden-name.mjs` -- read `FORBIDDEN_NAME` from the environment (exit 2 if unset), scan tracked files under `apps/` and `packages/` case-insensitively, skip paths in an in-file allow-list for content and settings data, print offenders and exit 1 -- NFR-12 name check
+- [x] `scripts/check-forbidden-name.test.mjs` -- node:test cases for the three matrix rows using a temporary directory -- prove the check
+- [x] `.github/workflows/ci.yml` -- on every push: Node 24, pnpm via corepack, PostgreSQL service for commerce build, install, lint, typecheck, test, build, name check with `FORBIDDEN_NAME: ${{ vars.FORBIDDEN_NAME || 'alar' }}` -- CI gate
+- [x] `apps/commerce`, `apps/web` -- fix any lint or type errors exposed under TypeScript 6 and Node 24 without changing behaviour -- green build
+- [x] `docs/starter.md` -- record starter URL, commit, date and the reshaping done -- traceability
+- [x] `infra/README.md` -- one paragraph: compose file arrives in Story 1.3 -- the directory exists
 
 **Acceptance Criteria:**
 - Given the reshaped repository on Node 24, when `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build` run from the root, then all pass for `@shop/commerce` and `@shop/web`.
@@ -68,9 +68,37 @@ context:
 
 ## Implementation Notes
 
+- `node --test scripts/` does not run on Node 24 (a directory argument is treated as a module path and fails with MODULE_NOT_FOUND). The equivalent `node --test "scripts/*.test.mjs"` is used in the root `test` script and passes (5 tests).
+- The lockfile is the starter's with only the `apps/backend` and `apps/storefront` importer keys renamed; `pnpm install --frozen-lockfile` passes. A plain `pnpm install` after the rename re-resolved several dependencies to newer minors and those newer versions raised extra lint errors, so the starter's resolution was kept.
+- The name check also flags file paths that contain the name, skips binary files and scans tracked plus untracked-but-not-ignored files. The allow-list holds two future data paths (`apps/commerce/src/settings-data/`, `apps/content/content-data/`); later stories should adjust them to where settings and content data actually land. It matches substrings, so a word that contains the name also fails.
+- CI uses a PostgreSQL 17 service, migrates (runs the starter's seed migration script), starts the kernel with `pnpm dev`, reads the seeded publishable key from the database, then runs `pnpm build`. Without a running kernel, `next build` fails prerendering `/sitemap.xml`.
+- The starter's `commerce:seed` (formerly `backend:seed`) stays a no-op, as in the starter.
+
 ## Spec Change Log
 
 ## Review Triage Log
+
+| # | Finding | Verdict | Evidence | Route |
+|---|---|---|---|---|
+| 1 | Matcher misses camelCase/plurals and deviates from the matrix's case-insensitive "contains" | medium | Orchestrator's word-boundary edit after implementation narrowed the rule; `useZebrashopTheme` passed | patch: restore substring |
+| 2 | ALARM-style upper-case words flagged by the word rule | false | Moot once substring rule is restored; substring flags them by design of the frozen matrix | rejected |
+| 3 | No test for untracked, not-ignored files | medium | Every fixture is staged by `makeRepo`; dropping `--others` passes all tests | patch |
+| 4 | No test for the binary skip | low | Removing `isBinary` passes all tests | patch |
+| 5 | `makeRepo` ignores git exit status | low | Without git the walk fallback runs and the .gitignore test fails confusingly | patch |
+| 6 | docs/starter.md contradicts itself on the matching rule | low | Stray bullet appended by the orchestrator | patch |
+| 7 | Comments say the name is "never in source" though ci.yml has a default | low | Frozen intent allows a workflow default; only the wording is wrong | patch |
+| 8 | Name check runs last in CI | low | Hidden behind slow kernel/build failures; one-step move | patch |
+| 9 | cancel-in-progress cancels runs on main | low | Two quick pushes leave a main commit with no verdict; one-expression fix | patch |
+| 10 | README still says Node v22.22+ | low | Contradicts engines `>=24 <25` introduced by this change | patch |
+| 11 | Root build/dev bypass Turbo; `start` depends only on `^build`; AGENTS.md says otherwise | medium | Inherited from starter; fix edits AGENTS.md | defer |
+| 12 | Turbo `seed` task left over | low | Starter task; AGENTS.md lists it | defer |
+| 13 | `apps/**` workspace glob too broad | low | Starter config; no nested package today | defer |
+| 14 | CI uses `medusa develop`, no cache, no PR trigger | low | Works for push-to-main; deploy story defines production start | defer |
+| 15 | cart.ts casts hide types | low | Same safety as the starter's `any`; no behaviour change | rejected |
+| 16 | U+0130 index drift, UTF-16 files, submodules, symlinked invocation, GIT_DIR in env, nonexistent root, read race | low | Unlikely in everyday use; each fix adds guards | rejected |
+| 17 | Fallback walk scans ignored files silently | low | Only when git fails; CI runs inside git | rejected |
+| 18 | Docs say Redis is required; CI runs without it | low | Medusa falls back to in-memory; Story 1.3 brings Redis | rejected |
+| 19 | Kernel crash waits 180s in CI | low | Slow failure, still fails | rejected |
 
 ## Design Notes
 
