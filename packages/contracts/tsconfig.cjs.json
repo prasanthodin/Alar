@@ -1,0 +1,15 @@
+{
+  // CommonJS build for the kernel (apps/commerce), which loads packages with require().
+  // Other units import the TypeScript source directly (package.json "exports").
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Bundler",
+    "noEmit": false,
+    "declaration": true,
+    "outDir": "dist/cjs",
+    "rootDir": "src"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}

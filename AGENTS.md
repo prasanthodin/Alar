@@ -17,6 +17,7 @@ A pnpm + Turborepo workspace monorepo created from the Medusa DTC starter (see `
 | --- | --- | --- |
 | Store/admin API route | `apps/commerce/src/api/{store,admin}/<path>/route.ts` | `@medusajs/framework` (`/http`), `@medusajs/medusa` |
 | Middleware, auth, body validation | `apps/commerce/src/api/middlewares.ts` | `@medusajs/framework` (`/http`) |
+| Call a built-in kernel route | add it to `packages/contracts/src/kernel-routes.ts` in the story that first calls it; others get 403 `route.not_allowed` | `docs/kernel-routes.md` |
 | Business logic | `apps/commerce/src/workflows/` | `@medusajs/framework` (`/workflows-sdk`), `@medusajs/core-flows` |
 | Reuse a built-in flow (create cart, product, order...) | import from `@medusajs/medusa/core-flows` | `@medusajs/core-flows` |
 | Custom data model + service | `apps/commerce/src/modules/<name>/` | `@medusajs/framework` (`/utils`) |
@@ -127,6 +128,7 @@ The root `<pm> run test` runs each app's `test` script via turbo: commerce runs 
 cd apps/commerce && <pm> run test:unit                      # **/src/**/__tests__/**/*.unit.spec.ts
 cd apps/commerce && <pm> run test:integration:modules       # **/src/modules/*/__tests__/**
 cd apps/commerce && <pm> run test:integration:http          # **/integration-tests/http/*.spec.ts
+cd apps/commerce && <pm> run test:integration               # builds @shop/contracts, then the http suites (CI runs this)
 ```
 
 Single test — pass a path/pattern through to Jest, keeping `TEST_TYPE`:

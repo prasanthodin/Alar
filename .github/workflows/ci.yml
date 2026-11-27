@@ -107,6 +107,16 @@ jobs:
         working-directory: apps/commerce
         run: pnpm exec medusa db:migrate
 
+      # The route allow-list (Story 1.4) and later kernel HTTP suites. Each run
+      # boots the kernel on a throwaway database; it runs before the kernel
+      # starts, so nothing else uses Redis meanwhile.
+      - name: Commerce integration tests
+        working-directory: apps/commerce
+        env:
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+        run: pnpm test:integration
+
       - name: Start the kernel
         working-directory: apps/commerce
         run: |
