@@ -1007,7 +1007,7 @@ boards['Review'] = ('Alar rate and review', 390, 844, phone(844, hdr('Rate this 
     <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 600">Your review (optional)</span><span style="min-height: 96px; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid {T2}; font-size: 14px; line-height: 20px">The green is exactly like the photo and the border is beautiful.</span></label>
     <div style="display: flex; gap: 8px">{pic('emerald', 64, 64, 10, 'center 60%')}<span style="width: 64px; height: 64px; border-radius: 10px; border: 1px dashed {T3}; background: {T4}; color: {PD}; display: inline-flex; align-items: center; justify-content: center">{ic('camera', 20, 1.800)}</span></div>
     <span style="font-size: 12px; line-height: 18px; color: {MUTE}">Shown with your first name. The overall rating appears on a saree once it has 5 ratings.</span>
-  </div>''' + bar(btn('Submit', href='Orders.dc.html'), '1fr')))
+  </div>''' + bar(btn('Send rating', href='Orders.dc.html'), '1fr')))
 
 # ================================================================== WEBSITE (1440 wide)
 def webnav():
