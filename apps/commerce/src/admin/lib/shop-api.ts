@@ -1,0 +1,83 @@
+import {
+  AdminDesignList,
+  AdminDesignResponse,
+  ApiError,
+  NotPublishableDetails,
+  PublishDesignResult,
+  UploadResult,
+  type DesignAttributesInput,
+  type DesignPhoto,
+  type PublishRequirement,
+  type UpdateDesignInput,
+} from "@shop/contracts"
+
+/** A contract schema, as far as this client uses it. */
+type Schema<T> = { safeParse(value: unknown): { success: true; data: T } | { success: false } }
+
+/** The create request as the form sends it (left-out attributes are empty). */
+export type CreateDesignRequest = {
+  name: string
+  description: string
+  attributes: DesignAttributesInput
+  photos: DesignPhoto[]
+  priceRupees: number
+}
+
+/**
+ * The shop's admin API (`/admin/shop/*`), called with the dashboard's session
+ * cookie. The Designs page calls nothing else; kernel product writes are
+ * refused by the route allow-list.
+ */
+
+/** A refused call: the shop error envelope. */
+export class ShopApiError extends Error {
+  readonly error: ApiError
+  constructor(error: ApiError) {
+    super(error.message)
+    this.error = error
+  }
+
+  /** The missing items of a `design.not_publishable` refusal, or an empty list. */
+  get missing(): PublishRequirement[] {
+    if (this.error.code !== "design.not_publishable") return []
+    const parsed = NotPublishableDetails.safeParse(this.error.details)
+    return parsed.success ? parsed.data.missing : []
+  }
+}
+
+async function call<T>(schema: Schema<T>, path: string, init: RequestInit = {}): Promise<T> {
+  const isForm = typeof FormData !== "undefined" && init.body instanceof FormData
+  const res = await fetch(path, {
+    ...init,
+    credentials: "include",
+    headers: isForm ? init.headers : { "content-type": "application/json", accept: "application/json", ...init.headers },
+  })
+  const body: unknown = await res.json().catch(() => null)
+  if (!res.ok) {
+    const parsed = ApiError.safeParse(body)
+    throw new ShopApiError(parsed.success ? parsed.data : { code: "internal", message: `HTTP ${res.status}` })
+  }
+  const parsed = schema.safeParse(body)
+  if (!parsed.success) throw new ShopApiError({ code: "response.invalid", message: "Unexpected response" })
+  return parsed.data
+}
+
+const json = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body) })
+
+export const shopApi = {
+  listDesigns: () => call(AdminDesignList, "/admin/shop/designs"),
+  getDesign: (id: string) => call(AdminDesignResponse, `/admin/shop/designs/${encodeURIComponent(id)}`),
+  createDesign: (input: CreateDesignRequest) =>
+    call(AdminDesignResponse, "/admin/shop/designs", json(input)),
+  updateDesign: (id: string, input: UpdateDesignInput) =>
+    call(AdminDesignResponse, `/admin/shop/designs/${encodeURIComponent(id)}`, json(input)),
+  setPrice: (id: string, priceRupees: number) =>
+    call(AdminDesignResponse, `/admin/shop/designs/${encodeURIComponent(id)}/price`, json({ priceRupees })),
+  publish: (id: string, trueColourConfirmed: boolean) =>
+    call(PublishDesignResult, `/admin/shop/designs/${encodeURIComponent(id)}/publish`, json({ trueColourConfirmed })),
+  uploadPhotos: (files: File[]) => {
+    const form = new FormData()
+    for (const file of files) form.append("files", file)
+    return call(UploadResult, "/admin/shop/uploads", { method: "POST", body: form })
+  },
+}

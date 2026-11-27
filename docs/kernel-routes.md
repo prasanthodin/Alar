@@ -57,6 +57,7 @@ Routes not in this table are not protected by the overlap test, though they are 
 
 - Admins are created only with `medusa user` (admin self-registration is refused), and an invite cannot be accepted: the invite routes are not on the list.
 - Password reset is refused for admins and Shoppers (`/auth/user|customer/emailpass/reset-password` and `/update`), and so is token refresh (`/auth/token/refresh`).
+- Product writes stay refused, including `POST /admin/products/:id` (which could change a product's status). Designs are created, priced and published through the shop routes under `/admin/shop/designs` and their workflows (Story 1.6, `docs/designs.md`); the kernel's Products screen is read-only.
 - Epic 3 (Shopper sign-in by one-time code) and the admin stories (Story 1.22 for admin sign-in, the Owner screens of Epic 1 and Epic 3) add the routes they need, each in the story that first calls it.
 
 ## Admin screens

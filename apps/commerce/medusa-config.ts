@@ -35,6 +35,14 @@ module.exports = defineConfig({
     {
       resolve: './src/modules/settings',
     },
+    // A Design's typed attributes, linked to its kernel product, and every
+    // Variant price change (Story 1.6). Written only by the Design workflows.
+    {
+      resolve: './src/modules/design-attributes',
+    },
+    {
+      resolve: './src/modules/price-history',
+    },
     // The shop's own tax provider is the only tax code (AD-5). `dependencies`
     // lets the provider, which lives in the tax module's container, read the
     // settings module and the cart and order line adjustments. The India tax

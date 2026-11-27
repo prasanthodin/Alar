@@ -132,6 +132,23 @@ export default class SettingsModuleService extends MedusaService({ SettingValue 
     return { id: row.id, key, value: parsed.data, effectiveFrom: from.toISOString() }
   }
 
+  /**
+   * Every dated value of `key`, earliest first (an empty list when it has
+   * none). Each value is checked like `getValue`; a stored value that fails
+   * its schema is logged and thrown as an unexpected state (`internal`).
+   */
+  async listValues<K extends SettingKey>(key: K): Promise<{ value: SettingValueOf<K>; effectiveFrom: string }[]> {
+    const rows = await this.listSettingValues({ key }, { order: { effective_from: "ASC" } })
+    return rows.map((row) => {
+      const parsed = parseSettingValue(key, unwrap(row.value))
+      if (!parsed.ok) {
+        this.logger_.error(`settings: stored value ${row.id} of ${key} fails its schema`)
+        throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, `A stored setting is not valid (${key})`, "internal")
+      }
+      return { value: parsed.data, effectiveFrom: new Date(row.effective_from).toISOString() }
+    })
+  }
+
   /** True when `key` has any value, at any time. */
   async hasValue(key: SettingKey): Promise<boolean> {
     const [, count] = await this.listAndCountSettingValues({ key }, { take: 1 })

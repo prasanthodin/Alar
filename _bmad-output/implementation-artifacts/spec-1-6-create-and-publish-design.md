@@ -2,7 +2,7 @@
 title: 'Story 1.6: Owner creates and publishes one Design'
 type: 'feature'
 created: '2026-11-27'
-status: 'in-progress'
+status: 'in-review'
 baseline_commit: '6080993140e6d0d81edc2c8537f5d88bb53e5114'
 route: 'dispatch'
 review_loop_iteration: 0
@@ -57,18 +57,25 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] contracts schemas and codes, with vitest tests
-- [ ] modules, link, migrations
-- [ ] workflows and the pure requirements function with unit tests
-- [ ] shop admin routes and integration tests for every matrix row (including DB checks that nothing is created on refusal and exactly one history row per price change)
-- [ ] admin UI route; a Playwright admin smoke (`apps/commerce/e2e/designs.spec.ts`, skipped unless `ADMIN_E2E_BASE_URL` is set) that signs in, creates a Design with two photos, sees the refusal list, confirms, and publishes
-- [ ] docs
+- [x] contracts schemas and codes, with vitest tests
+- [x] modules, link, migrations
+- [x] workflows and the pure requirements function with unit tests
+- [x] shop admin routes and integration tests for every matrix row (including DB checks that nothing is created on refusal and exactly one history row per price change)
+- [x] admin UI route; a Playwright admin smoke (`apps/commerce/e2e/designs.spec.ts`, skipped unless `ADMIN_E2E_BASE_URL` is set) that signs in, creates a Design with two photos, sees the refusal list, confirms, and publishes
+- [x] docs
 
 **Acceptance Criteria:**
 - Given the repository, when `pnpm lint && pnpm typecheck && pnpm test && pnpm build` and the commerce integration tests run, then all pass and the name check passes.
 - Given a running kernel and an admin user, when the admin smoke runs, then it passes, and a screenshot of the Designs page is saved to `docs/screenshots/admin-designs.png`.
 
 ## Implementation Notes
+
+- Lengths are stored as integer centimetres (`length_cm`, `width_cm`) and shown as `lengthM` / `widthM`, so no float column holds them.
+- `publishRequirements(view, bands, now)` takes every dated value of the tax code's bands and picks the one in effect at `now`; the settings service gained a read-only `listValues(key)` for it.
+- A publish refusal is HTTP 400 `design.not_publishable` with `details.missing`; a success is `PublishDesignResult` with `missing: []`.
+- Shop admin routes accept only the admin session cookie (`authenticate("user", ["session"])`); an admin bearer token and a secret API key also get 401.
+- Beyond the matrix: setting the same price again writes no history row; a published Design only takes a price a band fits (`tax.no_band`); an edit of a published Design must keep it publishable, and new photos need `trueColourConfirmed` again.
+- Dependencies added to `apps/commerce`: `multer` 2.5.0 (the version the kernel uses), `@playwright/test` 1.65.1 and `@types/multer` (dev).
 
 ## Spec Change Log
 

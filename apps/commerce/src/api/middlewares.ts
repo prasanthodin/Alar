@@ -1,5 +1,6 @@
-import { configureStoreSearch, defineMiddlewares } from '@medusajs/framework/http'
+import { authenticate, configureStoreSearch, defineMiddlewares } from '@medusajs/framework/http'
 import { KERNEL_ROUTE_MATCHERS, kernelRouteGuard } from '../lib/kernel-route-guard'
+import { photoUpload } from '../lib/photo-upload'
 
 export default defineMiddlewares({
   routes: [
@@ -12,6 +13,18 @@ export default defineMiddlewares({
       matcher,
       middlewares: [kernelRouteGuard],
     })),
+    // Shop admin routes (Story 1.6) accept only a signed-in admin's session
+    // cookie (the dashboard's): no bearer token, no secret API key, no Shopper.
+    {
+      matcher: '/admin/shop*',
+      middlewares: [authenticate('user', ['session'])],
+    },
+    // Design photos: multipart, at most 12 files of 10 MB (upload.invalid_file otherwise).
+    {
+      method: ['POST'],
+      matcher: '/admin/shop/uploads',
+      middlewares: [photoUpload],
+    },
     // The product index declares filterable `status` and `sales_channel_ids`, so
     // the route narrows it to published products in the key's sales channels.
     // POST /store/search is not on the allow-list yet; the story that first calls

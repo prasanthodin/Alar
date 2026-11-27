@@ -1,0 +1,95 @@
+{
+  "shopDesigns": {
+    "nav": "Designs",
+    "title": "Designs",
+    "subtitle": "Create a Design, add its photos and price, and publish it when it is complete.",
+    "create": "Create design",
+    "empty": "No designs yet. Create the first one.",
+    "loadFailed": "The designs could not be loaded. Reload the page to try again.",
+    "columns": {
+      "name": "Name",
+      "price": "Price",
+      "status": "Status"
+    },
+    "status": {
+      "draft": "Unpublished",
+      "proposed": "Unpublished",
+      "published": "Published",
+      "rejected": "Unpublished"
+    },
+    "noPrice": "No price",
+    "editor": {
+      "createTitle": "New design",
+      "editTitle": "Edit design",
+      "details": "Details",
+      "attributes": "Attributes",
+      "photos": "Photos",
+      "price": "Price",
+      "publish": "Publish",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving",
+      "created": "Design saved as unpublished.",
+      "saved": "Design saved.",
+      "priceSaved": "Price saved."
+    },
+    "fields": {
+      "name": "Name",
+      "description": "Description",
+      "fibre": "Fibre",
+      "weave": "Weave",
+      "lengthM": "Length (metres)",
+      "widthM": "Width (metres)",
+      "blousePieceIncluded": "Blouse piece included",
+      "care": "Care",
+      "countryOfOrigin": "Country of origin",
+      "taxCode": "Tax code",
+      "taxCodeHint": "The tax code in the shop settings, for example saree.",
+      "stitched": "Stitched",
+      "priceRupees": "Price in rupees (whole rupees, tax included)"
+    },
+    "photos": {
+      "add": "Upload photos",
+      "uploading": "Uploading",
+      "hint": "JPEG, PNG or WebP, up to 10 MB each. Mark one photo as the fabric close-up.",
+      "none": "No photos yet.",
+      "closeUp": "Fabric close-up",
+      "alt": "Photo {{n}}",
+      "moveUp": "Move photo {{n}} up",
+      "moveDown": "Move photo {{n}} down",
+      "remove": "Remove photo {{n}}",
+      "uploaded": "Photos uploaded. Save the design to keep them."
+    },
+    "publishing": {
+      "intro": "Publishing puts the design in the shop. Everything below must be present.",
+      "confirm": "I confirm the photos show the saree's true colour.",
+      "button": "Publish",
+      "published": "Design published.",
+      "isPublished": "This design is published.",
+      "confirmedAt": "True colour confirmed on {{at}}.",
+      "saveFirst": "Save your changes before publishing.",
+      "refused": "This design cannot be published yet. Missing:"
+    },
+    "missing": {
+      "fibre": "Fibre",
+      "lengthM": "Length",
+      "widthM": "Width",
+      "taxCode": "Tax code",
+      "taxBand": "A tax rate for this tax code and price",
+      "shelfPrice": "A price in whole rupees",
+      "fabricCloseUpPhoto": "A fabric close-up photo",
+      "otherPhoto": "At least one photo besides the close-up",
+      "trueColourConfirmation": "Your confirmation that the photos show the true colour"
+    },
+    "errors": {
+      "input.invalid": "Some fields are not valid. Check them and try again.",
+      "money.invalid_shelf_price": "The price must be a whole number of rupees, more than zero.",
+      "design.unknown_tax_code": "That tax code has no tax rate in the shop settings. Use a tax code that has one, such as saree.",
+      "design.not_found": "This design no longer exists.",
+      "design.not_publishable": "This design cannot be published yet.",
+      "upload.invalid_file": "That file was not uploaded. Use JPEG, PNG or WebP photos of 10 MB or less.",
+      "tax.no_band": "No tax rate fits this price, so a published design cannot have it.",
+      "unknown": "Something went wrong. Try again."
+    }
+  }
+}
