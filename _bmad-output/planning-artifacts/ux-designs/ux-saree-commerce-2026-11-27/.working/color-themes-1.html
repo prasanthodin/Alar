@@ -1,0 +1,224 @@
+<title>Alar Lavender Directions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Noto+Sans:wght@400;500;600&family=Noto+Sans+Tamil:wght@500&display=swap">
+<style>
+/* Layout: one column of intro, then three specimen phones in a wrapping row, then the shared scales. */
+:root{
+  --bg: oklch(0.985 0.004 300);
+  --fg: oklch(0.24 0.02 295);
+  --muted: oklch(0.47 0.02 295);
+  --line: oklch(0.89 0.012 300);
+  --panel: oklch(0.965 0.008 300);
+  --display: "Fraunces", Georgia, "Times New Roman", serif;
+  --body: "Noto Sans", "Noto Sans Tamil", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg: oklch(0.19 0.015 295); --fg: oklch(0.93 0.01 300); --muted: oklch(0.72 0.02 300); --line: oklch(0.34 0.02 295); --panel: oklch(0.24 0.02 295); color-scheme: dark }
+}
+:root[data-theme="dark"]{ --bg: oklch(0.19 0.015 295); --fg: oklch(0.93 0.01 300); --muted: oklch(0.72 0.02 300); --line: oklch(0.34 0.02 295); --panel: oklch(0.24 0.02 295); color-scheme: dark }
+
+/* Direction A — Wisteria: primary #5B3FA0 approx, oklch(0.47 0.16 295) */
+.dir-a{ --p: oklch(0.47 0.16 295); --p-press: oklch(0.41 0.16 295); --tint1: oklch(0.96 0.02 295); --tint2: oklch(0.92 0.04 295); --tint3: oklch(0.86 0.07 295); --ink: oklch(0.24 0.03 295); --ink-muted: oklch(0.48 0.03 295); --hair: oklch(0.89 0.02 295); }
+/* Direction B — Heather: primary #7A3D8C approx, oklch(0.46 0.15 312) */
+.dir-b{ --p: oklch(0.46 0.15 312); --p-press: oklch(0.40 0.15 312); --tint1: oklch(0.96 0.02 312); --tint2: oklch(0.92 0.04 312); --tint3: oklch(0.86 0.07 312); --ink: oklch(0.24 0.03 312); --ink-muted: oklch(0.48 0.03 312); --hair: oklch(0.89 0.02 312); }
+/* Direction C — Iris: primary #4743A8 approx, oklch(0.45 0.17 280) */
+.dir-c{ --p: oklch(0.45 0.17 280); --p-press: oklch(0.39 0.17 280); --tint1: oklch(0.96 0.02 280); --tint2: oklch(0.92 0.04 280); --tint3: oklch(0.86 0.07 280); --ink: oklch(0.24 0.03 280); --ink-muted: oklch(0.48 0.03 280); --hair: oklch(0.89 0.02 280); }
+
+body{ background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+.wrap{ max-width: 1120px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 32px; }
+h1{ font-family: var(--display); font-weight: 600; font-size: 2rem; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2{ font-family: var(--display); font-weight: 600; font-size: 1.375rem; line-height: 1.25; margin: 0; text-wrap: balance; }
+p{ margin: 0; max-width: 65ch; }
+.lede{ color: var(--muted); }
+.intro{ display: flex; flex-direction: column; gap: 12px; }
+.rules{ display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; list-style: none; }
+.rules li{ border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 0.875rem; color: var(--muted); }
+
+.dirs{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+.dir{ display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.dir-head{ display: flex; flex-direction: column; gap: 4px; }
+.dir-head .tag{ font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.dir-head p{ color: var(--muted); font-size: 0.9375rem; }
+
+/* Specimen phone: always light, sets its own ground and ink */
+.phone{ background: #fff; color: var(--ink); border: 1px solid var(--hair); border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; }
+.topbar{ display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: color-mix(in oklch, var(--tint1) 72%, transparent); backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4); border-bottom: 1px solid var(--hair); }
+.brand{ font-family: var(--display); font-weight: 600; font-size: 1.25rem; color: var(--p); }
+.icon{ width: 24px; height: 24px; border: 1.5px solid var(--ink); border-radius: 999px; }
+.screen{ padding: 16px; display: flex; flex-direction: column; gap: 16px; background: var(--tint1); }
+.chips{ display: flex; gap: 8px; flex-wrap: wrap; }
+.chip{ font-size: 0.875rem; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--hair); background: #fff; color: var(--ink); }
+.chip.on{ background: var(--tint3); border-color: var(--p); color: var(--ink); font-weight: 500; }
+.card{ background: #fff; border: 1px solid var(--hair); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+.photo{ background: oklch(0.965 0 0); aspect-ratio: 4 / 5; position: relative; display: flex; align-items: center; justify-content: center; }
+.saree{ width: 62%; height: 78%; border-radius: 4px; background:
+  linear-gradient(90deg, #b8860b 0 7%, transparent 7% 93%, #b8860b 93% 100%),
+  repeating-linear-gradient(0deg, #7b1f3a 0 14px, #86243f 14px 28px); }
+.ai{ position: absolute; left: 8px; bottom: 8px; font-size: 0.75rem; font-weight: 500; padding: 4px 8px; border-radius: 999px; background: #fff; color: var(--ink); border: 1px solid var(--hair); }
+.info{ padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+.name{ font-family: var(--display); font-weight: 500; font-size: 1.125rem; line-height: 1.3; }
+.weaver{ font-size: 0.875rem; color: var(--ink-muted); }
+.weaver b{ color: var(--p); font-weight: 600; }
+.row{ display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.price{ font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.btn{ font: inherit; font-weight: 600; font-size: 1rem; min-height: 48px; padding: 0 20px; border-radius: 12px; border: 1px solid transparent; background: var(--p); color: #fff; cursor: pointer; transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background-color 140ms ease-out; }
+.btn:active{ transform: scale(0.97); background: var(--p-press); }
+.btn.ghost{ background: #fff; color: var(--p); border-color: var(--p); }
+.btn:focus-visible{ outline: 2px solid var(--p); outline-offset: 2px; }
+.btns{ display: flex; gap: 8px; flex-wrap: wrap; }
+.btns .btn{ flex: 1 1 120px; }
+.tabbar{ display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 8px 12px; background: color-mix(in oklch, #fff 78%, transparent); backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4); border-top: 1px solid var(--hair); }
+.tab{ display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--ink-muted); padding: 4px 0; }
+.tab i{ width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid currentColor; }
+.tab.on{ color: var(--p); font-weight: 600; }
+.tab.on i{ background: var(--tint3); }
+
+.swatches{ display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; }
+.sw{ display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--muted); min-width: 0; }
+.sw span{ height: 40px; border-radius: 8px; border: 1px solid var(--line); }
+
+.shared{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+.panel{ background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.type-row{ display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.type-row:last-child{ border-bottom: 0; padding-bottom: 0; }
+.type-row small{ color: var(--muted); font-size: 0.75rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.space{ display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.space div{ display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.space i{ display: block; background: var(--muted); border-radius: 2px; width: 12px; }
+.radii{ display: flex; gap: 16px; flex-wrap: wrap; }
+.radii div{ display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--muted); }
+.radii i{ display: block; width: 56px; height: 56px; border: 1.5px solid var(--fg); background: var(--bg); }
+.note{ font-size: 0.9375rem; color: var(--muted); }
+@media (prefers-reduced-motion: reduce){ .btn{ transition: none } .btn:active{ transform: none } }
+</style>
+
+<div class="wrap">
+  <div class="intro">
+    <h1>Three lavenders for Alar</h1>
+    <p class="lede">Each direction uses the same rules you set. Only the hue changes. Pick the one that feels like your sarees, then the whole design system is built on it.</p>
+    <ul class="rules">
+      <li>No shadows anywhere</li>
+      <li>Depth from tinted surfaces and fine borders</li>
+      <li>Glass only on the top bar and tab bar</li>
+      <li>Saree photos on a neutral ground</li>
+      <li>Deep lavender for buttons and text</li>
+    </ul>
+  </div>
+
+  <div class="dirs">
+    <section class="dir dir-a">
+      <div class="dir-head"><span class="tag">Direction A</span><h2>Wisteria</h2><p>A true blue-violet lavender. Calm, fresh and modern; the most recognisably "lavender" of the three.</p></div>
+      <div class="phone">
+        <div class="topbar"><span class="brand">Alar</span><span class="icon" aria-hidden="true"></span></div>
+        <div class="screen">
+          <div class="chips"><span class="chip on">Silk</span><span class="chip">Cotton</span><span class="chip">Wedding</span></div>
+          <div class="card">
+            <div class="photo"><div class="saree" role="img" aria-label="Sample saree: maroon body with a gold border"></div><span class="ai">AI-generated</span></div>
+            <div class="info">
+              <div class="name">Arani silk, temple border</div>
+              <div class="weaver">Woven by <b>the Selvam family</b>, Arani</div>
+              <div class="row"><span class="price">₹3,400</span><span class="weaver">நெசவாளர்</span></div>
+              <div class="btns"><button class="btn" id="a-cart" type="button">Add to cart</button><button class="btn ghost" id="a-try" type="button">Try it on</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar"><span class="tab on"><i></i>Home</span><span class="tab"><i></i>Browse</span><span class="tab"><i></i>Cart</span><span class="tab"><i></i>You</span></div>
+      </div>
+      <div class="swatches">
+        <div class="sw"><span style="background: var(--p)"></span>Primary</div>
+        <div class="sw"><span style="background: var(--tint3)"></span>Tint 3</div>
+        <div class="sw"><span style="background: var(--tint2)"></span>Tint 2</div>
+        <div class="sw"><span style="background: var(--tint1)"></span>Tint 1</div>
+      </div>
+    </section>
+
+    <section class="dir dir-b">
+      <div class="dir-head"><span class="tag">Direction B</span><h2>Heather</h2><p>Leans towards mauve and plum. Warmer and more traditional; sits closest to silk and festive wear.</p></div>
+      <div class="phone">
+        <div class="topbar"><span class="brand">Alar</span><span class="icon" aria-hidden="true"></span></div>
+        <div class="screen">
+          <div class="chips"><span class="chip on">Silk</span><span class="chip">Cotton</span><span class="chip">Wedding</span></div>
+          <div class="card">
+            <div class="photo"><div class="saree" role="img" aria-label="Sample saree: maroon body with a gold border"></div><span class="ai">AI-generated</span></div>
+            <div class="info">
+              <div class="name">Arani silk, temple border</div>
+              <div class="weaver">Woven by <b>the Selvam family</b>, Arani</div>
+              <div class="row"><span class="price">₹3,400</span><span class="weaver">நெசவாளர்</span></div>
+              <div class="btns"><button class="btn" id="b-cart" type="button">Add to cart</button><button class="btn ghost" id="b-try" type="button">Try it on</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar"><span class="tab on"><i></i>Home</span><span class="tab"><i></i>Browse</span><span class="tab"><i></i>Cart</span><span class="tab"><i></i>You</span></div>
+      </div>
+      <div class="swatches">
+        <div class="sw"><span style="background: var(--p)"></span>Primary</div>
+        <div class="sw"><span style="background: var(--tint3)"></span>Tint 3</div>
+        <div class="sw"><span style="background: var(--tint2)"></span>Tint 2</div>
+        <div class="sw"><span style="background: var(--tint1)"></span>Tint 1</div>
+      </div>
+    </section>
+
+    <section class="dir dir-c">
+      <div class="dir-head"><span class="tag">Direction C</span><h2>Iris</h2><p>Leans towards indigo. Cooler and more technical; the most contrast against warm saree colours.</p></div>
+      <div class="phone">
+        <div class="topbar"><span class="brand">Alar</span><span class="icon" aria-hidden="true"></span></div>
+        <div class="screen">
+          <div class="chips"><span class="chip on">Silk</span><span class="chip">Cotton</span><span class="chip">Wedding</span></div>
+          <div class="card">
+            <div class="photo"><div class="saree" role="img" aria-label="Sample saree: maroon body with a gold border"></div><span class="ai">AI-generated</span></div>
+            <div class="info">
+              <div class="name">Arani silk, temple border</div>
+              <div class="weaver">Woven by <b>the Selvam family</b>, Arani</div>
+              <div class="row"><span class="price">₹3,400</span><span class="weaver">நெசவாளர்</span></div>
+              <div class="btns"><button class="btn" id="c-cart" type="button">Add to cart</button><button class="btn ghost" id="c-try" type="button">Try it on</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar"><span class="tab on"><i></i>Home</span><span class="tab"><i></i>Browse</span><span class="tab"><i></i>Cart</span><span class="tab"><i></i>You</span></div>
+      </div>
+      <div class="swatches">
+        <div class="sw"><span style="background: var(--p)"></span>Primary</div>
+        <div class="sw"><span style="background: var(--tint3)"></span>Tint 3</div>
+        <div class="sw"><span style="background: var(--tint2)"></span>Tint 2</div>
+        <div class="sw"><span style="background: var(--tint1)"></span>Tint 1</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="intro">
+    <h2>The same in every direction</h2>
+    <p class="lede">These scales do not change with the hue. Sizes are the same on the app and the website unless shown otherwise.</p>
+  </div>
+
+  <div class="shared">
+    <div class="panel">
+      <h2>Type scale</h2>
+      <div>
+        <div class="type-row"><span style="font-family: var(--display); font-size: 1.875rem; font-weight: 600; line-height: 1.2">Display</span><small>30 / 36 on web</small></div>
+        <div class="type-row"><span style="font-family: var(--display); font-size: 1.5rem; font-weight: 600; line-height: 1.25">Heading</span><small>24 / 28 on web</small></div>
+        <div class="type-row"><span style="font-family: var(--display); font-size: 1.125rem; font-weight: 500">Design name</span><small>18</small></div>
+        <div class="type-row"><span style="font-size: 1rem">Body text for descriptions</span><small>16</small></div>
+        <div class="type-row"><span style="font-size: 0.875rem">Labels and helper text</span><small>14</small></div>
+        <div class="type-row"><span style="font-size: 0.75rem">Captions, the smallest size</span><small>12</small></div>
+      </div>
+      <p class="note">Headings in a serif with character; everything else in a clean sans that also covers Tamil, Telugu, Kannada and Malayalam.</p>
+    </div>
+    <div class="panel">
+      <h2>Spacing</h2>
+      <div class="space">
+        <div><i style="height:4px"></i>4</div><div><i style="height:8px"></i>8</div><div><i style="height:12px"></i>12</div><div><i style="height:16px"></i>16</div><div><i style="height:24px"></i>24</div><div><i style="height:32px"></i>32</div><div><i style="height:48px"></i>48</div><div><i style="height:64px"></i>64</div>
+      </div>
+      <p class="note">Every margin, padding and gap comes from this one scale. Screen edges are 16 on a phone and 24 or more on the website. Anything you tap is at least 48 tall.</p>
+      <h2>Corners</h2>
+      <div class="radii">
+        <div><i style="border-radius:4px"></i>4 photos</div><div><i style="border-radius:12px"></i>12 buttons</div><div><i style="border-radius:16px"></i>16 cards</div><div><i style="border-radius:999px"></i>pills</div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Depth without shadows</h2>
+      <p class="note">A card is white on a lightly tinted page, with a fine border. A selected chip takes a stronger tint. The top bar and tab bar are frosted glass, so content blurs softly beneath them as it scrolls; where a phone cannot blur smoothly, they become a solid tint.</p>
+      <h2>Motion</h2>
+      <p class="note">Press either button on a phone above: it settles in by a hair and springs back. That is the scale of movement throughout. Carousels move only when the shopper swipes them.</p>
+    </div>
+  </div>
+</div>
