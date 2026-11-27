@@ -103,6 +103,15 @@ clothing later.
 - The product is not only for sarees. It will expand to all garment
   categories (men's wear, shirts and others), so the interface and
   everything else must be future-ready and not saree-specific.
+- Weavers are kept in the admin for the founder's own records and are hidden
+  from shoppers (founder, 2026-11-27).
+- The founder asked the analyst to choose which features from the reference
+  screens to build. Chosen: Buy now, similar products, a public star rating,
+  an offer card, colour and size choices. Deferred: a notifications inbox and
+  written public reviews.
+- The founder has no real saree photos yet. Mockup images and video are to be
+  generated in Higgsfield (Nano Banana Pro for images, Seedance for video)
+  from prompts in docs/design-references/media-prompts.md.
 
 ## AI controls the admin must have (founder, 2026-11-27)
 - Image-model routing is admin-managed: which model serves try-on, with the

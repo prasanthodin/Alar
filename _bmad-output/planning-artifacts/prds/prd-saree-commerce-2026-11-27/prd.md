@@ -19,11 +19,11 @@ Vocabulary is fixed in the Glossary (§3). Features are grouped in §4 with func
 
 Alar sells sarees woven by the founder's own family, and by weaver families the founder knows, directly to women in South India, at about Rs 1,500 to 5,000 each. Today these sarees pass through a dealer. Alar removes the dealer and lets the buyer see exactly what she is buying and who made it.
 
-A woman choosing a saree in a shop sees it draped on her shoulder and opened out end to end. Alar gives her the same confidence on a phone: a named weaver and an honest description, a full view of the entire saree, and an image of herself wearing it, made by AI from her own photo with her consent.
+A woman choosing a saree in a shop sees it draped on her shoulder and opened out end to end. Alar gives her the same confidence on a phone: an honest description, a full view of the entire saree, and an image of herself wearing it, made by AI from her own photo with her consent.
 
 The whole business is run by one person. Everything that changes week to week (the catalogue, stock, home screen, AI model and prompts) is changed in the admin without releasing new software.
 
-If it works, Alar grows to more weaving regions, cash on delivery, iOS and other clothing, and becomes a direct, named channel for weavers.
+If it works, Alar grows to more weaving regions, cash on delivery, iOS and other clothing, and becomes a direct channel from weavers to buyers. The product is not only for sarees: it will carry every kind of garment, so nothing in it may assume a saree (NFR-17).
 
 ## 2. Target user
 
@@ -59,7 +59,7 @@ Journeys are `[ASSUMPTION]`: written by the analyst from the brief, not narrated
 - **Shopper** — a person browsing or buying. May be anonymous or logged in.
 - **Owner** — the person who runs the shop in the admin. One person in the first version.
 - **Admin** — the back office used by the Owner.
-- **Weaver** — a weaving family that makes sarees; has a name, place and short story. One Weaver makes many Designs.
+- **Weaver** — a weaving family that makes sarees; has a name, place and notes. One Weaver makes many Designs. A Weaver is an Admin record only and is never shown to Shoppers.
 - **Design** — one saree as listed. A Design holds the description, attributes, Weaver, tax code and photos. Launch has about 100 Designs. A Design has one or more Variants.
 - **Piece** — one physical saree of a Variant. Pieces are counted, not individually tracked: stock is a number of Pieces per Variant. Launch has about 10 Pieces per Design.
 - **Variant** — the thing a Shopper buys: a version of a Design that differs by colour or size. A Variant holds the price and the stock, and may have photos of its own. Sarees at launch have one Variant; later clothing has several.
@@ -83,30 +83,31 @@ Journeys are `[ASSUMPTION]`: written by the analyst from the brief, not narrated
 
 ### 4.1 Catalogue and discovery
 
-**Description:** Shoppers browse and search Designs without logging in. Each Design page states who wove it and what it is made of, in terms the Owner can back with evidence. Realizes UJ-1.
+**Description:** Shoppers browse and search Designs without logging in. Each Design page states what it is made of, in terms the Owner can back with evidence. Realizes UJ-1.
 
 #### FR-1: Browse and filter Designs
-A Shopper can browse Designs and filter by fibre, weave, colour, occasion, price and Weaver. Realizes UJ-1.
+A Shopper can browse Designs and filter by category, fibre, weave, colour, occasion and price. Realizes UJ-1.
 - No login is required to browse, search or open a Design.
 - Filters combine; the result count updates before the Shopper applies them.
 - A Design with no Pieces in stock is shown as sold out, not hidden.
 
 #### FR-2: Search Designs
-A Shopper can search by words in a Design's name, description, weave or Weaver.
-- A search matches words in the name, description, weave and Weaver, and returns results within 2 seconds. `[ASSUMPTION]`
+A Shopper can search by words in a Design's name, description, category or weave.
+- A search matches words in the name, description, category and weave, and returns results within 2 seconds. `[ASSUMPTION]`
 - A search with no results shows the filter panel with counts and the three weaves that have the most Designs, instead of an empty page.
 
 #### FR-3: Design page
-A Shopper can open a Design and see its photos, price, description, attributes, Weaver, stock status and delivery estimate. Realizes UJ-1.
+A Shopper can open a Design and see its photos, price, description, attributes, colour and size choices, stock status and delivery estimate. Realizes UJ-1.
 - Attributes shown: fibre, weave, zari, where it was woven, length and width in metres, blouse piece included or not, care, country of origin.
 - At least one photo is a close-up of the fabric, and the page says colours can look slightly different on different screens.
 - The page shows the maker's name and address, a consumer-care contact, and the return, refund, delivery and payment terms.
 - Entry points to the Full saree view and Try-on are visible without scrolling on a phone. `[ASSUMPTION]`
 
-#### FR-4: Weaver provenance
-A Shopper can see who wove a Design and read about that Weaver.
+#### FR-4: Weaver records, Admin only
+Every Design is linked to the Weaver who made it, for the Owner's own records. Shoppers are not shown who wove a Design.
 - Every published Design is linked to exactly one Weaver.
-- A Weaver page lists that Weaver's Designs.
+- No Shopper-facing screen, message or document names a Weaver.
+- The Owner can list a Weaver's Designs and sales in the Admin.
 
 #### FR-5: Whole-rupee, all-inclusive prices
 Every price a Shopper sees is a whole number of rupees and includes tax.
@@ -306,8 +307,8 @@ A Shopper is told about each event that concerns her, and the Owner about each e
 
 #### FR-30: Compose a screen from Blocks
 The Owner can build and reorder a Server-driven screen from Blocks.
-- Blocks available at launch: banner, row of Designs, grid of Designs, Weaver story, text, image. `[ASSUMPTION]`
-- The Design-page region accepts: row of Designs, Weaver story, text, image.
+- Blocks available at launch: banner, banner carousel, category tabs, row of category thumbnails, row of Designs, grid of Designs, service strip, text, image. `[ASSUMPTION]`
+- The Design-page region accepts: row of Designs, text, image.
 - A Block that lists Designs can be filled by hand or by a rule such as "newest" or a filter.
 
 #### FR-31: Draft, preview, schedule, publish
@@ -364,7 +365,30 @@ The Owner can set the delivery region, the shipping charge rule, the return peri
 - A change takes effect without a release and is recorded with who made it and when.
 
 #### FR-57: Weavers
-The Owner can create and edit a Weaver: name, place, story and photos.
+The Owner can create and edit a Weaver: name, place, notes and photos, for the Owner's records only.
+
+#### FR-61: Buy now
+A Shopper can go straight from a Design page to checkout with that one item.
+- It behaves as adding the item to the cart and beginning checkout; every rule of FR-18 and FR-19 applies.
+
+#### FR-62: Similar products
+A Design page shows other Designs like the one being viewed.
+- Similar means the same category, with the same fibre or weave, in a nearby price range; sold-out Designs are left out.
+- The row is a Block the Owner can remove from the Design-page region.
+
+#### FR-63: Public rating
+A Design shows the average of its "did it match" ratings (FR-53) and how many there are.
+- The rating appears only once a Design has at least 5 ratings. `[ASSUMPTION]`
+- Only Shoppers who received the Design can rate it; there are no written public reviews in the first version.
+
+#### FR-64: Offer card
+A Design page can show one current offer, such as a first-order code, with the price after the offer.
+- The offer is a discount under FR-58 and follows FR-5; an offer that does not apply to this Shopper is not shown as her price.
+
+#### FR-65: Categories and departments
+The Owner can organise Designs into departments (such as Women, Men, Kids) and categories within them, each with a name and thumbnail, and choose which appear to Shoppers.
+- A department or category with no published Designs is not shown.
+- At launch only saree categories are shown; adding menswear later needs no release.
 
 #### FR-58: Discounts
 The Owner can create a discount as a percentage or an amount, for chosen Designs, between two dates, applied automatically or by a code.
@@ -474,6 +498,8 @@ The Owner signs in to the Admin with a password and a second factor.
 
 - Cash on delivery. Designed for, switched off.
 - iOS app. `[ASSUMPTION: follows once Android is stable; see Open Question 9]`
+- A notifications inbox in the app. Order updates go by SMS and email (FR-54).
+- Written public reviews; only the star rating of FR-63 is shown.
 - Staff accounts (FR-50). One Owner at launch; FR-60 keeps the door open.
 - Other clothing categories. The Variant model is ready for them.
 - Try-on for under-18s.
@@ -503,11 +529,13 @@ The Owner signs in to the Admin with a password and a second factor.
 - **NFR-13 Honest design.** No pre-ticked extras, false urgency or late-added charges, and no sign-up demanded for anything unrelated to the purchase (signing in at checkout to confirm a mobile number is not such a demand). A yearly self-audit against the official list of dark patterns is recorded.
 - **NFR-14 Languages.** All Shopper-facing text can be translated without a release.
 - **NFR-15 Accessibility.** Text is readable at large system font sizes and every action is reachable by screen reader. `[ASSUMPTION]`
+- **NFR-17 Category-neutral.** Screens, wording, filters, attributes and data never assume a saree: a category defines which attributes, variant choices (colour, size, blouse piece) and size chart apply.
+- **NFR-18 Compact sizing.** Controls and text follow the compact scale in the UX design; nothing is oversized.
 - **NFR-16 Measurement.** Alar counts Design-page views, Full saree view opens, Try-on requests, cart additions and Orders, so that §9 can be measured. Counts are not tied to advertising profiles and are not shared with advertisers.
 
 ## 7a. Look and feel
 
-The founder wants Alar to look modern, distinctive and attractive. The PRD sets no visual design; that is the UX step's work. Two things bind it: the saree and its weaver are the centre of every screen, and nothing in the design may make a saree look better than it is.
+The founder wants Alar to look modern, distinctive and attractive. The PRD sets no visual design; that is the UX step's work. Two things bind it: the product is the centre of every screen, and nothing in the design may make a product look better than it is. Screens follow the layout conventions of large fashion shopping apps closely (address bar, search, department tabs, category thumbnails, banner carousel, two-column grid, floating filter bar, a product page with price, offers, variant choices, delivery, specifications and similar products), in Alar's own theme, with a bottom navigation of its own.
 
 ## 8. Compliance and regulatory
 

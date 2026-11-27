@@ -7565,3 +7565,15 @@ So that real Shoppers can buy real sarees.
 - Any requirement the SMS service has for approving sender names and templates was listed in `docs/` by Story 3.6; it is completed as part of live mode and ticked in the go-live list. This story builds no adapter.
 - The developer agent prepares the go-live list and the configuration checks; the live keys, the real purchases and the sign-off are the Owner's.
 
+
+## Changes after the epics were finalised
+
+The PRD was updated on 2026-11-27 after the founder's design decisions. The stories above were written before these changes. Each affected story is revised when its epic is about to be built.
+
+| Change | PRD | Stories affected |
+|---|---|---|
+| Weavers are Admin records only; Shoppers are never shown who wove a Design. No Weaver page, filter, search field, badge or Block. | FR-1, FR-2, FR-3, FR-4, FR-30, FR-57 | Epic 2: the Weavers, catalogue read, browse and filter, search, Weaver page and Design page stories; Epic 5: the Design and Weaver Blocks story; Epic 6: the browse and Design page stories |
+| The product is for all garment categories. Departments and categories with thumbnails; attributes, variant choices and size charts depend on the category. | FR-65, NFR-17 | Epic 2: attributes, Variants, catalogue read, browse and Design page stories; Epic 5: Blocks (category tabs, category thumbnails); Epic 6: the same screens |
+| New Shopper features: Buy now, similar products, public star rating, offer card. | FR-61, FR-62, FR-63, FR-64 | New stories needed in Epic 2 (similar products, offer card), Epic 3 (Buy now, public rating); Epic 6 mirrors them |
+| Compact sizing and the reference layout. | NFR-18, PRD §7a | Every Shopper-facing story, through DESIGN.md |
+| Blocks at launch now include banner carousel, category tabs, category thumbnail row and service strip. | FR-30 | Epic 5: the draft and Blocks stories; Epic 6: server-driven screens |
