@@ -51,3 +51,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-4-kernel-route-allow-list.md`
   summary: CI never builds the commerce image, so an image missing the CommonJS build of @shop/contracts would ship with CI green.
   evidence: Every CI path builds contracts itself; only the manual compose smoke would catch it. Add an image build and start check in Story 1.24.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-5-dated-settings-and-tax.md`
+  summary: A cart's tax lines computed before a dated rate change keep the old rate until something refreshes them; nothing re-checks the rate before the Order is created.
+  evidence: The provider reads bands at the time it runs. Story 1.9 (begin checkout: snapshot and Hold) must recompute tax lines when the Checkout snapshot is taken, and confirm-payment must compare against that snapshot.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-5-dated-settings-and-tax.md`
+  summary: The seed does not repair an India region or tax region that already existed with other settings (tax-exclusive prices, a non-saree default rate, another provider).
+  evidence: Only databases built outside the repository have such rows; every in-repo path creates India fresh. Revisit if an existing database is ever imported.
