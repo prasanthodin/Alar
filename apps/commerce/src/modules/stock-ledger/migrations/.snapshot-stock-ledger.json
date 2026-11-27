@@ -68,6 +68,7 @@
           "default": null,
           "comment": null,
           "enumItems": [
+            "opening_balance",
             "manual_adjustment",
             "checkout_hold",
             "payment_confirmed",
@@ -142,6 +143,22 @@
           "enumItems": [],
           "mappedType": "text"
         },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
         "reason": {
           "name": "reason",
           "type": "text",
@@ -173,6 +190,22 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "datetime"
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "text"
         },
         "created_at": {
           "name": "created_at",
@@ -243,6 +276,15 @@
           "primary": false,
           "unique": false,
           "expression": "CREATE INDEX IF NOT EXISTS \"IDX_stock_movement_variant_id_occurred_at\" ON \"stock_movement\" (\"variant_id\", \"occurred_at\") WHERE deleted_at IS NULL"
+        },
+        {
+          "keyName": "IDX_stock_movement_request_id_unique",
+          "columnNames": [],
+          "composite": false,
+          "constraint": false,
+          "primary": false,
+          "unique": false,
+          "expression": "CREATE UNIQUE INDEX IF NOT EXISTS \"IDX_stock_movement_request_id_unique\" ON \"stock_movement\" (\"request_id\") WHERE request_id IS NOT NULL AND deleted_at IS NULL"
         },
         {
           "keyName": "stock_movement_pkey",

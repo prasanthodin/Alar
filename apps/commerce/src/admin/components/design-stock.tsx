@@ -2,7 +2,13 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Button, Heading, Input, Label, Text, toast } from "@medusajs/ui"
-import { MAX_STOCK_PIECES, Pieces, StockReason, type AdminDesignStockResponse } from "@shop/contracts"
+import {
+  MAX_STOCK_PIECES,
+  Pieces,
+  StockReason,
+  type AdminDesignStockResponse,
+  type StockMovementView,
+} from "@shop/contracts"
 import { ShopApiError, shopApi, type AdjustStockRequest } from "../lib/shop-api"
 
 type Props = {
@@ -19,7 +25,9 @@ const signed = (n: number) => (n > 0 ? `+${n}` : String(n))
  * The Stock section of a Design (Story 1.7): stocked, reserved and available
  * Pieces, the two named actions that change the count (set it to a number,
  * or add or remove one Piece), each with a required reason, and the stock
- * history, newest first. The count itself is never an editable field.
+ * history, newest first, a page at a time. The count itself is never an
+ * editable field. Each click sends a new request id, so a resent request is
+ * applied once.
  */
 export const DesignStock = ({ designId }: Props) => {
   const { t, i18n } = useTranslation()
@@ -30,6 +38,11 @@ export const DesignStock = ({ designId }: Props) => {
   const [setTo, setSetTo] = useState("")
   const [errors, setErrors] = useState<FieldErrors>({})
   const [busy, setBusy] = useState(false)
+  // Older history pages loaded with "Show older changes", after the first page.
+  const [older, setOlder] = useState<{ rows: StockMovementView[]; next: string | null } | null>(null)
+  const [loadingOlder, setLoadingOlder] = useState(false)
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleString(i18n.language, { dateStyle: "medium", timeStyle: "short" })
 
   const errorText = (e: unknown) => {
     const code = e instanceof ShopApiError ? e.error.code : "unknown"
@@ -57,11 +70,13 @@ export const DesignStock = ({ designId }: Props) => {
     setBusy(true)
     try {
       const updated: AdminDesignStockResponse = await shopApi.adjustStock(designId, request)
-      queryClient.setQueryData(key, updated)
+      setOlder(null)
+      if (updated.refreshed) queryClient.setQueryData(key, updated)
+      else void queryClient.invalidateQueries({ queryKey: key })
       setReason("")
       setSetTo("")
       setErrors({})
-      toast.success(t("shopStock.saved", { stocked: updated.stock.stocked }))
+      toast.success(t(updated.refreshed ? "shopStock.saved" : "shopStock.savedNotRefreshed", { stocked: updated.stock.stocked }))
     } catch (e) {
       toast.error(errorText(e))
       // Someone else may have changed it meanwhile: show the count as it is now.
@@ -73,14 +88,31 @@ export const DesignStock = ({ designId }: Props) => {
 
   const setStock = () => {
     const values = validate(true)
-    if (values && values.set !== undefined) void apply({ set: values.set, reason: values.reason })
+    if (values && values.set !== undefined) {
+      void apply({ set: values.set, reason: values.reason, requestId: crypto.randomUUID() })
+    }
   }
   const change = (delta: 1 | -1) => {
     const values = validate(false)
-    if (values) void apply({ delta, reason: values.reason })
+    if (values) void apply({ delta, reason: values.reason, requestId: crypto.randomUUID() })
+  }
+  const showOlder = async () => {
+    const cursor = older ? older.next : stock.data?.nextBefore
+    if (!cursor) return
+    setLoadingOlder(true)
+    try {
+      const page = await shopApi.getStock(designId, cursor)
+      setOlder((o) => ({ rows: [...(o?.rows ?? []), ...page.movements], next: page.nextBefore }))
+    } catch (e) {
+      toast.error(errorText(e))
+    } finally {
+      setLoadingOlder(false)
+    }
   }
 
   const data = stock.data
+  const movements = data ? [...data.movements, ...(older?.rows ?? [])] : []
+  const moreCursor = older ? older.next : (data?.nextBefore ?? null)
   const fieldError = (k: keyof FieldErrors) =>
     errors[k] ? (
       <Text size="xsmall" className="text-ui-fg-error" id={`stock-${k}-error`}>
@@ -128,6 +160,7 @@ export const DesignStock = ({ designId }: Props) => {
               value={reason}
               maxLength={200}
               aria-invalid={!!errors.reason}
+              aria-describedby={errors.reason ? "stock-reason-error" : undefined}
               placeholder={t("shopStock.reasonPlaceholder")}
               onChange={(e) => setReason(e.target.value)}
             />
@@ -146,16 +179,22 @@ export const DesignStock = ({ designId }: Props) => {
                 step="1"
                 value={setTo}
                 aria-invalid={!!errors.set}
+                aria-describedby={errors.set ? "stock-set-error" : undefined}
                 onChange={(e) => setSetTo(e.target.value)}
               />
+              {fieldError("set")}
             </div>
             <Button variant="secondary" disabled={busy} onClick={setStock}>
               {t("shopStock.setButton")}
             </Button>
           </div>
-          {fieldError("set")}
           <div className="flex gap-x-2">
-            <Button variant="secondary" size="small" disabled={busy} onClick={() => change(-1)}>
+            <Button
+              variant="secondary"
+              size="small"
+              disabled={busy || data.stock.available === 0}
+              onClick={() => change(-1)}
+            >
               {t("shopStock.removeOne")}
             </Button>
             <Button variant="secondary" size="small" disabled={busy} onClick={() => change(1)}>
@@ -164,13 +203,13 @@ export const DesignStock = ({ designId }: Props) => {
           </div>
 
           <Heading level="h3">{t("shopStock.history")}</Heading>
-          {data.movements.length === 0 ? (
+          {movements.length === 0 ? (
             <Text size="small" className="text-ui-fg-muted">
               {t("shopStock.noHistory")}
             </Text>
           ) : (
             <ol className="divide-ui-border-base border-ui-border-base flex flex-col divide-y rounded-md border">
-              {data.movements.map((m) => (
+              {movements.map((m) => (
                 <li key={m.id} data-testid="stock-movement" className="flex flex-col gap-y-1 p-3">
                   <div className="flex items-baseline justify-between gap-x-3">
                     <Text size="small" weight="plus">
@@ -186,7 +225,7 @@ export const DesignStock = ({ designId }: Props) => {
                   </Text>
                   <Text size="xsmall" className="text-ui-fg-subtle break-all">
                     {t("shopStock.when", {
-                      at: new Date(m.occurredAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }),
+                      at: formatTime(m.occurredAt),
                       actor: m.actor,
                     })}
                   </Text>
@@ -194,6 +233,11 @@ export const DesignStock = ({ designId }: Props) => {
               ))}
             </ol>
           )}
+          {moreCursor ? (
+            <Button variant="transparent" size="small" className="w-fit" disabled={loadingOlder} onClick={showOlder}>
+              {t("shopStock.showOlder")}
+            </Button>
+          ) : null}
         </>
       )}
     </section>

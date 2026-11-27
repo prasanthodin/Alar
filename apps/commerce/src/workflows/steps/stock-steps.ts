@@ -7,6 +7,7 @@ import {
   readStockLevel,
   shopStockLocationId,
   undoEnsureVariantStock,
+  warnIfOverReserved,
   type EnsuredVariantStock,
   type StockTarget,
 } from "../../lib/stock"
@@ -39,26 +40,54 @@ export type CheckStockAdjustmentInput = {
   target: StockTarget
   set?: number
   delta?: number
+  /** The client's id of the change: when a row already has it, the change is not made again. */
+  requestId?: string
 }
 
-/** The checked adjustment: the quantities now, the stocked quantity it leads to and the signed change. */
+/**
+ * The checked adjustment: the quantities now, the stocked quantity it leads
+ * to and the signed change. `replayed` means the request id was already
+ * recorded: nothing is to be changed, and `stockedAfter` is the quantity now.
+ */
 export type CheckedStockAdjustment = {
   stockedBefore: number
   reserved: number
   stockedAfter: number
   change: number
+  replayed: boolean
 }
 
 /**
  * Reads the stocked and reserved quantities (run it under the stock lock)
- * and resolves `set` or `delta` against them. Refuses a result below 0 with
- * `stock.invalid_quantity` and one below what is reserved with
- * `stock.below_reserved`. Reads only.
+ * and resolves `set` or `delta` against them. A request id that is already
+ * recorded for this Variant returns `replayed` (the first request's change
+ * stands); one recorded for another Variant is `input.invalid`. Refuses a
+ * result below 0 with `stock.invalid_quantity` and one below what is
+ * reserved with `stock.below_reserved`. Reads only.
  */
 export const checkStockAdjustmentStep = createStep(
   "check-stock-adjustment",
   async (input: CheckStockAdjustmentInput, { container }) => {
     const { stocked, reserved } = await readStockLevel(container, input.target)
+    warnIfOverReserved(container, input.target.inventoryItemId, { stocked, reserved })
+    if (input.requestId) {
+      const ledger = container.resolve<StockLedgerModuleService>(STOCK_LEDGER_MODULE)
+      const earlier = await ledger.findByRequestId(input.requestId)
+      if (earlier) {
+        if (earlier.variant_id !== input.target.variantId) {
+          throw shopError("input.invalid", "This request id was used for another stock change", {
+            issues: ["requestId: already used for another Variant"],
+          })
+        }
+        return new StepResponse<CheckedStockAdjustment>({
+          stockedBefore: stocked,
+          reserved,
+          stockedAfter: stocked,
+          change: earlier.change,
+          replayed: true,
+        })
+      }
+    }
     const resolved = resolveStockTarget({ stocked, reserved }, { set: input.set, delta: input.delta })
     if (!resolved.ok) {
       const details = { stocked, reserved, ...(input.set !== undefined ? { set: input.set } : { delta: input.delta }) }
@@ -71,6 +100,7 @@ export const checkStockAdjustmentStep = createStep(
       reserved,
       stockedAfter: resolved.stocked,
       change: resolved.change,
+      replayed: false,
     })
   }
 )
@@ -82,7 +112,9 @@ export type RecordStockMovementStepInput = {
   stockedAfter: number
   reservedAfter: number
   actor: string
+  actorId?: string | null
   reason: string
+  requestId?: string | null
 }
 
 /**
@@ -102,7 +134,9 @@ export const recordStockMovementStep = createStep(
       stockedAfter: input.stockedAfter,
       reservedAfter: input.reservedAfter,
       actor: input.actor,
+      actorId: input.actorId ?? null,
       reason: input.reason,
+      requestId: input.requestId ?? null,
     })
     return new StepResponse({ id: row.id })
   }

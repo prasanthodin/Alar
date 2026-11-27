@@ -2,7 +2,7 @@
 title: 'Story 1.7: Owner sets and adjusts stock in Pieces'
 type: 'feature'
 created: '2026-11-27'
-status: 'in-review'
+status: 'done'
 baseline_commit: 'f27a0ba1f9d324991c2f3666d6068cd35bc06fde'
 route: 'dispatch'
 review_loop_iteration: 0

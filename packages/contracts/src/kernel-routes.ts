@@ -158,8 +158,15 @@ export const NEVER_ALLOWED_KERNEL_ROUTES: readonly KernelRoute[] = [
   r("POST", "/store/payment-collections/:id/payment-sessions"),
   r("POST", "/store/payment-collections/:id/payment-sessions/:session_id"),
 
-  // Stock locations and the links that say how much stock a variant uses.
+  // Stock locations and the links that say how much stock a variant uses. The shop
+  // has one stock location, India, seeded by the stock seed (Story 1.7): none is
+  // created, changed, deleted or linked to sales channels or fulfilment here.
+  r("POST", "/admin/stock-locations"),
+  r("POST", "/admin/stock-locations/:id"),
   r("DELETE", "/admin/stock-locations/:id"),
+  r("POST", "/admin/stock-locations/:id/sales-channels"),
+  r("POST", "/admin/stock-locations/:id/fulfillment-sets"),
+  r("POST", "/admin/stock-locations/:id/fulfillment-providers"),
   r("POST", "/admin/products/:id/variants/:variant_id/inventory-items"),
   r("POST", "/admin/products/:id/variants/:variant_id/inventory-items/:inventory_item_id"),
   r("DELETE", "/admin/products/:id/variants/:variant_id/inventory-items/:inventory_item_id"),

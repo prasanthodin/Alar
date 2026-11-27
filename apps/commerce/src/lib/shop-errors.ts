@@ -72,9 +72,17 @@ export function sendShopError(res: EnvelopeResponse, e: unknown): void {
 /** A minimal logger, as far as `sendShopErrorOrInternal` uses one. */
 type ErrorLogger = { error(message: string): void }
 
+/** The error a workflow failed with (it may be wrapped), or the error itself. */
+function innerError(e: unknown): unknown {
+  const inner = (e as Thrown | null)?.errors?.[0]?.error
+  return inner ?? e
+}
+
 /**
- * Answers with the envelope of a shop error, or with 500 `internal` for any
- * other error (logged with its message only, never the request).
+ * Answers with the envelope of a shop error. A kernel error (a `MedusaError`
+ * such as not found or invalid data) is rethrown for the kernel's handler, as
+ * `sendShopError` does. Anything else, and a shop `internal` fault, is
+ * answered 500 `internal` and logged with its stack (never the request).
  */
 export function sendShopErrorOrInternal(res: EnvelopeResponse, e: unknown, logger: ErrorLogger): void {
   const envelope = shopErrorOf(e)
@@ -82,7 +90,16 @@ export function sendShopErrorOrInternal(res: EnvelopeResponse, e: unknown, logge
     res.status(STATUS[envelope.code] ?? 400).json(envelope)
     return
   }
-  logger.error(`shop: request failed: ${e instanceof Error ? e.message : String(e)}`)
+  const inner = innerError(e)
+  if (
+    MedusaError.isMedusaError(inner) &&
+    (inner as MedusaError).code !== "internal" &&
+    (inner as MedusaError).type !== MedusaError.Types.UNEXPECTED_STATE
+  ) {
+    throw inner
+  }
+  const detail = inner instanceof Error ? (inner.stack ?? inner.message) : String(inner)
+  logger.error(`shop: request failed: ${detail}`)
   res.status(500).json({ code: "internal", message: "Something went wrong" })
 }
 

@@ -88,6 +88,38 @@ test("the Owner creates a Design with two photos, sees what is missing, confirms
   await expect(movement.first().getByTestId("stock-movement-change")).toHaveText("+10")
   await expect(movement.first()).toContainText(EMAIL)
   await expect(movement.first()).toContainText("First delivery from the weaver")
+
+  // Add 1 piece, then remove 1 piece: each a row of its own, newest first.
+  await stock.getByLabel("Reason (required)").fill("Found one more in the back room")
+  await stock.getByRole("button", { name: "Add 1 piece" }).click()
+  await expect(stock.getByTestId("stock-stocked")).toHaveText("11")
+  await expect(movement).toHaveCount(2)
+  await expect(movement.first().getByTestId("stock-movement-change")).toHaveText("+1")
+  await expect(movement.first()).toContainText("Found one more in the back room")
+  await stock.getByLabel("Reason (required)").fill("Damaged while folding")
+  await stock.getByRole("button", { name: "Remove 1 piece" }).click()
+  await expect(stock.getByTestId("stock-stocked")).toHaveText("10")
+  await expect(movement).toHaveCount(3)
+  await expect(movement.first().getByTestId("stock-movement-change")).toHaveText("-1")
+
+  // A refused change shows its message and leaves the count as it was. (Pieces are
+  // reserved only from Story 1.9, so the refusal is answered here by the test.)
+  const stockUrl = /\/admin\/shop\/designs\/[^/]+\/stock$/
+  await page.route(stockUrl, (route) =>
+    route.request().method() === "POST"
+      ? route.fulfill({
+          status: 409,
+          contentType: "application/json",
+          body: JSON.stringify({ code: "stock.below_reserved", message: "below reserved" }),
+        })
+      : route.fallback()
+  )
+  await stock.getByLabel("Reason (required)").fill("Miscount")
+  await stock.getByRole("button", { name: "Remove 1 piece" }).click()
+  await expect(page.getByText("Stock cannot go below the pieces already held for shoppers.")).toBeVisible()
+  await page.unroute(stockUrl)
+  await expect(stock.getByTestId("stock-stocked")).toHaveText("10")
+  await expect(movement).toHaveCount(3)
   await stock.scrollIntoViewIfNeeded()
   await page.screenshot({ path: STOCK_SCREENSHOT })
 

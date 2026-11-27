@@ -16,7 +16,7 @@ import {
 } from "@shop/contracts"
 
 /** A stock change as the Stock section sends it: an absolute target or a signed change, with the reason. */
-export type AdjustStockRequest = ({ set: number } | { delta: number }) & { reason: string }
+export type AdjustStockRequest = ({ set: number } | { delta: number }) & { reason: string; requestId: string }
 
 /** A contract schema, as far as this client uses it. */
 type Schema<T> = { safeParse(value: unknown): { success: true; data: T } | { success: false } }
@@ -90,7 +90,11 @@ export const shopApi = {
     call(AdminDesignResponse, `/admin/shop/designs/${encodeURIComponent(id)}/price`, json({ priceRupees })),
   publish: (id: string, trueColourConfirmed: boolean) =>
     call(PublishDesignResult, `/admin/shop/designs/${encodeURIComponent(id)}/publish`, json({ trueColourConfirmed })),
-  getStock: (id: string) => call(AdminDesignStockResponse, `/admin/shop/designs/${encodeURIComponent(id)}/stock`),
+  getStock: (id: string, before?: string) =>
+    call(
+      AdminDesignStockResponse,
+      `/admin/shop/designs/${encodeURIComponent(id)}/stock${before ? `?before=${encodeURIComponent(before)}` : ""}`
+    ),
   adjustStock: (id: string, input: AdjustStockRequest) =>
     call(AdminDesignStockResponse, `/admin/shop/designs/${encodeURIComponent(id)}/stock`, json(input)),
   uploadPhotos: (files: File[]) => {

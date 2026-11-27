@@ -20,6 +20,12 @@ describe("setting keys", () => {
     expect(taxBandsKey("saree")).toBe("tax.bands.saree")
   })
 
+  it("knows stock.location_id, which holds a stock location id", () => {
+    expect(isSettingKey("stock.location_id")).toBe(true)
+    expect(parseSettingValue("stock.location_id", "sloc_01ABC").ok).toBe(true)
+    expect(parseSettingValue("stock.location_id", "loc_01ABC").ok).toBe(false)
+  })
+
   it("refuses unknown keys and malformed tax codes", () => {
     expect(isSettingKey("shop.colour")).toBe(false)
     expect(isSettingKey("tax.bands.")).toBe(false)

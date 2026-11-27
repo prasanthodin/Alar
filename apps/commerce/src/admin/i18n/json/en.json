@@ -146,6 +146,7 @@
     "history": "Stock history",
     "noHistory": "No stock changes yet.",
     "causes": {
+      "opening_balance": "Opening balance",
       "manual_adjustment": "Manual adjustment",
       "checkout_hold": "Held at checkout",
       "payment_confirmed": "Payment confirmed",
@@ -159,6 +160,8 @@
       "set": "Enter a whole number of pieces from 0 to {{max}}."
     },
     "after": "(in stock after: {{stocked}})",
-    "when": "{{at}} by {{actor}}"
+    "when": "{{at}} by {{actor}}",
+    "savedNotRefreshed": "Stock changed to {{stocked}}. The history could not be refreshed; reload the page to see it. Do not send the change again.",
+    "showOlder": "Show older changes"
   }
 }

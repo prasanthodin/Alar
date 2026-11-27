@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
+import { MedusaError } from "@medusajs/framework/utils"
 import { sendShopError, sendShopErrorOrInternal, shopError, shopErrorOf } from "../shop-errors"
 
 describe("shop errors", () => {
@@ -42,5 +43,21 @@ describe("sendShopErrorOrInternal", () => {
     expect(res.status).toHaveBeenLastCalledWith(500)
     expect(json).toHaveBeenLastCalledWith({ code: "internal", message: "Something went wrong" })
     expect(logger.error).toHaveBeenCalledWith(expect.stringContaining("ledger down"))
+    // The stack is logged, not only the message.
+    expect(logger.error).toHaveBeenLastCalledWith(expect.stringContaining("shop-errors.test.ts"))
+    sendShopErrorOrInternal(res, shopError("internal", "broken record"), logger)
+    expect(res.status).toHaveBeenLastCalledWith(500)
+    expect(json).toHaveBeenLastCalledWith({ code: "internal", message: "Something went wrong" })
+  })
+
+  it("rethrows a kernel error (not found, invalid data) for the kernel's handler, also wrapped by a workflow", () => {
+    const res = { status: vi.fn() }
+    const logger = { error: vi.fn() }
+    const notFound = new MedusaError(MedusaError.Types.NOT_FOUND, "User not found")
+    expect(() => sendShopErrorOrInternal(res as never, notFound, logger)).toThrow(notFound)
+    const invalid = new MedusaError(MedusaError.Types.INVALID_DATA, "bad")
+    expect(() => sendShopErrorOrInternal(res as never, { errors: [{ error: invalid }] }, logger)).toThrow(invalid)
+    expect(res.status).not.toHaveBeenCalled()
+    expect(logger.error).not.toHaveBeenCalled()
   })
 })

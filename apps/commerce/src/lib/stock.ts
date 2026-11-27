@@ -1,7 +1,10 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
-import { ContainerRegistrationKeys, MathBN, MedusaError, Modules } from "@medusajs/framework/utils"
-import { availablePieces, StockMovementView, VariantStockView } from "@shop/contracts"
+import { ContainerRegistrationKeys, MathBN, Modules } from "@medusajs/framework/utils"
+import { availablePieces, StockLocationId, StockMovementView, VariantStockView } from "@shop/contracts"
 import type { StockMovementRow } from "../modules/stock-ledger"
+import { SETTINGS_MODULE } from "../modules/settings"
+import type SettingsModuleService from "../modules/settings/service"
+import { shopError } from "./shop-errors"
 
 /**
  * The shop's one stock location (Story 1.7): India. Every Design's Variant
@@ -10,9 +13,7 @@ import type { StockMovementRow } from "../modules/stock-ledger"
 export const SHOP_STOCK_LOCATION = { name: "India", countryCode: "IN" } as const
 
 /** A fault on the shop's side, answered as 500 `internal`. */
-function internal(message: string): MedusaError {
-  return new MedusaError(MedusaError.Types.UNEXPECTED_STATE, message, "internal")
-}
+const internal = (message: string) => shopError("internal", message)
 
 /** A kernel quantity (number or big number) as a JavaScript number. */
 export function quantity(value: unknown): number {
@@ -36,9 +37,32 @@ async function listLocations(container: MedusaContainer): Promise<LocationRow[]>
 
 const inIndia = (l: LocationRow) => (l.address?.country_code ?? "").toUpperCase() === SHOP_STOCK_LOCATION.countryCode
 
-/** The India stock location's id, or null when it has not been seeded. */
-export async function findShopStockLocationId(container: MedusaContainer): Promise<string | null> {
+/** The setting that holds the India stock location's id, written by the stock seed. */
+export const STOCK_LOCATION_SETTING = "stock.location_id" as const
+
+/** The India location found by its address (oldest first), for the seed and as a fallback. */
+export async function findIndiaLocationByAddress(container: MedusaContainer): Promise<string | null> {
   return (await listLocations(container)).find(inIndia)?.id ?? null
+}
+
+/**
+ * The India stock location's id, from the setting `stock.location_id`, or
+ * null when it has not been seeded. Without the setting (a database seeded
+ * before it existed) it falls back to the location with an IN address, with
+ * a warning; a second IN location is never picked over the stored one.
+ */
+export async function findShopStockLocationId(container: MedusaContainer): Promise<string | null> {
+  const settings = container.resolve<SettingsModuleService>(SETTINGS_MODULE)
+  if (await settings.hasValue(STOCK_LOCATION_SETTING)) {
+    return StockLocationId.parse(await settings.getValue(STOCK_LOCATION_SETTING))
+  }
+  const id = await findIndiaLocationByAddress(container)
+  if (id) {
+    container
+      .resolve(ContainerRegistrationKeys.LOGGER)
+      .warn(`stock: the setting ${STOCK_LOCATION_SETTING} is missing; using the IN stock location ${id} (run db:migrate)`)
+  }
+  return id
 }
 
 /** The India stock location's id; `internal` when it is missing (run `db:migrate`, which seeds it). */
@@ -49,8 +73,21 @@ export async function shopStockLocationId(container: MedusaContainer): Promise<s
 }
 
 /** Every stock location that is not the India one (the seed renames the starter's location instead of adding one). */
-export async function otherStockLocations(container: MedusaContainer): Promise<LocationRow[]> {
-  return (await listLocations(container)).filter((l) => !inIndia(l))
+export async function otherStockLocations(container: MedusaContainer, shopLocationId?: string): Promise<LocationRow[]> {
+  return (await listLocations(container)).filter((l) => (shopLocationId ? l.id !== shopLocationId : !inIndia(l)))
+}
+
+/** Logs that a level holds more reserved than stocked Pieces, which no workflow should ever leave. */
+export function warnIfOverReserved(
+  container: MedusaContainer,
+  inventoryItemId: string,
+  level: { stocked: number; reserved: number }
+): void {
+  if (level.reserved > level.stocked) {
+    container
+      .resolve(ContainerRegistrationKeys.LOGGER)
+      .warn(`stock: inventory item ${inventoryItemId} has ${level.reserved} reserved but only ${level.stocked} stocked`)
+  }
 }
 
 /** The inventory item ids linked to a Variant, and whether the kernel manages its inventory. */
@@ -111,6 +148,7 @@ export async function readStockLevel(
 export async function readVariantStock(container: MedusaContainer, variantId: string): Promise<VariantStockView> {
   const target = await loadStockTarget(container, variantId)
   const { stocked, reserved } = await readStockLevel(container, target)
+  warnIfOverReserved(container, target.inventoryItemId, { stocked, reserved })
   return VariantStockView.parse({
     variantId,
     inventoryItemId: target.inventoryItemId,
@@ -131,6 +169,7 @@ export function movementView(row: StockMovementRow): StockMovementView {
     stockedAfter: row.stocked_after,
     reservedAfter: row.reserved_after,
     actor: row.actor,
+    actorId: row.actor_id ?? null,
     reason: row.reason,
     occurredAt: new Date(row.occurred_at as unknown as string | Date).toISOString(),
   })
@@ -165,33 +204,50 @@ export async function ensureVariantStock(
   const inventoryModule = container.resolve(Modules.INVENTORY)
   const link = container.resolve(ContainerRegistrationKeys.LINK)
 
-  const turnedOnInventory = !inventory.manageInventory
-  if (turnedOnInventory) await products.updateProductVariants(variantId, { manage_inventory: true })
-
-  let inventoryItemId = inventory.inventoryItemIds[0]
-  const createdInventoryItem = !inventoryItemId
-  if (!inventoryItemId) {
-    const variant = await products.retrieveProductVariant(variantId, { select: ["id", "title", "sku"] })
-    const [item] = await inventoryModule.createInventoryItems([
-      { title: variant.title ?? undefined, sku: variant.sku ?? undefined, requires_shipping: true },
-    ])
-    inventoryItemId = item!.id
-    await link.create({
-      [Modules.PRODUCT]: { variant_id: variantId },
-      [Modules.INVENTORY]: { inventory_item_id: inventoryItemId },
-      data: { required_quantity: 1 },
+  const done: EnsuredVariantStock = {
+    inventoryItemId: inventory.inventoryItemIds[0] ?? "",
+    turnedOnInventory: false,
+    createdInventoryItem: false,
+    createdLevelId: null,
+  }
+  try {
+    if (!inventory.manageInventory) {
+      await products.updateProductVariants(variantId, { manage_inventory: true })
+      done.turnedOnInventory = true
+    }
+    if (!done.inventoryItemId) {
+      const variant = await products.retrieveProductVariant(variantId, { select: ["id", "title", "sku"] })
+      const [item] = await inventoryModule.createInventoryItems([
+        { title: variant.title ?? undefined, sku: variant.sku ?? undefined, requires_shipping: true },
+      ])
+      done.inventoryItemId = item!.id
+      done.createdInventoryItem = true
+      await link.create({
+        [Modules.PRODUCT]: { variant_id: variantId },
+        [Modules.INVENTORY]: { inventory_item_id: done.inventoryItemId },
+        data: { required_quantity: 1 },
+      })
+    }
+    const levels = await inventoryModule.listInventoryLevels({
+      inventory_item_id: done.inventoryItemId,
+      location_id: locationId,
     })
+    if (!levels.length) {
+      const [level] = await inventoryModule.createInventoryLevels([
+        { inventory_item_id: done.inventoryItemId, location_id: locationId, stocked_quantity: 0 },
+      ])
+      done.createdLevelId = level!.id
+    }
+  } catch (e) {
+    // Leave nothing half-made: undo what this call wrote, then report the failure.
+    await undoEnsureVariantStock(container, variantId, done).catch((undoError: unknown) => {
+      container
+        .resolve(ContainerRegistrationKeys.LOGGER)
+        .error(`stock: could not undo a partial stock record of Variant ${variantId}: ${(undoError as Error).stack ?? undoError}`)
+    })
+    throw e
   }
-
-  const levels = await inventoryModule.listInventoryLevels({ inventory_item_id: inventoryItemId, location_id: locationId })
-  let createdLevelId: string | null = null
-  if (!levels.length) {
-    const [level] = await inventoryModule.createInventoryLevels([
-      { inventory_item_id: inventoryItemId, location_id: locationId, stocked_quantity: 0 },
-    ])
-    createdLevelId = level!.id
-  }
-  return { inventoryItemId, turnedOnInventory, createdInventoryItem, createdLevelId }
+  return done
 }
 
 /** Undoes what `ensureVariantStock` created or changed, newest first. */
@@ -202,7 +258,7 @@ export async function undoEnsureVariantStock(
 ): Promise<void> {
   const inventoryModule = container.resolve(Modules.INVENTORY)
   if (done.createdLevelId) await inventoryModule.deleteInventoryLevels([done.createdLevelId])
-  if (done.createdInventoryItem) {
+  if (done.createdInventoryItem && done.inventoryItemId) {
     await container.resolve(ContainerRegistrationKeys.LINK).dismiss({
       [Modules.PRODUCT]: { variant_id: variantId },
       [Modules.INVENTORY]: { inventory_item_id: done.inventoryItemId },

@@ -19,9 +19,12 @@ export type Pieces = z.infer<typeof Pieces>
  * `manual_adjustment` (`adjust-stock`, Story 1.7), `checkout_hold`
  * (`begin-checkout`), `payment_confirmed` (`confirm-payment`), `hold_released`
  * (`release-hold`), `fulfilled` (`fulfil-order`), `order_cancelled`
- * (`cancel-order`) and `return_restocked` (`restock-return`).
+ * (`cancel-order`) and `return_restocked` (`restock-return`). The stock
+ * seed writes `opening_balance` for each non-zero level of a stock location
+ * it adopts, so the ledger adds up from its first row.
  */
 export const StockMovementCause = z.enum([
+  "opening_balance",
   "manual_adjustment",
   "checkout_hold",
   "payment_confirmed",
@@ -36,11 +39,17 @@ export type StockMovementCause = z.infer<typeof StockMovementCause>
 export const StockReason = z.string().trim().min(1).max(200)
 export type StockReason = z.infer<typeof StockReason>
 
+/** A client's id for one stock change (a UUID), so a resent request is applied once. */
+export const StockRequestId = z.uuid()
+export type StockRequestId = z.infer<typeof StockRequestId>
+
 /**
  * `POST /admin/shop/designs/:id/stock`: either an absolute target (`set`,
  * "set to 10") or a signed change (`delta`, "+1", never 0), never both, with
  * the reason. Both are resolved inside the stock lock against the stocked
- * quantity at that moment.
+ * quantity at that moment. `requestId` (the Admin sends a new one per click)
+ * makes a resent request return the first one's result instead of applying
+ * it again.
  */
 export const AdjustStockInput = z
   .strictObject({
@@ -53,6 +62,7 @@ export const AdjustStockInput = z
       .refine((n) => n !== 0, { message: "A change of 0 changes nothing" })
       .optional(),
     reason: StockReason,
+    requestId: StockRequestId.optional(),
   })
   .refine((v) => (v.set === undefined) !== (v.delta === undefined), {
     message: "Send either set or delta",
@@ -87,15 +97,57 @@ export const StockMovementView = z.object({
   stockedAfter: Pieces,
   reservedAfter: Pieces,
   actor: z.string().min(1),
+  /** The admin user id behind `actor`, or null for a system row (such as an opening balance). */
+  actorId: Id.nullable(),
   reason: z.string(),
   occurredAt: IsoDateTime,
 })
 export type StockMovementView = z.infer<typeof StockMovementView>
 
-/** `GET /admin/shop/designs/:id/stock` and the answer of an adjustment: the stock and its history, newest first. */
+/** The most history rows one page holds, and the default page size. */
+export const STOCK_HISTORY_MAX_LIMIT = 200
+export const STOCK_HISTORY_DEFAULT_LIMIT = 50
+
+/** A history cursor: the `occurredAt` and `id` of the last row of a page, as `<occurredAt>~<id>`. */
+export const StockHistoryCursor = z
+  .string()
+  .max(300)
+  .refine((v) => parseStockHistoryCursor(v) !== null, { message: "Not a history cursor" })
+
+/** The cursor that continues after this row. */
+export function stockHistoryCursor(row: { occurredAt: string; id: string }): string {
+  return `${row.occurredAt}~${row.id}`
+}
+
+/** A cursor's row position, or null when it is not one. */
+export function parseStockHistoryCursor(cursor: string): { occurredAt: string; id: string } | null {
+  const at = cursor.indexOf("~")
+  if (at < 0) return null
+  const occurredAt = cursor.slice(0, at)
+  const id = cursor.slice(at + 1)
+  if (!IsoDateTime.safeParse(occurredAt).success || !Id.safeParse(id).success) return null
+  return { occurredAt, id }
+}
+
+/** The query of `GET /admin/shop/designs/:id/stock`: a page size and the cursor to continue after. */
+export const StockHistoryQuery = z.strictObject({
+  limit: z.coerce.number().int().min(1).max(STOCK_HISTORY_MAX_LIMIT).default(STOCK_HISTORY_DEFAULT_LIMIT),
+  before: StockHistoryCursor.optional(),
+})
+export type StockHistoryQuery = z.infer<typeof StockHistoryQuery>
+
+/**
+ * `GET /admin/shop/designs/:id/stock` and the answer of an adjustment: the
+ * stock and one page of its history, newest first; `nextBefore` continues it
+ * (null on the last page). After an adjustment, `refreshed: false` means the
+ * change was made but the stock and history could not be read again: `stock`
+ * is the workflow's own result and `movements` is empty.
+ */
 export const AdminDesignStockResponse = z.object({
   stock: VariantStockView,
   movements: z.array(StockMovementView),
+  nextBefore: z.string().nullable(),
+  refreshed: z.boolean().default(true),
 })
 export type AdminDesignStockResponse = z.infer<typeof AdminDesignStockResponse>
 
@@ -113,7 +165,9 @@ export type StockTarget =
  * reserved quantities: `set` as given, or the current quantity plus `delta`.
  * Refuses a result below 0 or above `MAX_STOCK_PIECES` with
  * `stock.invalid_quantity`, and a result below what is reserved with
- * `stock.below_reserved`.
+ * `stock.below_reserved` — except a rise: if reserved is already above
+ * stocked (which should never happen), a change that moves stocked up toward
+ * reserved is allowed.
  */
 export function resolveStockTarget(
   current: { stocked: number; reserved: number },
@@ -123,6 +177,6 @@ export function resolveStockTarget(
   if (!Number.isSafeInteger(stocked) || stocked < 0 || stocked > MAX_STOCK_PIECES) {
     return { ok: false, code: "stock.invalid_quantity" }
   }
-  if (stocked < current.reserved) return { ok: false, code: "stock.below_reserved" }
+  if (stocked < current.reserved && stocked <= current.stocked) return { ok: false, code: "stock.below_reserved" }
   return { ok: true, stocked, change: stocked - current.stocked }
 }

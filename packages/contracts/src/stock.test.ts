@@ -6,7 +6,10 @@ import {
   ErrorCode,
   MAX_STOCK_PIECES,
   parseInput,
+  parseStockHistoryCursor,
   resolveStockTarget,
+  stockHistoryCursor,
+  StockHistoryQuery,
   StockMovementCause,
   StockMovementView,
   VariantStockView,
@@ -21,6 +24,7 @@ const movement = {
   stockedAfter: 10,
   reservedAfter: 0,
   actor: "owner@example.test",
+  actorId: "user_1",
   reason: "first delivery",
   occurredAt: "2026-11-27T10:15:00.000Z",
 }
@@ -34,8 +38,9 @@ describe("stock error codes", () => {
 })
 
 describe("StockMovementCause", () => {
-  it("holds the cause of each of the seven stock workflows", () => {
+  it("holds the opening balance and the cause of each of the seven stock workflows", () => {
     expect(StockMovementCause.options).toEqual([
+      "opening_balance",
       "manual_adjustment",
       "checkout_hold",
       "payment_confirmed",
@@ -77,6 +82,12 @@ describe("AdjustStockInput", () => {
     if (!res.ok) expect(res.error.code).toBe("input.invalid")
   })
 
+  it("takes an optional request id, which must be a UUID", () => {
+    const requestId = "7d444840-9dc0-41b0-8e26-6a3f2a0d2c11"
+    expect(AdjustStockInput.parse({ delta: 1, reason: "r", requestId })).toEqual({ delta: 1, reason: "r", requestId })
+    expect(AdjustStockInput.safeParse({ delta: 1, reason: "r", requestId: "click-1" }).success).toBe(false)
+  })
+
   it("accepts a 200-character reason", () => {
     expect(AdjustStockInput.safeParse({ set: 1, reason: "x".repeat(200) }).success).toBe(true)
   })
@@ -100,6 +111,13 @@ describe("resolveStockTarget", () => {
       code: "stock.below_reserved",
     })
     expect(resolveStockTarget({ stocked: 3, reserved: 2 }, { set: 2 })).toMatchObject({ ok: true, stocked: 2 })
+  })
+
+  it("lets a change move stocked up toward reserved when reserved is above stocked (never expected)", () => {
+    expect(resolveStockTarget({ stocked: 1, reserved: 3 }, { delta: 1 })).toEqual({ ok: true, stocked: 2, change: 1 })
+    expect(resolveStockTarget({ stocked: 1, reserved: 3 }, { set: 5 })).toEqual({ ok: true, stocked: 5, change: 4 })
+    expect(resolveStockTarget({ stocked: 1, reserved: 3 }, { set: 1 })).toEqual({ ok: false, code: "stock.below_reserved" })
+    expect(resolveStockTarget({ stocked: 1, reserved: 3 }, { delta: -1 })).toEqual({ ok: false, code: "stock.below_reserved" })
   })
 
   it("refuses a negative result or one above the limit with stock.invalid_quantity", () => {
@@ -138,13 +156,37 @@ describe("stock views", () => {
     expect(StockMovementView.safeParse({ ...movement, occurredAt: "2026-11-27" }).success).toBe(false)
   })
 
-  it("AdminDesignStockResponse is the stock with its movements, and ignores unknown fields", () => {
+  it("AdminDesignStockResponse is the stock with a page of movements, and ignores unknown fields", () => {
     const res = AdminDesignStockResponse.parse({
       stock: { variantId: "variant_1", inventoryItemId: "iitem_1", stocked: 10, reserved: 0, available: 10 },
       movements: [{ ...movement, extra: true }],
+      nextBefore: null,
       extra: 1,
     })
     expect(res.movements[0]).toEqual(movement)
+    expect(res.refreshed).toBe(true)
     expect(res).not.toHaveProperty("extra")
+    expect(StockMovementView.parse({ ...movement, actorId: null }).actorId).toBeNull()
+  })
+})
+
+describe("stock history pages", () => {
+  it("round-trips a cursor on (occurredAt, id)", () => {
+    const cursor = stockHistoryCursor(movement)
+    expect(cursor).toBe("2026-11-27T10:15:00.000Z~smov_1")
+    expect(parseStockHistoryCursor(cursor)).toEqual({ occurredAt: movement.occurredAt, id: "smov_1" })
+    expect(parseStockHistoryCursor("smov_1")).toBeNull()
+    expect(parseStockHistoryCursor("yesterday~smov_1")).toBeNull()
+  })
+
+  it("defaults the page to 50 rows and checks limit and cursor", () => {
+    expect(StockHistoryQuery.parse({})).toEqual({ limit: 50 })
+    expect(StockHistoryQuery.parse({ limit: "2", before: "2026-11-27T10:15:00.000Z~smov_1" })).toEqual({
+      limit: 2,
+      before: "2026-11-27T10:15:00.000Z~smov_1",
+    })
+    for (const q of [{ limit: "0" }, { limit: "201" }, { limit: "x" }, { before: "nope" }, { offset: "1" }]) {
+      expect(StockHistoryQuery.safeParse(q).success).toBe(false)
+    }
   })
 })

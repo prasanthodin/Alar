@@ -39,7 +39,7 @@ describe("acquireStockLocks", () => {
     const b = await acquireStockLocks(container(locking), ["iitem_3"])
     expect(a.keys).toEqual(["shop-stock:iitem_1", "shop-stock:iitem_2"])
     expect(a.ownerId).not.toBe(b.ownerId)
-    expect(locking.acquire).toHaveBeenCalledWith("shop-stock:iitem_1", expect.objectContaining({ expire: 30 }))
+    expect(locking.acquire).toHaveBeenCalledWith("shop-stock:iitem_1", expect.objectContaining({ expire: 120 }))
     await releaseStockLocks(container(locking), a)
     expect([...locking.locks.keys()]).toEqual(["shop-stock:iitem_3"])
   })
@@ -56,6 +56,27 @@ describe("acquireStockLocks", () => {
     setTimeout(() => locking.locks.delete("shop-stock:iitem_1"), 100)
     const locks = await acquireStockLocks(container(locking), ["iitem_1"], { timeoutMs: 2_000 })
     expect(locking.locks.get("shop-stock:iitem_1")).toBe(locks.ownerId)
+  })
+
+  it("does not wait past the limit for an attempt that hangs, and gives back a key it takes late", async () => {
+    const locking = fakeLocking()
+    let finish: () => void = () => undefined
+    locking.acquire.mockImplementationOnce(
+      (key: string, args: { ownerId: string }) =>
+        new Promise<void>((resolve) => {
+          finish = () => {
+            locking.locks.set(key, args.ownerId)
+            resolve()
+          }
+        })
+    )
+    const started = Date.now()
+    const err = await acquireStockLocks(container(locking), ["iitem_1"], { timeoutMs: 150 }).catch((e) => e)
+    expect(err).toMatchObject({ code: "stock.lock_timeout" })
+    expect(Date.now() - started).toBeLessThan(1_000)
+    finish()
+    await new Promise((r) => setTimeout(r, 10))
+    expect(locking.locks.size).toBe(0)
   })
 
   it("rethrows a locking failure that is not a held key at once", async () => {

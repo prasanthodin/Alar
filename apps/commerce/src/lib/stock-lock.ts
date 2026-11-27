@@ -17,8 +17,12 @@ import { shopError } from "./shop-errors"
 /** How long to wait for a stock lock before refusing with `stock.lock_timeout`. */
 export const STOCK_LOCK_TIMEOUT_MS = 5_000
 
-/** How long a held stock lock lives if its holder dies without releasing it. */
-export const STOCK_LOCK_TTL_SECONDS = 30
+/**
+ * How long a held stock lock lives. It is not renewed, so a stock workflow
+ * must finish (read, write, record, release) well within it; a holder that
+ * dies without releasing frees the keys after this long.
+ */
+export const STOCK_LOCK_TTL_SECONDS = 120
 
 /** The pause between two attempts to take a held lock. */
 const RETRY_INTERVAL_MS = 50
@@ -47,10 +51,29 @@ export type StockLockOptions = {
 const isHeldElsewhere = (e: unknown) =>
   Boolean(e) && typeof e === "object" && (e as { type?: unknown }).type === MedusaError.Types.CONFLICT
 
+/** Marks an attempt that did not answer before the time limit. */
+const TIMED_OUT = Symbol("timed-out")
+
+/** `attempt`, or `TIMED_OUT` once `ms` have passed without an answer. */
+async function within<T>(attempt: Promise<T>, ms: number): Promise<T | typeof TIMED_OUT> {
+  let timer: NodeJS.Timeout | undefined
+  const timeout = new Promise<typeof TIMED_OUT>((resolve) => {
+    timer = setTimeout(() => resolve(TIMED_OUT), Math.max(0, ms))
+    timer.unref?.()
+  })
+  try {
+    return await Promise.race([attempt, timeout])
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 /**
  * Takes the stock lock of every inventory item, one key at a time in sorted
  * order. A key held by another owner is retried until the time limit; then
  * the keys already taken are released and `stock.lock_timeout` is thrown.
+ * An attempt that hangs is not waited for past the time limit either: it is
+ * raced against the time left, and a key it takes late is released.
  * Any other locking failure is rethrown as it is, after the same release.
  */
 export async function acquireStockLocks(
@@ -64,22 +87,33 @@ export async function acquireStockLocks(
   const deadline = Date.now() + (options.timeoutMs ?? STOCK_LOCK_TIMEOUT_MS)
   const expire = options.ttlSeconds ?? STOCK_LOCK_TTL_SECONDS
   const taken: string[] = []
+  const timedOut = () =>
+    shopError("stock.lock_timeout", "The stock lock could not be taken in time", {
+      inventoryItemIds: [...new Set(inventoryItemIds)].sort(),
+    })
   try {
     for (const key of keys) {
       for (;;) {
+        const attempt = locking.acquire(key, { ownerId, expire })
+        let outcome: void | typeof TIMED_OUT
         try {
-          await locking.acquire(key, { ownerId, expire })
-          taken.push(key)
-          break
+          outcome = await within(attempt, deadline - Date.now())
         } catch (e) {
           if (!isHeldElsewhere(e)) throw e
-          if (Date.now() >= deadline) {
-            throw shopError("stock.lock_timeout", "The stock lock could not be taken in time", {
-              inventoryItemIds: [...new Set(inventoryItemIds)].sort(),
-            })
-          }
+          if (Date.now() >= deadline) throw timedOut()
           await sleep(RETRY_INTERVAL_MS)
+          continue
         }
+        if (outcome === TIMED_OUT) {
+          // If the hung attempt takes the key after all, give it back.
+          attempt.then(
+            () => locking.release(key, { ownerId }).catch(() => undefined),
+            () => undefined
+          )
+          throw timedOut()
+        }
+        taken.push(key)
+        break
       }
     }
   } catch (e) {
