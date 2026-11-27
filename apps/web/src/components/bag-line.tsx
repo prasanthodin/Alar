@@ -16,11 +16,12 @@ const stepButton =
  * a quantity stepper that stops at the Pieces available and says why, and
  * Remove. Every amount comes from the server; this only formats it.
  */
-export function BagLine({ line }: { line: BagLineView }) {
+export function BagLine({ line, locked = false }: { line: BagLineView; locked?: boolean }) {
   const initial: BagActionState = { error: null, done: 0 }
   const [qtyState, setQuantity, settingQty] = useActionState(setBagQuantityAction, initial)
   const [removeState, remove, removing] = useActionState(removeFromBagAction, initial)
-  const busy = settingQty || removing
+  // A checkout holds the Bag (Story 1.9): nothing can change until it is cancelled or ends.
+  const busy = settingQty || removing || locked
   const error = qtyState.error ?? removeState.error
   // No longer on sale, or none left: it can only be removed.
   const unavailable = !line.buyable || line.stock === 0

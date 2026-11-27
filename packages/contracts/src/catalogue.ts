@@ -27,9 +27,11 @@ export type Rating = z.infer<typeof Rating>
 /**
  * Whether a Design can be bought now, computed by the server from stocked −
  * reserved Pieces at the India stock location (Story 1.8). A sold-out Design
- * is still shown, with adding to the Bag disabled.
+ * is still shown, with adding to the Bag disabled. `held` (Story 1.9): none
+ * is available now, but only because other Shoppers' Holds have them while
+ * they pay; shown as "unavailable for now", and it cannot be added either.
  */
-export const Availability = z.enum(["available", "sold_out"])
+export const Availability = z.enum(["available", "sold_out", "held"])
 export type Availability = z.infer<typeof Availability>
 
 /**
@@ -134,11 +136,18 @@ export const BagLine = z.object({
 export type BagLine = z.infer<typeof BagLine>
 
 /**
+ * The live Hold on a Bag (Story 1.9): while it lasts the Bag cannot be
+ * changed (`cart.locked`), and its Checkout is the Shopper's to pay or cancel.
+ */
+export const BagHold = z.object({ checkoutId: Id, expiresAt: IsoDateTime })
+export type BagHold = z.infer<typeof BagHold>
+
+/**
  * The Shopper's Bag (the kernel's cart). The four price lines are always
  * present and in this order: totalMrp, discount, delivery, total. Every
  * amount is computed by the server; clients only format them. `delivery` is
  * the charge of the shop's standard shipping option (Rs 0 in Epic 1), shown
- * before checkout.
+ * before checkout. `hold` is set while a checkout holds the Bag's Pieces.
  */
 export const BagView = z.object({
   lines: z.array(BagLine),
@@ -147,6 +156,7 @@ export const BagView = z.object({
   delivery: Paise,
   total: Paise,
   count: z.number().int().nonnegative(),
+  hold: BagHold.nullable().default(null),
 })
 export type BagView = z.infer<typeof BagView>
 

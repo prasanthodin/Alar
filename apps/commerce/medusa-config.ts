@@ -48,6 +48,16 @@ module.exports = defineConfig({
     {
       resolve: './src/modules/stock-ledger',
     },
+    // Checkouts and Holds (Story 1.9, AD-6): a Checkout's snapshot of what the
+    // Shopper agreed to pay for, and the Hold that keeps her Pieces (with
+    // kernel reservations tagged with its id). Written only by the
+    // begin-checkout and release-hold workflows.
+    {
+      resolve: './src/modules/checkout',
+    },
+    {
+      resolve: './src/modules/hold',
+    },
     // The shop's own tax provider is the only tax code (AD-5). `dependencies`
     // lets the provider, which lives in the tax module's container, read the
     // settings module and the cart and order line adjustments. The India tax

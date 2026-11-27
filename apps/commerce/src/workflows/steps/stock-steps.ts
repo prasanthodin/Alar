@@ -141,3 +141,32 @@ export const recordStockMovementStep = createStep(
     return new StepResponse({ id: row.id })
   }
 )
+
+/** One row of `recordStockMovementsStep`. */
+export type StockMovementRowInput = {
+  inventoryItemId: string
+  variantId: string
+  cause: StockMovementCause
+  change: number
+  stockedAfter: number
+  reservedAfter: number
+  actor: string
+  actorId?: string | null
+  reason: string
+  requestId?: string | null
+}
+
+/**
+ * Writes several stock-movement rows in one write, all or none (AD-6): one
+ * per change of a stock workflow that changes several items (a Hold and its
+ * release). Like `recordStockMovementStep` it has no compensation and is the
+ * workflow's last write.
+ */
+export const recordStockMovementsStep = createStep(
+  "record-stock-movements",
+  async (rows: StockMovementRowInput[], { container }) => {
+    const ledger = container.resolve<StockLedgerModuleService>(STOCK_LEDGER_MODULE)
+    const created = await ledger.recordMany(rows)
+    return new StepResponse({ ids: created.map((r) => r.id) })
+  }
+)

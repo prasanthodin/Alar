@@ -2,6 +2,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import {
   availablePieces,
+  type Availability,
   DesignCard,
   DesignView,
   type AdminDesignView,
@@ -9,6 +10,7 @@ import {
   type ImageRef,
 } from "@shop/contracts"
 import { DESIGN_PRODUCT_FIELDS, designFromProduct, type DesignRecord, type ProductRow } from "./designs"
+import { heldByInventoryItem } from "./holds"
 import { previewTokenExpiry, verifyPreviewToken } from "./preview-token"
 import { shopError } from "./shop-errors"
 import { findShopStockLocationId, quantity, warnIfOverReserved } from "./stock"
@@ -45,34 +47,82 @@ export type StoreDesign = {
   variantName: string
   /** Pieces available now: stocked − reserved at the India location, never below 0. */
   available: number
+  /** `available`, `sold_out`, or `held` when none is available only because of other Shoppers' Holds. */
+  availability: Availability
+  /** The Variant's inventory item (null when the kernel does not count its stock). */
+  inventoryItemId: string | null
+}
+
+/** A Variant's stock at the India location as the Shopper's views need it. */
+export type VariantStock = {
+  inventoryItemId: string | null
+  stocked: number
+  reserved: number
+  /** Pieces reserved by Holds (checkout), part of `reserved`. */
+  held: number
+  /** stocked − reserved, never below 0. */
+  available: number
+  availability: Availability
+}
+
+const NO_STOCK: VariantStock = {
+  inventoryItemId: null,
+  stocked: 0,
+  reserved: 0,
+  held: 0,
+  available: 0,
+  availability: "sold_out",
 }
 
 /**
- * Pieces available per Variant at the India stock location. A Variant whose
- * stock the kernel does not manage, or without a level there, has none
+ * The availability of a Variant: `available` when a Piece is available
+ * (stocked − reserved > 0); `held` (Story 1.9) when none is, but some would
+ * be without the Holds of Shoppers who are paying (stocked − reserved other
+ * than by Holds > 0); otherwise `sold_out`.
+ */
+export function availabilityOf(stock: { stocked: number; reserved: number; held: number }): Availability {
+  if (availablePieces(stock.stocked, stock.reserved) > 0) return "available"
+  if (availablePieces(stock.stocked, stock.reserved - stock.held) > 0) return "held"
+  return "sold_out"
+}
+
+/**
+ * The stock of each Variant at the India stock location: stocked, reserved
+ * (and how much of it by Holds), available and the availability. A Variant
+ * whose stock the kernel does not manage, or without a level there, has none
  * (a Design's Variant always has one: `create-design` and the stock seed).
  */
-export async function availableByVariant(
+export async function stockByVariant(
   container: MedusaContainer,
   variants: { id: string; manageInventory: boolean; inventoryItemIds: string[] }[]
-): Promise<Map<string, number>> {
-  const out = new Map<string, number>(variants.map((v) => [v.id, 0]))
+): Promise<Map<string, VariantStock>> {
+  const out = new Map<string, VariantStock>(variants.map((v) => [v.id, NO_STOCK]))
   const locationId = await findShopStockLocationId(container)
   const counted = variants.filter((v) => v.manageInventory && v.inventoryItemIds.length === 1)
   if (!locationId || counted.length === 0) return out
-  const levels = await container.resolve(Modules.INVENTORY).listInventoryLevels({
-    inventory_item_id: counted.map((v) => v.inventoryItemIds[0]!),
-    location_id: locationId,
-  })
+  const itemIds = counted.map((v) => v.inventoryItemIds[0]!)
+  const [levels, held] = await Promise.all([
+    container.resolve(Modules.INVENTORY).listInventoryLevels({ inventory_item_id: itemIds, location_id: locationId }),
+    heldByInventoryItem(container, itemIds, locationId),
+  ])
   const byItem = new Map(levels.map((l) => [l.inventory_item_id, l]))
   for (const v of counted) {
     const itemId = v.inventoryItemIds[0]!
     const level = byItem.get(itemId)
-    if (!level) continue
+    if (!level) {
+      out.set(v.id, { ...NO_STOCK, inventoryItemId: itemId })
+      continue
+    }
     const stocked = quantity(level.stocked_quantity)
     const reserved = quantity(level.reserved_quantity)
     warnIfOverReserved(container, itemId, { stocked, reserved })
-    out.set(v.id, availablePieces(stocked, reserved))
+    const stock = { stocked, reserved, held: Math.min(held.get(itemId) ?? 0, reserved) }
+    out.set(v.id, {
+      inventoryItemId: itemId,
+      ...stock,
+      available: availablePieces(stocked, reserved),
+      availability: availabilityOf(stock),
+    })
   }
   return out
 }
@@ -98,7 +148,7 @@ async function toStoreDesigns(container: MedusaContainer, rows: StoreProductRow[
       title: variant?.title ?? null,
     }
   })
-  const available = await availableByVariant(container, variants)
+  const stock = await stockByVariant(container, variants)
   const out: StoreDesign[] = []
   candidates.forEach(({ record }, i) => {
     const { view } = record
@@ -113,7 +163,9 @@ async function toStoreDesigns(container: MedusaContainer, rows: StoreProductRow[
       record,
       view: { ...view, pricePaise: view.pricePaise },
       variantName: variants[i]!.title?.trim() || DEFAULT_VARIANT_NAME,
-      available: available.get(view.variantId) ?? 0,
+      available: stock.get(view.variantId)?.available ?? 0,
+      availability: stock.get(view.variantId)?.availability ?? "sold_out",
+      inventoryItemId: stock.get(view.variantId)?.inventoryItemId ?? null,
     })
   })
   return out
@@ -147,7 +199,7 @@ export function toDesignCard(design: StoreDesign): DesignCard {
     // No MRP in Epic 1: the price is the MRP, so no discount is shown.
     mrp: view.pricePaise,
     image: imageOf(main!, view.name),
-    availability: design.available > 0 ? "available" : "sold_out",
+    availability: design.availability,
   })
 }
 

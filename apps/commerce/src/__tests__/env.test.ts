@@ -15,6 +15,7 @@ const valid = {
   S3_FILE_URL: "http://localhost:4566/catalog/",
   S3_ACCESS_KEY_ID: "key-id",
   S3_SECRET_ACCESS_KEY: "key-secret",
+  S3_DOCUMENTS_BUCKET: "documents",
   PREVIEW_TOKEN_SECRET: "a-preview-signing-key-of-32-chars-or-more",
 }
 
@@ -62,6 +63,8 @@ describe("parseEnv", () => {
     ["JWT_SECRET", "short"],
     ["S3_ENDPOINT", "floci:4566"],
     ["S3_BUCKET", "Catalog_Bucket"],
+    ["S3_DOCUMENTS_BUCKET", "Documents"],
+    ["S3_DOCUMENTS_BUCKET", "catalog"],
     ["S3_FILE_URL", "not a url"],
     ["MEDUSA_WORKER_MODE", "both"],
     ["LOG_LEVEL", "loud"],

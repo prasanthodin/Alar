@@ -79,6 +79,8 @@ export default async function DesignPage(props: Props) {
   const design = res.data
   const variant = design.variants[0]!
   const soldOut = design.availability === "sold_out"
+  // Every available Piece is held by Shoppers who are paying (Story 1.9): unavailable for now, not sold out.
+  const held = design.availability === "held"
   const rows = design.details ? detailRows(design.details) : design.attributes
 
   return (
@@ -122,16 +124,23 @@ export default async function DesignPage(props: Props) {
           <div data-testid="stock-status">
             {soldOut ? (
               <StatusChip tone="danger">{t("design.soldOut")}</StatusChip>
+            ) : held ? (
+              <StatusChip tone="lavender">{t("design.held")}</StatusChip>
             ) : (
               <StatusChip tone="success">{t("design.inStock")}</StatusChip>
             )}
           </div>
           <AddToBag
             variantId={variant.id}
-            disabled={soldOut || Boolean(design.preview)}
-            label={soldOut ? t("design.soldOut") : t("design.addToBag")}
+            disabled={soldOut || held || Boolean(design.preview)}
+            label={soldOut ? t("design.soldOut") : held ? t("design.held") : t("design.addToBag")}
           />
           {soldOut ? <p className="text-body-sm text-text-muted">{t("design.soldOutNote")}</p> : null}
+          {held ? (
+            <p className="text-body-sm text-text-muted" data-testid="held-note">
+              {t("design.heldNote")}
+            </p>
+          ) : null}
 
           {design.description ? (
             <div className="flex flex-col gap-2 border-t border-border pt-4">

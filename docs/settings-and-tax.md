@@ -23,6 +23,7 @@ The module key is `shopSettings`, not `settings`: `settings` is the kernel's own
 | --- | --- | --- |
 | `shop.name` | string, 1–80 characters (trimmed) | `STORE_NAME` if set, else the default in `settings-data/seed.ts` |
 | `shop.time_zone` | IANA time zone name | `Asia/Kolkata` |
+| `checkout.hold_minutes` | whole minutes, 1–60: how long a checkout Hold lasts (Story 1.9) | 15 (`settings-data/seed.ts`; `migration-scripts/checkout-hold-setting.ts` seeds it on older databases) |
 | `tax.bands.<taxCode>` | `TaxBands` (see below); `<taxCode>` is lower-case letters, digits, `_`, `-`, at most 40 characters | `tax.bands.saree` = `[{ minTaxablePaise: 0, maxTaxablePaise: null, rateBp: 500 }]` |
 
 Every value is checked against its key's schema when written (`setValue`) and again when read (`getValue`). A refused write stores nothing and fails with `settings.invalid_value`; so does an unknown key. A read with no value in effect fails with `settings.not_found`. A stored value that fails its schema on read is a fault on the shop's side: it is logged with its key and fails as an unexpected state (HTTP 500, code `internal`). Later stories add their own keys (Hold length, return period, seller details) to `SETTING_SCHEMAS` when they first need them. Editing settings in the Admin is Epic 3 (FR-56); changing a tax rate there is Epic 2 (FR-37).

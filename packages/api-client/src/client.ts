@@ -38,8 +38,8 @@ export const REQUEST_TIMEOUT_MS = 15_000
 
 /** Kernel failure as seen by the transport, before mapping to a contract code. */
 export type KernelFailure =
-  /** `code` is the error envelope's code from the response body, when it has one. */
-  | { kind: "http"; status: number; message: string; code?: string }
+  /** `code` (and `details`) are the error envelope's, from the response body, when it has them. */
+  | { kind: "http"; status: number; message: string; code?: string; details?: Record<string, unknown> }
   | { kind: "network"; message: string }
   | { kind: "invalid"; message: string }
 
@@ -65,7 +65,8 @@ class HttpFailure extends Error {
   constructor(
     readonly status: number,
     message: string,
-    readonly code?: string
+    readonly code?: string,
+    readonly details?: Record<string, unknown>
   ) {
     super(message)
   }
@@ -102,11 +103,14 @@ async function kernelFetch(
     ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
   })
   if (res.status >= 300) {
-    const body = (await res.json().catch(() => ({}))) as { message?: unknown; code?: unknown }
+    const body = (await res.json().catch(() => ({}))) as { message?: unknown; code?: unknown; details?: unknown }
     throw new HttpFailure(
       res.status,
       typeof body.message === "string" ? body.message : res.statusText,
-      typeof body.code === "string" ? body.code : undefined
+      typeof body.code === "string" ? body.code : undefined,
+      body.details && typeof body.details === "object" && !Array.isArray(body.details)
+        ? (body.details as Record<string, unknown>)
+        : undefined
     )
   }
   return res.json()
@@ -152,7 +156,13 @@ export function createTransport(config: ApiClientConfig): Transport {
         if (e instanceof HttpFailure) {
           return {
             ok: false,
-            failure: { kind: "http", status: e.status, message: e.message, ...(e.code ? { code: e.code } : {}) },
+            failure: {
+              kind: "http",
+              status: e.status,
+              message: e.message,
+              ...(e.code ? { code: e.code } : {}),
+              ...(e.details ? { details: e.details } : {}),
+            },
           }
         }
         if (e instanceof SyntaxError) {

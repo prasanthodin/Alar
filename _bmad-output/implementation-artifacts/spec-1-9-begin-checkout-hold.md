@@ -2,7 +2,7 @@
 title: 'Story 1.9: Begin checkout: snapshot and Hold'
 type: 'feature'
 created: '2026-11-27'
-status: 'in-progress'
+status: 'in-review'
 route: 'dispatch'
 baseline_commit: 'e9eef3e'
 review_loop_iteration: 0
@@ -64,17 +64,24 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] contracts and codes with tests
-- [ ] modules, migrations, workflows, job, routes, cart-lock guard
-- [ ] documents bucket in infra and CI; recovery file step
-- [ ] integration tests for every matrix row (file failure by a failing S3 step; race with `Promise.all`; expiry by moving a Hold's `expiresAt` into the past and invoking the job handler), checking reservations, movement rows and that the recovery file exists with the snapshot and no address appears in captured logs
-- [ ] api-client tests; website checkout page; web e2e: sign in, begin checkout, see total and end time, Bag locked, cancel unlocks; screenshot of the checkout page at 390 and 1440
-- [ ] docs
+- [x] contracts and codes with tests
+- [x] modules, migrations, workflows, job, routes, cart-lock guard
+- [x] documents bucket in infra and CI; recovery file step
+- [x] integration tests for every matrix row (file failure by a failing S3 step; race with `Promise.all`; expiry by moving a Hold's `expiresAt` into the past and invoking the job handler), checking reservations, movement rows and that the recovery file exists with the snapshot and no address appears in captured logs
+- [x] api-client tests; website checkout page; web e2e: sign in, begin checkout, see total and end time, Bag locked, cancel unlocks; screenshot of the checkout page at 390 and 1440
+- [x] docs
 
 **Acceptance Criteria:**
 - Given the repository, when `pnpm lint && pnpm typecheck && pnpm test && pnpm build`, the commerce integration tests, the admin smoke and the web e2e run, then all pass and the name check passes.
 
 ## Implementation Notes
+
+- `cart.changed` vs `stock.unavailable`: a line short of stock *not counting other Shoppers' Holds* (or unpublished, or repriced) is `cart.changed`; a shortage caused only by other Holds is `stock.unavailable`. `held` availability uses the same rule (Hold reservations are those whose `external_id` starts `hold_`).
+- Hold stock-movement rows record the change in reserved Pieces (+n/−n); the Admin history shows "held for shoppers after" for them. The ledger gained `recordMany` (one insert).
+- `begin-checkout` also transfers the cart to the Shopper, sets its shipping address and the standard shipping method, then forces a tax-line refresh (after the price check, so re-pricing is a no-op). These cart changes are not undone on failure (harmless).
+- An expired-but-unreleased Hold no longer locks the Bag; `POST /store/shop/checkouts` releases it (reason `expired`) before beginning again.
+- Module keys are `shopCheckout`/`shopHold` (tables `checkout`/`hold`). Routes accept a customer bearer token only.
+- Website: `?next=` return path on sign-in/sign-up/sign-out; checkout page lists changed lines with Accept/Change/Remove.
 
 ## Spec Change Log
 

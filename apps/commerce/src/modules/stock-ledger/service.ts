@@ -30,13 +30,29 @@ export type StockHistoryPage = {
   more: boolean
 }
 
+function toRow(input: RecordStockMovementInput) {
+  return {
+    inventory_item_id: input.inventoryItemId,
+    variant_id: input.variantId,
+    cause: input.cause,
+    change: input.change,
+    stocked_after: input.stockedAfter,
+    reserved_after: input.reservedAfter,
+    actor: input.actor,
+    actor_id: input.actorId ?? null,
+    reason: input.reason,
+    request_id: input.requestId ?? null,
+    occurred_at: input.occurredAt ?? new Date(),
+  }
+}
+
 type InjectedDependencies = {
   stockMovementService: ModulesSdkTypes.IMedusaInternalService<typeof StockMovement>
 }
 
 /**
  * The stock ledger: append-only stock-movement rows. It exposes `record`,
- * `findByRequestId` and `listForVariant` only, and a database trigger
+ * `recordMany`, `findByRequestId` and `listForVariant` only, and a database trigger
  * refuses any UPDATE or DELETE of a row. Rows are written only by the stock
  * workflows (AD-6), inside the stock lock. Deliberately not a
  * `MedusaService`, which would generate update and delete methods.
@@ -50,20 +66,19 @@ export default class StockLedgerModuleService {
 
   /** Inserts one row and returns it. A `requestId` already recorded fails on the unique index. */
   async record(input: RecordStockMovementInput): Promise<StockMovementRow> {
-    const created = await this.movements_.create({
-      inventory_item_id: input.inventoryItemId,
-      variant_id: input.variantId,
-      cause: input.cause,
-      change: input.change,
-      stocked_after: input.stockedAfter,
-      reserved_after: input.reservedAfter,
-      actor: input.actor,
-      actor_id: input.actorId ?? null,
-      reason: input.reason,
-      request_id: input.requestId ?? null,
-      occurred_at: input.occurredAt ?? new Date(),
-    })
+    const created = await this.movements_.create(toRow(input))
     return created as unknown as StockMovementRow
+  }
+
+  /**
+   * Inserts several rows in one write (all or none) and returns them in
+   * order: a stock workflow that changes several items records them together.
+   */
+  async recordMany(inputs: RecordStockMovementInput[]): Promise<StockMovementRow[]> {
+    if (inputs.length === 0) return []
+    const at = new Date()
+    const created = await this.movements_.create(inputs.map((i) => toRow({ ...i, occurredAt: i.occurredAt ?? at })))
+    return created as unknown as StockMovementRow[]
   }
 
   /** The row recorded for a client's request id, or null. */

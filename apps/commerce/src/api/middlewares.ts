@@ -23,6 +23,13 @@ export default defineMiddlewares({
       matcher: '/store/carts*',
       middlewares: [bagCartGuard],
     },
+    // Checkout (Story 1.9) is for a signed-in Shopper only: a customer bearer
+    // token, never an admin and never a cookie. Each Shopper reaches her own
+    // Checkouts only (checkout.not_found otherwise).
+    {
+      matcher: '/store/shop/checkouts*',
+      middlewares: [authenticate('customer', ['bearer'])],
+    },
     // Shop admin routes (Story 1.6) accept only a signed-in admin's session
     // cookie (the dashboard's): no bearer token, no secret API key, no Shopper.
     // Because a cookie is sent cross-site, writes must also come from an

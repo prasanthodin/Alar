@@ -35,6 +35,9 @@ export const StockLocationId = z.string().regex(/^sloc_[A-Za-z0-9]{1,100}$/)
 /** A kernel shipping option id, e.g. `so_01J...`. */
 export const ShippingOptionId = z.string().regex(/^so_[A-Za-z0-9]{1,100}$/)
 
+/** How long a checkout Hold lasts, in whole minutes (Story 1.9): 1 to 60. */
+export const HoldMinutes = z.number().int().min(1).max(60)
+
 /** The keys with a fixed name, and their schemas. */
 export const SETTING_SCHEMAS = {
   "shop.name": ShopName,
@@ -43,6 +46,8 @@ export const SETTING_SCHEMAS = {
   "stock.location_id": StockLocationId,
   /** The shop's standard shipping option for India (Story 1.8), written by the shipping seed. */
   "shipping.standard_option_id": ShippingOptionId,
+  /** How long a checkout Hold keeps a Shopper's Pieces (Story 1.9), seeded at 15 minutes. */
+  "checkout.hold_minutes": HoldMinutes,
 } as const
 
 /** Prefix of the per-tax-code band keys: `tax.bands.<taxCode>` holds `TaxBands`. */

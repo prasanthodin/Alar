@@ -1,8 +1,10 @@
 "use server"
 
-import type { ErrorCode } from "@shop/contracts"
+import type { CheckoutAddressInput, ErrorCode } from "@shop/contracts"
+import { CartChangedDetails } from "@shop/contracts"
 import { refresh } from "next/cache"
 import { redirect } from "next/navigation"
+import { safeReturnPath } from "@/lib/return-path"
 import { api } from "@/lib/session"
 
 export type FormState = { error: ErrorCode | null; email: string }
@@ -26,14 +28,15 @@ export async function signUpAction(_prev: FormState, form: FormData): Promise<Fo
     lastName: optional(form, "lastName"),
   })
   if (!res.ok) return { error: res.error.code, email }
-  redirect("/account")
+  // Back where she came from (checkout sends her here with ?next=/checkout), else her account.
+  redirect(safeReturnPath(field(form, "next")) ?? "/account")
 }
 
 export async function signInAction(_prev: FormState, form: FormData): Promise<FormState> {
   const email = field(form, "email").trim()
   const res = await api().signIn({ email, password: field(form, "password") })
   if (!res.ok) return { error: res.error.code, email }
-  redirect("/account")
+  redirect(safeReturnPath(field(form, "next")) ?? "/account")
 }
 
 export async function signOutAction(): Promise<void> {
@@ -90,4 +93,48 @@ export async function removeFromBagAction(prev: BagActionState, form: FormData):
  */
 export async function clearStaleBagAction(): Promise<void> {
   await api().getBag()
+}
+
+/** The address fields of the checkout form, in its order. */
+const ADDRESS_FIELDS = ["name", "mobile", "addressLine", "city", "pincode", "state"] as const
+
+/**
+ * What beginning checkout answers when it does not go on to the held
+ * checkout: the error, the fields to check (`input.invalid`), the changed
+ * lines to accept first (`cart.changed`), and what she typed, to fill the
+ * form in again.
+ */
+export type CheckoutFormState = {
+  error: ErrorCode | null
+  fields: string[]
+  changed: CartChangedDetails["lines"]
+  values: Partial<Record<(typeof ADDRESS_FIELDS)[number], string>>
+}
+
+/**
+ * Begins checkout (Story 1.9): the server re-checks the Bag, snapshots it and
+ * holds its Pieces; then the page shows the held checkout. A signed-out
+ * Shopper (or an ended session) is sent to sign in and back here.
+ */
+export async function beginCheckoutAction(_prev: CheckoutFormState, form: FormData): Promise<CheckoutFormState> {
+  const values = Object.fromEntries(ADDRESS_FIELDS.map((name) => [name, field(form, name)])) as CheckoutFormState["values"]
+  const res = await api().beginCheckout(values as CheckoutAddressInput)
+  if (res.ok) redirect("/checkout")
+  if (res.error.code === "auth.unauthenticated") redirect("/sign-out?next=%2Fcheckout")
+  const details = res.error.details ?? {}
+  const changed = res.error.code === "cart.changed" ? CartChangedDetails.safeParse(details) : null
+  refresh()
+  return {
+    error: res.error.code,
+    fields: Array.isArray(details.fields) ? details.fields.filter((f): f is string => typeof f === "string") : [],
+    changed: changed?.success ? changed.data.lines : [],
+    values,
+  }
+}
+
+/** Cancels the checkout: the Pieces go back to stock and the Bag can be changed again. */
+export async function cancelCheckoutAction(form: FormData): Promise<void> {
+  const res = await api().cancelCheckout(field(form, "checkoutId"))
+  if (!res.ok && res.error.code === "auth.unauthenticated") redirect("/sign-out?next=%2Fcheckout")
+  redirect("/bag")
 }

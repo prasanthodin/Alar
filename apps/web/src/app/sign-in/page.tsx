@@ -4,10 +4,15 @@ import { AuthForm } from "@/components/auth-form"
 import { TopBar } from "@/components/top-bar"
 import { Card } from "@/components/ui"
 import { t } from "@/lib/i18n"
+import { safeReturnPath, withReturnPath } from "@/lib/return-path"
 
 export const metadata: Metadata = { title: t("signIn.title") }
 
-export default function SignInPage() {
+type Props = { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }
+
+/** `?next=/checkout` (from checkout) brings her back there afterwards. */
+export default async function SignInPage({ searchParams }: Props) {
+  const next = safeReturnPath((await searchParams).next)
   return (
     <>
       <TopBar />
@@ -28,7 +33,8 @@ export default function SignInPage() {
             ]}
             submit="signIn.submit"
             pending="signIn.pending"
-            footer={{ text: "signIn.noAccount", link: "signIn.signUpLink", href: "/sign-up" }}
+            footer={{ text: "signIn.noAccount", link: "signIn.signUpLink", href: withReturnPath("/sign-up", next) }}
+            next={next}
           />
         </Card>
       </main>

@@ -48,6 +48,7 @@ export async function seedShopSettings(
   const values: [SettingKey, SettingValueOf<SettingKey>][] = [
     ["shop.name", seedShopName(env)],
     ["shop.time_zone", seed.timeZone],
+    ["checkout.hold_minutes", seed.holdMinutes],
     ...Object.entries(seed.taxBands).map(
       ([code, bands]): [SettingKey, SettingValueOf<SettingKey>] => [taxBandsKey(code), [...bands]]
     ),

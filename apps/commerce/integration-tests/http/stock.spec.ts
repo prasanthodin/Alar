@@ -675,7 +675,7 @@ medusaIntegrationTestRunner({
         const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(ledger())).filter(
           (n) => n !== "constructor" && !n.startsWith("__")
         )
-        expect(methods.sort()).toEqual(["findByRequestId", "listForVariant", "record"])
+        expect(methods.sort()).toEqual(["findByRequestId", "listForVariant", "record", "recordMany"])
       })
 
       it("is refused by the database: an UPDATE and a DELETE of a row fail", async () => {

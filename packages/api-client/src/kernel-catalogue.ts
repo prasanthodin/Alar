@@ -11,7 +11,7 @@ const DesignResponse = z.object({ design: DesignView })
 const BagResponse = z.object({ bag: BagView })
 
 /** The Bag before anything is in it: no lines and nothing to pay. */
-const EMPTY_BAG: BagView = { lines: [], totalMrp: 0, discount: 0, delivery: 0, total: 0, count: 0 }
+const EMPTY_BAG: BagView = { lines: [], totalMrp: 0, discount: 0, delivery: 0, total: 0, count: 0, hold: null }
 
 /** The kernel's error code when a Variant has fewer Pieces available than asked (its inventory check). */
 const KERNEL_INSUFFICIENT_INVENTORY = "insufficient_inventory"
@@ -25,7 +25,7 @@ export function checkQuantity(quantity: number): Result<number> {
 }
 
 /** In memory: one Bag per client, for clients that pass no store. */
-function memoryStore(): TokenStore {
+export function memoryStore(): TokenStore {
   let value: string | null = null
   return {
     get: () => value,
@@ -42,8 +42,9 @@ function memoryStore(): TokenStore {
  * Maps a failed Bag write: too many Pieces is `bag.stock_exceeded` (the
  * kernel refuses before changing the line, so it keeps its quantity); a
  * Variant that is not the Variant of a published Design is `design.not_found`
- * (the shop's cart guard decides this from the catalogue); an unknown cart or
- * line is `bag.not_found`; anything else follows `mapFailure`.
+ * (the shop's cart guard decides this from the catalogue); a Bag held by a
+ * checkout is `cart.locked`; an unknown cart or line is `bag.not_found`;
+ * anything else follows `mapFailure`.
  */
 function bagFailure<T>(failure: KernelFailure): Result<T> {
   if (failure.kind === "http") {
@@ -51,6 +52,8 @@ function bagFailure<T>(failure: KernelFailure): Result<T> {
       return fail("bag.stock_exceeded", failure.message)
     }
     if (failure.code === "design.not_found") return fail("design.not_found", failure.message)
+    // A checkout holds this Bag (Story 1.9): it cannot change until the checkout is cancelled or ends.
+    if (failure.code === "cart.locked") return fail("cart.locked", failure.message)
     if (failure.code === "input.invalid") return fail("input.invalid", failure.message)
     if (failure.status === 404) return fail("bag.not_found", failure.message)
   }

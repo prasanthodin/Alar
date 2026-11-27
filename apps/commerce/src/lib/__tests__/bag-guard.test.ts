@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { cartWriteSchema } from "../bag-guard"
+import { cartWriteSchema, lineWriteCartId } from "../bag-guard"
 
 const item = { variant_id: "variant_01", quantity: 1 }
 
@@ -43,5 +43,21 @@ describe("cartWriteSchema", () => {
     expect(cartWriteSchema("GET", "/store/carts")).toBeNull()
     expect(cartWriteSchema("POST", "/store/carts/cart_01/complete")).toBeNull()
     expect(cartWriteSchema("POST", "/store/shop/bag/cart_01")).toBeNull()
+  })
+})
+
+describe("lineWriteCartId", () => {
+  it("names the cart of every line write (add, change, remove), which a live Hold refuses", () => {
+    expect(lineWriteCartId("POST", "/store/carts/cart_01/line-items")).toBe("cart_01")
+    expect(lineWriteCartId("post", "/store/carts/cart_01/line-items/cali_01?fields=id")).toBe("cart_01")
+    expect(lineWriteCartId("DELETE", "/store/carts/cart_01/line-items/cali_01/")).toBe("cart_01")
+  })
+
+  it("is null for a new cart, a read and any other path", () => {
+    expect(lineWriteCartId("POST", "/store/carts")).toBeNull()
+    expect(lineWriteCartId("GET", "/store/carts/cart_01")).toBeNull()
+    expect(lineWriteCartId("GET", "/store/carts/cart_01/line-items")).toBeNull()
+    expect(lineWriteCartId("POST", "/store/carts/cart_01/complete")).toBeNull()
+    expect(lineWriteCartId("POST", "/store/shop/checkouts")).toBeNull()
   })
 })

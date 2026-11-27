@@ -72,7 +72,8 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # One-shot: creates the public, versioned `catalog` bucket, then exits.
+  # One-shot: creates the public, versioned `catalog` bucket and the private,
+  # versioned `documents` bucket (Checkout recovery files, Story 1.9), then exits.
   # Runs the commerce image (built by the commerce service) for its S3 client.
   bucket-init:
     image: ${COMMERCE_IMAGE:-shop/commerce:local}
@@ -82,6 +83,7 @@ services:
     environment:
       <<: *s3-env
       CATALOG_BUCKET: catalog
+      DOCUMENTS_BUCKET: documents
     depends_on:
       floci:
         condition: service_healthy
@@ -108,6 +110,8 @@ services:
       # Preview links of unpublished Designs point at the website.
       STOREFRONT_URL: ${PUBLIC_URL:-http://localhost:${CADDY_PORT:-8080}}
       S3_BUCKET: catalog
+      # Private: never served by Caddy, reached only through the S3 client.
+      S3_DOCUMENTS_BUCKET: documents
       S3_FILE_URL: ${S3_FILE_URL:-${PUBLIC_URL:-http://localhost:${CADDY_PORT:-8080}}/catalog}
       PUBLISHABLE_KEY_FILE: /var/lib/shop/publishable-key
       # Seeded into the shop.name setting on the first migration (Story 1.5).

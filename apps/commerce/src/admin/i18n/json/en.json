@@ -167,6 +167,7 @@
       "set": "Enter a whole number of pieces from 0 to {{max}}."
     },
     "after": "(in stock after: {{stocked}})",
+    "heldAfter": "(held for shoppers after: {{reserved}})",
     "when": "{{at}} by {{actor}}",
     "savedNotRefreshed": "Stock changed to {{stocked}}. The history could not be refreshed; reload the page to see it. Do not send the change again.",
     "showOlder": "Show older changes"

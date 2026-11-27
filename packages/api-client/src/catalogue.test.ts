@@ -92,7 +92,7 @@ describe("mock catalogue", () => {
     const res = await client().getBag()
     expect(res).toEqual({
       ok: true,
-      data: { lines: [], totalMrp: 0, discount: 0, delivery: 0, total: 0, count: 0 },
+      data: { lines: [], totalMrp: 0, discount: 0, delivery: 0, total: 0, count: 0, hold: null },
     })
   })
 

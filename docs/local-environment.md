@@ -6,8 +6,8 @@ The whole system runs from one compose file, `infra/compose.yaml` (Story 1.3). S
 | --- | --- | --- |
 | `postgres` | `postgres:17` | Database `commerce`. Published on `127.0.0.1:55432`. |
 | `redis` | `redis:8` | Event bus, workflow engine and locking for the kernel. Never a cache: `maxmemory-policy noeviction`, append-only persistence. Published on `127.0.0.1:56379`. |
-| `floci` | `floci/floci:2.5.0` | Local AWS emulator. Holds the public, versioned `catalog` bucket. Browsers fetch public files through Caddy at `/catalog/...`; also published on `127.0.0.1:4566` for host tools. |
-| `bucket-init` | the commerce image (`shop/commerce:local`, built by `commerce`) | One-shot: creates `catalog`, turns on versioning, sets a public-read policy (`infra/init/create-buckets.mjs`), then exits. |
+| `floci` | `floci/floci:2.5.0` | Local AWS emulator. Holds the public, versioned `catalog` bucket and the private, versioned `documents` bucket (Checkout recovery files, Story 1.9). Browsers fetch public files through Caddy at `/catalog/...`; also published on `127.0.0.1:4566` for host tools. |
+| `bucket-init` | the commerce image (`shop/commerce:local`, built by `commerce`) | One-shot: creates `catalog` (versioned, public-read policy) and `documents` (versioned, no policy, public access blocked) (`infra/init/create-buckets.mjs`), then exits. |
 | `commerce` | built from `apps/commerce/Dockerfile` | The kernel in shared worker mode (HTTP, subscribers and scheduled jobs in one process). On start it runs migrations, writes the publishable key for the website, then runs `medusa start`. |
 | `web` | built from `apps/web/Dockerfile` | The website (`next start`). Calls commerce over the container network. |
 | `caddy` | `caddy:2` | The entry point: `http://localhost:8080` (`CADDY_PORT`). `/store`, `/auth`, `/admin`, `/app` (admin UI), `/hooks/*` and `/health` go to commerce, `/catalog/*` to the emulator, everything else to the website. Stored files therefore live on the site's own origin (`S3_FILE_URL` defaults to `${PUBLIC_URL}/catalog`), reachable from other devices that can reach the site. |

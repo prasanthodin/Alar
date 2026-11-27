@@ -1,12 +1,15 @@
 import { formatRupees } from "@shop/contracts"
 import type { Metadata } from "next"
+import Link from "next/link"
 import { BagLine } from "@/components/bag-line"
 import { HeaderActions } from "@/components/header-actions"
 import { TopBar } from "@/components/top-bar"
-import { ButtonLink, Note } from "@/components/ui"
+import { buttonClass, ButtonLink, Note } from "@/components/ui"
 import { errorText, t, tf } from "@/lib/i18n"
 import { ClearStaleBag } from "@/components/clear-stale-bag"
-import { readBag } from "@/lib/session"
+import { withReturnPath } from "@/lib/return-path"
+import { hasSession, readBag } from "@/lib/session"
+import { holdEndTime } from "@/lib/time"
 
 export const metadata: Metadata = { title: t("bag.title"), robots: { index: false } }
 
@@ -24,10 +27,15 @@ function Row({ label, value, testId, strong = false }: { label: string; value: s
 /**
  * The Bag (Story 1.8): its lines, and the same four price lines in the same
  * order (Total MRP, Discount, Delivery, Total), every amount from the server.
- * The delivery charge is shown before checkout.
+ * The delivery charge is shown before checkout. Checkout (Story 1.9) needs
+ * a signed-in Shopper; while a checkout holds the Bag, it cannot be changed.
  */
 export default async function BagPage() {
   const { result: res, staleCookie } = await readBag()
+  const signedIn = await hasSession()
+  const hold = res.ok ? res.data.hold : null
+  // A line that is no longer on sale or holds more than are available must be resolved first.
+  const unresolved = res.ok && res.data.lines.some((l) => !l.buyable || l.stock === 0 || l.quantity > l.stock)
 
   return (
     <>
@@ -51,13 +59,20 @@ export default async function BagPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-8">
-            <section aria-label={t("bag.lines")} className="flex-1 rounded-xl border border-border bg-surface px-4">
-              <ul>
-                {res.data.lines.map((line) => (
-                  <BagLine key={line.id} line={line} />
-                ))}
-              </ul>
-            </section>
+            <div className="flex flex-1 flex-col gap-3">
+              {hold ? (
+                <Note tone="info" testId="bag-held">
+                  {tf("bag.held", { time: holdEndTime(hold.expiresAt) })}
+                </Note>
+              ) : null}
+              <section aria-label={t("bag.lines")} className="rounded-xl border border-border bg-surface px-4">
+                <ul>
+                  {res.data.lines.map((line) => (
+                    <BagLine key={line.id} line={line} locked={Boolean(hold)} />
+                  ))}
+                </ul>
+              </section>
+            </div>
             <section
               aria-labelledby="bag-summary"
               className="rounded-xl border border-border bg-surface p-4 lg:w-[380px] lg:shrink-0"
@@ -77,6 +92,29 @@ export default async function BagPage() {
                 <Row label={t("bag.total")} value={formatRupees(res.data.total)} testId="bag-total" strong />
               </dl>
               <p className="mt-3 text-caption text-text-muted">{t("bag.taxNote")}</p>
+              <div className="mt-4 flex flex-col gap-2">
+                {hold ? (
+                  <Link href="/checkout" data-testid="bag-checkout" className={`${buttonClass.primary} w-full`}>
+                    {t("bag.continueCheckout")}
+                  </Link>
+                ) : unresolved ? (
+                  <>
+                    <button type="button" disabled data-testid="bag-checkout" className={`${buttonClass.primary} w-full`}>
+                      {t("bag.checkout")}
+                    </button>
+                    <p className="text-caption text-text-muted">{t("bag.resolveFirst")}</p>
+                  </>
+                ) : (
+                  // Signed out: sign in (or up) first, then back to checkout; the Bag is kept in its cookie.
+                  <Link
+                    href={signedIn ? "/checkout" : withReturnPath("/sign-in", "/checkout")}
+                    data-testid="bag-checkout"
+                    className={`${buttonClass.primary} w-full`}
+                  >
+                    {t("bag.checkout")}
+                  </Link>
+                )}
+              </div>
             </section>
           </div>
         )}

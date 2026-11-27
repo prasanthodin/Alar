@@ -91,12 +91,20 @@ export const envSchema = z.object({
   S3_FILE_URL: httpUrl.transform((value) => value.replace(/\/+$/, "")),
   S3_ACCESS_KEY_ID: nonEmpty,
   S3_SECRET_ACCESS_KEY: nonEmpty,
+  // The private, versioned bucket for documents (Story 1.9): Checkout recovery
+  // files now, invoices, credit notes and labels later. Never public, so never
+  // the catalog bucket (S3_BUCKET); objects are reached only through the S3 client.
+  S3_DOCUMENTS_BUCKET: bucketName,
   // Signs the Admin's preview links of unpublished Designs (Story 1.8). Its own key,
   // never JWT_SECRET or COOKIE_SECRET. Generate with: openssl rand -hex 32
   PREVIEW_TOKEN_SECRET: signingKey,
   // The website's public origin, where preview links point. Optional: defaults to the
   // first exact origin in STORE_CORS.
   STOREFRONT_URL: origin.optional(),
+}).superRefine((env, ctx) => {
+  if (env.S3_DOCUMENTS_BUCKET === env.S3_BUCKET) {
+    ctx.addIssue({ code: "custom", path: ["S3_DOCUMENTS_BUCKET"], message: "The documents bucket must not be the public catalog bucket" })
+  }
 })
 
 export type Env = z.infer<typeof envSchema>

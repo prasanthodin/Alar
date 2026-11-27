@@ -25,17 +25,21 @@ export function AuthForm({
   submit,
   pending: pendingLabel,
   footer,
+  next,
 }: {
   action: (prev: FormState, form: FormData) => Promise<FormState>
   fields: Field[]
   submit: MessageKey
   pending: MessageKey
   footer: { text: MessageKey; link: MessageKey; href: string }
+  /** Where to go after signing in or up (a safe path on this site), else the account. */
+  next?: string | null
 }) {
   const [state, formAction, pending] = useActionState(action, { error: null, email: "" })
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       {state.error ? (
         <p
           role="alert"

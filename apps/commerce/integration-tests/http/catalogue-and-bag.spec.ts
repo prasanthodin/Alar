@@ -374,6 +374,7 @@ medusaIntegrationTestRunner({
           delivery: 0,
           total: 315000,
           count: 1,
+          hold: null,
         })
       })
 

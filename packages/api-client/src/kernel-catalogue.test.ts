@@ -117,6 +117,7 @@ function bagWith(quantity: number) {
     delivery: 0,
     total: 315000 * quantity,
     count: quantity,
+    hold: null,
   }
 }
 const cartRef = (id = "cart_01") => ({ cart: { id, total: 999, items: [] } })
@@ -168,7 +169,7 @@ describe("kernel catalogue: Bag", () => {
   it("is empty, without a call, before anything is added", async () => {
     expect(await client().api.getBag()).toEqual({
       ok: true,
-      data: { lines: [], totalMrp: 0, discount: 0, delivery: 0, total: 0, count: 0 },
+      data: { lines: [], totalMrp: 0, discount: 0, delivery: 0, total: 0, count: 0, hold: null },
     })
     expect(calls).toEqual([])
   })

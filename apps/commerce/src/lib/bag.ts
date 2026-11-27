@@ -2,6 +2,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, MathBN } from "@medusajs/framework/utils"
 import { BagView, ShelfPrice, type BagLine } from "@shop/contracts"
 import { kernelAmountToExactPaise, kernelAmountToPaise } from "./designs"
+import { findLiveHold, holdExpired, reservedByHold } from "./holds"
 import { findIndiaRegionId, SHOP_REGION } from "./region"
 import { standardDeliveryPaise } from "./shipping"
 import { shopError } from "./shop-errors"
@@ -14,7 +15,7 @@ import { orderedPhotos, storeDesignsByProduct } from "./store-catalogue"
  * format these amounts.
  */
 
-type ItemRow = {
+export type ItemRow = {
   id: string
   product_id?: string | null
   product_handle?: string | null
@@ -29,7 +30,7 @@ type ItemRow = {
   created_at?: Date | string | null
 }
 
-type CartRow = {
+export type CartRow = {
   id: string
   currency_code: string
   region_id?: string | null
@@ -65,7 +66,7 @@ const CART_FIELDS = [
  * (completed), or it is not a Bag this shop can show: not in rupees, not in
  * the India region, or not in one of the publishable key's sales channels.
  */
-async function loadCart(container: MedusaContainer, cartId: string, salesChannelIds: readonly string[]): Promise<CartRow> {
+export async function loadCart(container: MedusaContainer, cartId: string, salesChannelIds: readonly string[]): Promise<CartRow> {
   const notFound = () => shopError("bag.not_found", `No Bag ${cartId}`, { cartId })
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const { data } = await query.graph({ entity: "cart", fields: CART_FIELDS, filters: { id: cartId } })
@@ -98,6 +99,10 @@ export async function loadBag(
 
   const productIds = [...new Set(items.flatMap((i) => (i.product_id ? [i.product_id] : [])))]
   const designs = await storeDesignsByProduct(container, productIds)
+  // While a checkout holds this Bag's Pieces (Story 1.9), they are hers: count
+  // them as available to her lines, though no other Shopper can have them.
+  const liveHold = await findLiveHold(container, cart.id)
+  const ownHeld = liveHold ? await reservedByHold(container, liveHold.id) : new Map<string, number>()
 
   const lines: BagLine[] = items.map((item) => {
     if (!item.product_id || !item.variant_id) throw shopError("internal", `Bag line ${item.id} names no product or variant`)
@@ -126,7 +131,7 @@ export async function loadBag(
       mrp: price,
       quantity,
       lineTotal: kernelAmountToExactPaise(item.total, `Bag line ${item.id} total`),
-      stock: design ? design.available : 0,
+      stock: design ? design.available + (design.inventoryItemId ? (ownHeld.get(design.inventoryItemId) ?? 0) : 0) : 0,
     }
   })
 
@@ -147,5 +152,9 @@ export async function loadBag(
     delivery,
     total: itemTotal + delivery,
     count: lines.reduce((sum, l) => sum + l.quantity, 0),
+    hold:
+      liveHold && !holdExpired(liveHold)
+        ? { checkoutId: liveHold.checkout_id, expiresAt: new Date(liveHold.expires_at).toISOString() }
+        : null,
   })
 }

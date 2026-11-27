@@ -214,7 +214,9 @@ export const DesignStock = ({ designId }: Props) => {
                   <div className="flex items-baseline justify-between gap-x-3">
                     <Text size="small" weight="plus">
                       <span data-testid="stock-movement-change">{signed(m.change)}</span>{" "}
-                      {t("shopStock.after", { stocked: m.stockedAfter })}
+                      {m.cause === "checkout_hold" || m.cause === "hold_released"
+                        ? t("shopStock.heldAfter", { reserved: m.reservedAfter })
+                        : t("shopStock.after", { stocked: m.stockedAfter })}
                     </Text>
                     <Text size="small" className="text-ui-fg-subtle">
                       {t(`shopStock.causes.${m.cause}`)}

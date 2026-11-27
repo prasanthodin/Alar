@@ -69,10 +69,12 @@ jobs:
       PREVIEW_TOKEN_SECRET: ci-only-preview-token-secret-0123456789
       # The kernel's event bus, workflow engine and locking run on Redis (Story 1.3).
       REDIS_URL: redis://localhost:6379
-      # File storage on the floci service: the public `catalog` bucket, created
+      # File storage on the floci service: the public `catalog` bucket and the
+      # private `documents` bucket (Checkout recovery files, Story 1.9), created
       # by infra/init/create-buckets.mjs before the integration tests.
       S3_ENDPOINT: http://localhost:4566
       S3_BUCKET: catalog
+      S3_DOCUMENTS_BUCKET: documents
       S3_REGION: us-east-1
       S3_FILE_URL: http://localhost:4566/catalog
       S3_ACCESS_KEY_ID: ci-only
@@ -119,10 +121,11 @@ jobs:
       # after it does: migrate (the starter's initial data seed runs as a
       # migration script), start the kernel and read the seeded publishable key,
       # which the build checks for and the running website uses. See docs/starter.md.
-      - name: Create the catalog bucket
+      - name: Create the catalog and documents buckets
         working-directory: apps/commerce
         env:
           CATALOG_BUCKET: catalog
+          DOCUMENTS_BUCKET: documents
         run: node ../../infra/init/create-buckets.mjs
 
       - name: Migrate and seed the kernel database

@@ -3,6 +3,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { BagQuantity, matchesPattern, normalisePath, type ApiError } from "@shop/contracts"
 import { z } from "zod"
+import { findLockingHold } from "./holds"
 import { findIndiaRegionId } from "./region"
 import { shopError, shopErrorOf } from "./shop-errors"
 import { storeDesignsByProduct } from "./store-catalogue"
@@ -16,7 +17,8 @@ import { storeDesignsByProduct } from "./store-catalogue"
  * publishable key's sales channel, and every Variant must be the Variant of a
  * published Design on sale through the key (404 `design.not_found` otherwise).
  * Runs as a global middleware after the route allow-list, before the kernel's
- * own body validation.
+ * own body validation. A cart with a live Hold (Story 1.9) refuses every
+ * line write (add, change, remove) with 409 `cart.locked`.
  */
 
 const Item = z.strictObject({ variant_id: z.string().min(1), quantity: BagQuantity })
@@ -32,6 +34,21 @@ const CART_WRITES = [
 export function cartWriteSchema(method: string, path: string): z.ZodType | null {
   const p = normalisePath(path)
   return CART_WRITES.find((w) => w.method === method.toUpperCase() && matchesPattern(w.pattern, p))?.body ?? null
+}
+
+/** The writes to an existing cart's lines: add, change and remove. */
+const LINE_WRITES = [
+  { method: "POST", pattern: "/store/carts/:id/line-items" },
+  { method: "POST", pattern: "/store/carts/:id/line-items/:line_id" },
+  { method: "DELETE", pattern: "/store/carts/:id/line-items/:line_id" },
+] as const
+
+/** The cart whose lines this request adds, changes or removes, or null when it is not such a write. */
+export function lineWriteCartId(method: string, path: string): string | null {
+  const p = normalisePath(path)
+  if (!LINE_WRITES.some((w) => w.method === method.toUpperCase() && matchesPattern(w.pattern, p))) return null
+  const id = p.split("/")[3]
+  return id ? decodeURIComponent(id) : null
 }
 
 /** The fields of a refused body, for `details.fields`. */
@@ -75,6 +92,24 @@ function refuse(res: MedusaResponse, status: number, error: ApiError) {
 
 export async function bagCartGuard(req: MedusaRequest, res: MedusaResponse, next: MedusaNextFunction) {
   // `originalUrl` keeps the full path; the mount point strips it from `req.path`.
+  const lockedCart = lineWriteCartId(req.method, req.originalUrl)
+  if (lockedCart) {
+    // While a checkout holds the Bag's Pieces (Story 1.9), its lines cannot change.
+    try {
+      if (await findLockingHold(req.scope, lockedCart)) {
+        return refuse(res, 409, {
+          code: "cart.locked",
+          message: "This Bag is held for a checkout; cancel it to change the Bag",
+          details: { cartId: lockedCart },
+        })
+      }
+    } catch (e) {
+      req.scope
+        .resolve(ContainerRegistrationKeys.LOGGER)
+        .error(`bag: cart lock check failed: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`)
+      return refuse(res, 500, { code: "internal", message: "Something went wrong" })
+    }
+  }
   const schema = cartWriteSchema(req.method, req.originalUrl)
   if (!schema) return next()
   const parsed = schema.safeParse(req.body ?? {})

@@ -17,6 +17,7 @@ export function DesignCard({ design }: { design: DesignCardView }) {
             {formatRupees(design.price)}
           </span>
           {design.availability === "sold_out" ? <StatusChip tone="danger">{t("design.soldOut")}</StatusChip> : null}
+          {design.availability === "held" ? <StatusChip tone="lavender">{t("design.held")}</StatusChip> : null}
         </span>
       </div>
     </Link>

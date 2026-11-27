@@ -18,6 +18,13 @@ const STATUS: Partial<Record<ErrorCode, number>> = {
   "stock.invalid_quantity": 400,
   "stock.below_reserved": 409,
   "stock.lock_timeout": 409,
+  "tax.kernel_mismatch": 400,
+  "tax.discount_unsupported": 400,
+  "tax.shipping_unsupported": 400,
+  "cart.changed": 409,
+  "cart.locked": 409,
+  "stock.unavailable": 409,
+  "checkout.not_found": 404,
 }
 
 const KERNEL_TYPE: Partial<Record<ErrorCode, string>> = {
@@ -27,6 +34,10 @@ const KERNEL_TYPE: Partial<Record<ErrorCode, string>> = {
   "design.not_draft": MedusaError.Types.NOT_ALLOWED,
   "stock.below_reserved": MedusaError.Types.NOT_ALLOWED,
   "stock.lock_timeout": MedusaError.Types.CONFLICT,
+  "cart.changed": MedusaError.Types.CONFLICT,
+  "cart.locked": MedusaError.Types.CONFLICT,
+  "stock.unavailable": MedusaError.Types.CONFLICT,
+  "checkout.not_found": MedusaError.Types.NOT_FOUND,
   internal: MedusaError.Types.UNEXPECTED_STATE,
 }
 
@@ -100,10 +111,26 @@ export function sendShopErrorOrInternal(res: EnvelopeResponse, e: unknown, logge
   ) {
     throw inner
   }
-  const detail = inner instanceof Error ? (inner.stack ?? inner.message) : String(inner)
-  logger.error(`shop: request failed: ${detail}`)
+  logger.error(`shop: request failed: ${errorDetail(inner)}`)
   res.status(500).json({ code: "internal", message: "Something went wrong" })
 }
+
+/**
+ * What to log of a failure: its stack or message. A workflow hands back a
+ * step's error as a plain object (serialised), so its `stack` and `message`
+ * are read from it too; never the request.
+ */
+export function errorDetail(e: unknown): string {
+  if (e instanceof Error) return e.stack ?? e.message
+  if (e && typeof e === "object") {
+    const { stack, message } = e as { stack?: unknown; message?: unknown }
+    if (typeof stack === "string") return stack
+    if (typeof message === "string") return message
+  }
+  return String(e)
+}
+
+
 
 /** Answers with an envelope for a refused request. */
 export function sendEnvelope(res: EnvelopeResponse, error: ApiError): void {

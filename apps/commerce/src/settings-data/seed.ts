@@ -23,6 +23,11 @@ export const SHOP_SETTINGS_SEED = {
     saree: [{ minTaxablePaise: 0, maxTaxablePaise: null, rateBp: 500 }],
   },
   /**
+   * `checkout.hold_minutes` (Story 1.9): how long a checkout Hold keeps a
+   * Shopper's Pieces while she pays. Later changes are dated settings.
+   */
+  holdMinutes: 15,
+  /**
    * The one shipping option for India (Story 1.8), created once by the
    * shipping seed: free delivery at launch (Rs 0). Later charges are changes
    * to the option's price, not edits here.

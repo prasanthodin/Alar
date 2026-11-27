@@ -1,11 +1,13 @@
 // One-shot bucket set-up for the local AWS emulator (the `bucket-init` service in
 // infra/compose.yaml). Creates each bucket if it is missing, turns on versioning
-// and, for public buckets, sets a public-read bucket policy. Safe to run again.
+// and, for public buckets, sets a public-read bucket policy. A private bucket
+// gets no policy at all (and any policy found on it is an error). Safe to run again.
 //
 // Runs with the commerce image, from apps/commerce, so `@aws-sdk/client-s3` (the
 // only cloud client the repository uses) resolves from that package.
 //
-// Env: S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, CATALOG_BUCKET (default "catalog").
+// Env: S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, CATALOG_BUCKET (default "catalog"),
+// DOCUMENTS_BUCKET (default "documents").
 import { createRequire } from "node:module"
 import path from "node:path"
 
@@ -21,8 +23,13 @@ const {
   GetBucketPolicyCommand,
 } = require("@aws-sdk/client-s3")
 
-// Only `catalog` in Story 1.3; later stories add `documents` (private), `tiles` and `shopper-media`.
-const BUCKETS = [{ name: process.env.CATALOG_BUCKET || "catalog", public: true }]
+// `catalog` (public, Story 1.3) and `documents` (private: Checkout recovery files,
+// later invoices, credit notes and labels; Story 1.9). Later stories add `tiles`
+// and `shopper-media`.
+const BUCKETS = [
+  { name: process.env.CATALOG_BUCKET || "catalog", public: true },
+  { name: process.env.DOCUMENTS_BUCKET || "documents", public: false },
+]
 
 function required(name) {
   const value = process.env[name]
@@ -131,6 +138,34 @@ async function setUp(bucket) {
       throw new Error(`${name}: public-read policy not applied`)
     }
     console.log(`${name}: public-read policy set`)
+  } else {
+    // A private bucket: block every kind of public access and make sure no policy grants any.
+    await client.send(
+      new PutPublicAccessBlockCommand({
+        Bucket: name,
+        PublicAccessBlockConfiguration: {
+          BlockPublicAcls: true,
+          IgnorePublicAcls: true,
+          BlockPublicPolicy: true,
+          RestrictPublicBuckets: true,
+        },
+      })
+    )
+    if (await bucketPolicy(name)) {
+      throw new Error(`${name}: a private bucket must have no bucket policy`)
+    }
+    console.log(`${name}: private (no bucket policy)`)
+  }
+}
+
+/** The bucket's policy, or null when it has none. */
+async function bucketPolicy(name) {
+  try {
+    const { Policy } = await client.send(new GetBucketPolicyCommand({ Bucket: name }))
+    return Policy ?? null
+  } catch (err) {
+    if (err?.name === "NoSuchBucketPolicy" || err?.$metadata?.httpStatusCode === 404) return null
+    throw err
   }
 }
 
