@@ -18,7 +18,12 @@ clothing later.
 
 ## Platform requirements stated
 - Server-driven UI (SDUI) for the apps.
-- CMS and admin on Django, using an open-source Django library.
+- Backend language is open: Django, Go, Rust or anything else that responds
+  fast is acceptable. Java is excluded. (Earlier the founder named Django;
+  that is now a candidate, not a requirement.)
+- Whatever stack is chosen must come with an open-source CMS and the related
+  admin tooling.
+- Microservices are acceptable, including gRPC between services.
 - Payments via Razorpay (account exists). Shipping via a delivery API
   (credentials exist).
 - Production-level inventory management: product image upload, and variants
@@ -26,16 +31,18 @@ clothing later.
   variant.
 - AI prompts and their governance manageable from admin.
 - User management, and everything operational manageable from admin.
-- Backend, AI model integration and database schema designed for production;
-  microservices only if required.
+- Backend, AI model integration and database schema designed for production.
 
 ## Process requirements stated
 - Use the BMAD method (installed in this repo), not an imitation of it.
 - Thorough research, including market research, before any development.
 - Then PRD, epics and stories.
 
+## Decided
+- Own inventory (the business holds the stock); not a marketplace.
+
 ## Not yet decided
-- Marketplace (many sellers) or own inventory.
+- Backend stack, CMS and commerce core (for technical research to recommend).
 - Where sarees are sourced; price band; launch region and languages.
 - Cash on delivery or prepaid only.
 - Which shipping provider.
