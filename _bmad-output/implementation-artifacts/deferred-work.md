@@ -30,3 +30,18 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-mobile-app-shell.md`
   summary: No automated test runs the mobile screens (hooks, providers, loading/error/empty states); the screenshot script is manual and CI has no mobile step.
   evidence: vitest covers pure modules only. Add a CI job that exports the web target and runs Playwright over the main flows, or React Native Testing Library, when Epic 6 starts.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-3-local-environment-compose.md`
+  summary: Container images reinstall dependencies on every source change, copy the whole build tree (about 1.5 GB each) and need a `certs` build context; a plain `docker build` fails without it.
+  evidence: `COPY . .` before install, no pnpm store cache, `COPY --from=certs` with no fallback stage. Fix with the image trimming and multi-arch build in Story 1.24.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-3-local-environment-compose.md`
+  summary: Migrations and the publishable-key export run inside the commerce container on every start; staging with more than one replica would migrate concurrently.
+  evidence: docker-entrypoint.sh runs db:migrate before start. Move to a one-shot migrate service in Story 1.24.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-3-local-environment-compose.md`
+  summary: The compose smoke (container paths, Caddy routing, key handoff, S3 provider options) does not run in CI.
+  evidence: Story 1.24 sets up staging deployment; run the smoke there or in a CI job with Docker.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-3-local-environment-compose.md`
+  summary: The Redis spike subscriber and workflows ship in the production kernel.
+  evidence: Inert, runs kept one hour. Remove or gate behind a flag once Story 1.24 proves the staging part of spike item 3.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-3-local-environment-compose.md`
+  summary: Floci does not enforce bucket policies; every bucket is readable without credentials locally.
+  evidence: Found during implementation. Story 1.9's private documents bucket must not rely on Floci for access control in tests; verify signed links against real S3 or a policy-enforcing emulator.
