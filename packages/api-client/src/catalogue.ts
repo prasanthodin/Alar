@@ -97,7 +97,7 @@ function createMockCatalogue(assetBaseUrl: string): Catalogue {
         variantId,
         name: design.name,
         colourName: variant.colourName,
-        image: image(variant.file, design.alt),
+        image: image(variant.file, variant.alt),
         price: design.pricePaise,
         mrp: design.mrpPaise,
         quantity,
@@ -155,7 +155,7 @@ function createMockCatalogue(assetBaseUrl: string): Catalogue {
       if (!found) return fail("design.not_found", `No variant with id ${variantId}`, { variantId })
       const current = bag.get(variantId) ?? 0
       if (current + 1 > found.variant.stock) {
-        return fail("input.invalid", "Not enough stock for this variant", {
+        return fail("bag.stock_exceeded", "The Bag already holds every piece of this variant", {
           variantId,
           stock: found.variant.stock,
         })

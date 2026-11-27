@@ -5,6 +5,7 @@
   "nav.tryOn": "Try-on",
   "nav.bag": "Bag",
   "nav.bagCount": "Bag, {n} items",
+  "nav.bagCountOne": "Bag, 1 item",
   "common.back": "Go back",
   "common.loading": "Loading",
   "common.retry": "Try again",
@@ -48,6 +49,8 @@
   "listing.sort.priceHigh": "Sort: Price high to low",
   "listing.filterSoon": "Filters arrive with the full catalogue.",
   "listing.empty": "Nothing matches.",
+  "listing.notFound.title": "We could not find that category",
+  "listing.notFound.body": "It may no longer be available.",
   "listing.emptyBody": "There are no designs in this category yet.",
   "product.fullSaree": "Full saree",
   "product.tryOn": "Try it on",
@@ -77,6 +80,7 @@
   "bag.free": "FREE",
   "bag.total": "Total amount",
   "bag.youSave": "You save {amount}",
+  "bag.error": "We could not load your bag.",
   "bag.payLater": "Paying for your order arrives in a later version of the app.",
   "tryOn.title": "Try-on",
   "tryOn.empty.title": "Try-on is coming",
@@ -94,5 +98,6 @@
   "error.client.update_required": "This app is out of date. Update it and try again.",
   "error.route.not_allowed": "That is not available. Please go back and try again.",
   "error.design.not_found": "We could not find that design. It may no longer be available.",
+  "error.bag.stock_exceeded": "You already have every piece of this colour in your bag.",
   "error.internal": "Something went wrong on our side. Please try again in a moment."
 }

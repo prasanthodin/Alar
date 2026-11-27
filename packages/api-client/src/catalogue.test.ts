@@ -1,6 +1,6 @@
 import { BagView, DesignCard, DesignView, lowStockCount } from "@shop/contracts"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { createApiClient, type ApiClientConfig } from "./index"
+import { ALL_CATEGORY_ID, createApiClient, type ApiClientConfig } from "./index"
 
 const fetchSpy = vi.fn(async () => new Response("{}", { status: 500 }))
 beforeEach(() => {
@@ -49,6 +49,15 @@ describe("mock catalogue", () => {
     expect(silk.data.length).toBeGreaterThan(0)
     expect(silk.data.length).toBeLessThan(8)
     expect(silk.data.every((d) => /silk/i.test(d.name))).toBe(true)
+  })
+
+  it("the all-sarees category returns every design", async () => {
+    const api = client()
+    const all = await api.listDesigns()
+    const catchAll = await api.listDesigns({ categoryId: ALL_CATEGORY_ID })
+    expect(all.ok && catchAll.ok).toBe(true)
+    if (!all.ok || !catchAll.ok) return
+    expect(catchAll.data.map((d) => d.id)).toEqual(all.data.map((d) => d.id))
   })
 
   it("prices come from the boards in paise", async () => {
@@ -117,7 +126,7 @@ describe("mock catalogue", () => {
     const api = client()
     for (let i = 0; i < 3; i++) expect((await api.addToBag("arani-silk-maroon")).ok).toBe(true)
     const res = await api.addToBag("arani-silk-maroon")
-    expect(res).toMatchObject({ ok: false, error: { code: "input.invalid" } })
+    expect(res).toMatchObject({ ok: false, error: { code: "bag.stock_exceeded" } })
     expect(await api.addToBag("banarasi-silk-navy")).toMatchObject({ ok: false })
   })
 

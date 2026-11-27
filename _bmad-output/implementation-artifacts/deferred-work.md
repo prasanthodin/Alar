@@ -24,3 +24,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-2-contracts-and-api-client.md`
   summary: AGENTS.md still calls apps/web the "Next.js storefront" and has a run-on sentence in its overview.
   evidence: Agent-context file; tidy with the next bmad-project-context update.
+- source_spec: `_bmad-output/implementation-artifacts/spec-mobile-app-shell.md`
+  summary: The Bag has no remove-line or change-quantity operation in the api-client contract or the screen.
+  evidence: Only addToBag exists; the real Bag (FR-16) is built in Epic 3, which must add remove and set-quantity to the same api-client surface.
+- source_spec: `_bmad-output/implementation-artifacts/spec-mobile-app-shell.md`
+  summary: No automated test runs the mobile screens (hooks, providers, loading/error/empty states); the screenshot script is manual and CI has no mobile step.
+  evidence: vitest covers pure modules only. Add a CI job that exports the web target and runs Playwright over the main flows, or React Native Testing Library, when Epic 6 starts.

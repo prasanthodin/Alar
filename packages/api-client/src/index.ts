@@ -5,6 +5,7 @@ import { createTransport, type ApiClientConfig } from "./client"
 export type { ApiClientConfig, TokenStore } from "./client"
 export type { CatalogueSource, ListDesignsInput } from "./catalogue"
 export { DEFAULT_MOCK_ASSET_BASE_URL } from "./catalogue"
+export { ALL_CATEGORY_ID } from "./mock/catalogue-data"
 export type {
   BagLine,
   BagView,

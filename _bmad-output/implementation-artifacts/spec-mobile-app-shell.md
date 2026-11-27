@@ -67,6 +67,30 @@ context:
 
 ## Review Triage Log
 
+| # | Finding | Verdict | Evidence | Route |
+|---|---|---|---|---|
+| 1 | Retry does nothing; rejected load never settles | medium | `router.replace("/")` on the same route; `useResult` has no catch | patch |
+| 2 | Categories and Home rail show a skeleton forever on error | medium | Only `ok` is handled | patch |
+| 3 | Bag shows "empty" while loading and on failure | medium | `bag === null` treated as empty; failed getBag ignored | patch |
+| 4 | Double tap adds two pieces / navigates twice | medium | No in-flight guard | patch |
+| 5 | Any input.invalid shown as stock limit; Buy now navigates on error | medium | Generic code reused | patch: `bag.stock_exceeded` |
+| 6 | Colour choice does not change photos; wrong alt on Bag line | medium | Gallery always uses design.images | patch |
+| 7 | Gallery misaligned above 640px; NaN counter | low | ScrollView wider than page | patch |
+| 8 | Unknown category shows blank page | low | listDesigns returns [] | patch |
+| 9 | Sort note uses stale state | low | Closure reads old sort | patch |
+| 10 | "sarees" catch-all untested and duplicated | medium | Removing the branch passes all tests | patch |
+| 11 | Touch targets under 44pt | low | Bare text links; tabs touch-min - 8 | patch |
+| 12 | "Bag, 1 items" | low | No singular | patch |
+| 13 | Badge font hard-coded; no 99+ cap | low | Literal font name | patch |
+| 14 | Empty-state padding ignores bottom inset | low | Bag and Try-on only | patch |
+| 15 | Native builds without dev server show no images | low | Relative /mock URLs | patch: warn + doc |
+| 16 | Screenshot server hides missing files; prefix guard; dead wait | low | 200 + index.html for every miss | patch |
+| 17 | No remove or quantity change in the Bag | medium | Not in this shell's intent | defer |
+| 18 | No automated screen tests; screenshot script manual | medium | vitest pure modules only | defer |
+| 19 | Search and address bar look tappable but are inert | low | Placeholders in a sample shell | rejected |
+| 20 | Tapping the current tab does nothing | low | Convenience behaviour | rejected |
+| 21 | Screenshot script hangs if the browser fails to launch | low | Dev-only script | rejected |
+
 ## Design Notes
 
 Plain React Native `StyleSheet` with values from `@shop/tokens` (no extra styling library yet). Pin every Expo package to the versions `npx expo install` chooses for SDK 58. pnpm and Metro: set `node-linker=hoisted` only for this app if Metro cannot resolve workspace packages; prefer Expo's documented monorepo setup. Playwright's own browser cannot be downloaded here: use `/usr/bin/google-chrome` or `chromium.launch()` as the environment allows. Run the export with `EXPO_PUBLIC_STORE_NAME=alar` for screenshots only (the name check forbids it in code). Session: Node 24 at `/opt/node24/bin`. Do not commit.

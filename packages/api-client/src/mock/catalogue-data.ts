@@ -85,10 +85,10 @@ export const mockDesigns: MockDesign[] = [
     gallery: [{ file: "2-1-closeup-maroon.jpg", alt: "Close view of the maroon silk weave and gold border" }],
     fullView: { file: "3-1-full-maroon.jpg", alt: "The whole maroon saree laid out from blouse piece to pallu" },
     variants: [
-      { id: "arani-silk-maroon", colourName: "Maroon", file: "1-1-maroon.jpg", alt: "Maroon", stock: 3 },
-      { id: "arani-silk-violet", colourName: "Violet", file: "1-2-violet.jpg", alt: "Violet", stock: 10 },
-      { id: "arani-silk-emerald", colourName: "Emerald", file: "1-3-emerald.jpg", alt: "Emerald", stock: 8 },
-      { id: "arani-silk-peacock", colourName: "Peacock blue", file: "1-4-peacock.jpg", alt: "Peacock blue", stock: 0 },
+      { id: "arani-silk-maroon", colourName: "Maroon", file: "1-1-maroon.jpg", alt: "Arani silk saree in maroon", stock: 3 },
+      { id: "arani-silk-violet", colourName: "Violet", file: "1-2-violet.jpg", alt: "Arani silk saree in violet", stock: 10 },
+      { id: "arani-silk-emerald", colourName: "Emerald", file: "1-3-emerald.jpg", alt: "Arani silk saree in emerald", stock: 8 },
+      { id: "arani-silk-peacock", colourName: "Peacock blue", file: "1-4-peacock.jpg", alt: "Arani silk saree in peacock blue", stock: 0 },
     ],
     attributes: silkAttributes("Arani", "Temple, zari", "Wedding, festive"),
   },
@@ -104,7 +104,7 @@ export const mockDesigns: MockDesign[] = [
     rating: { value: 4.8, count: 41 },
     categoryIds: ["silk", "wedding"],
     variants: [
-      { id: "kanchipuram-silk-violet-violet", colourName: "Violet", file: "1-2-violet.jpg", alt: "Violet", stock: 27 },
+      { id: "kanchipuram-silk-violet-violet", colourName: "Violet", file: "1-2-violet.jpg", alt: "Kanchipuram silk saree in violet", stock: 27 },
     ],
     attributes: silkAttributes("Kanchipuram", "Plain zari", "Wedding"),
   },
@@ -119,7 +119,7 @@ export const mockDesigns: MockDesign[] = [
     badge: "Wedding pick",
     categoryIds: ["silk", "wedding"],
     variants: [
-      { id: "kanchipuram-silk-emerald-emerald", colourName: "Emerald", file: "1-3-emerald.jpg", alt: "Emerald", stock: 1 },
+      { id: "kanchipuram-silk-emerald-emerald", colourName: "Emerald", file: "1-3-emerald.jpg", alt: "Kanchipuram silk saree in emerald", stock: 1 },
     ],
     attributes: silkAttributes("Kanchipuram", "Contrast, pink", "Wedding"),
   },
@@ -134,7 +134,7 @@ export const mockDesigns: MockDesign[] = [
     rating: { value: 4.4, count: 64 },
     categoryIds: ["silk", "festive", "under-2500"],
     variants: [
-      { id: "soft-silk-peacock-peacock", colourName: "Peacock blue", file: "1-4-peacock.jpg", alt: "Peacock blue", stock: 41 },
+      { id: "soft-silk-peacock-peacock", colourName: "Peacock blue", file: "1-4-peacock.jpg", alt: "Soft silk saree in peacock blue", stock: 41 },
     ],
     attributes: silkAttributes("Soft silk", "Plain", "Festive"),
   },
@@ -147,7 +147,7 @@ export const mockDesigns: MockDesign[] = [
     file: "1-5-kasavu.jpg",
     alt: "Ivory Kasavu cotton saree with a red border",
     categoryIds: ["cotton", "festive", "under-2500"],
-    variants: [{ id: "kasavu-cotton-ivory", colourName: "Ivory", file: "1-5-kasavu.jpg", alt: "Ivory", stock: 10 }],
+    variants: [{ id: "kasavu-cotton-ivory", colourName: "Ivory", file: "1-5-kasavu.jpg", alt: "Kasavu cotton saree in ivory", stock: 10 }],
     attributes: cottonAttributes("Kasavu", "Red"),
   },
   {
@@ -160,7 +160,7 @@ export const mockDesigns: MockDesign[] = [
     alt: "Mustard Chettinad cotton saree with a checked border",
     categoryIds: ["cotton", "new-in", "under-2500"],
     variants: [
-      { id: "chettinad-cotton-mustard", colourName: "Mustard", file: "1-6-mustard.jpg", alt: "Mustard", stock: 22 },
+      { id: "chettinad-cotton-mustard", colourName: "Mustard", file: "1-6-mustard.jpg", alt: "Chettinad cotton saree in mustard", stock: 22 },
     ],
     attributes: cottonAttributes("Chettinad", "Checked"),
   },
@@ -173,7 +173,7 @@ export const mockDesigns: MockDesign[] = [
     file: "1-7-rust.jpg",
     alt: "Rust Tussar silk saree with a green border",
     categoryIds: ["silk", "new-in"],
-    variants: [{ id: "tussar-silk-rust", colourName: "Rust", file: "1-7-rust.jpg", alt: "Rust", stock: 14 }],
+    variants: [{ id: "tussar-silk-rust", colourName: "Rust", file: "1-7-rust.jpg", alt: "Tussar silk saree in rust", stock: 14 }],
     attributes: silkAttributes("Tussar", "Green", "Festive"),
   },
   {
@@ -185,7 +185,7 @@ export const mockDesigns: MockDesign[] = [
     file: "1-8-navy.jpg",
     alt: "Navy Banarasi silk saree with gold brocade",
     categoryIds: ["silk", "wedding"],
-    variants: [{ id: "banarasi-silk-navy", colourName: "Navy", file: "1-8-navy.jpg", alt: "Navy", stock: 0 }],
+    variants: [{ id: "banarasi-silk-navy", colourName: "Navy", file: "1-8-navy.jpg", alt: "Banarasi silk saree in navy", stock: 0 }],
     attributes: silkAttributes("Banarasi", "Gold brocade", "Wedding"),
   },
 ]
