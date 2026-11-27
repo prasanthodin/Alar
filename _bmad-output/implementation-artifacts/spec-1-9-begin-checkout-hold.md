@@ -2,8 +2,9 @@
 title: 'Story 1.9: Begin checkout: snapshot and Hold'
 type: 'feature'
 created: '2026-11-27'
-status: 'ready-for-dev'
+status: 'in-progress'
 route: 'dispatch'
+baseline_commit: 'e9eef3e'
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/implementation-artifacts/epic-1-context.md'
