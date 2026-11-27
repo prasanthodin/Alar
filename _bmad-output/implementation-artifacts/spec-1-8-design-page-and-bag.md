@@ -2,7 +2,8 @@
 title: 'Story 1.8: Shopper opens the Design and puts it in her Bag'
 type: 'feature'
 created: '2026-11-27'
-status: 'ready-for-dev'
+status: 'in-progress'
+baseline_commit: '4f26e4ab33497689f2cc11111e3fdc2190c0ef8b'
 route: 'dispatch'
 review_loop_iteration: 0
 context:
