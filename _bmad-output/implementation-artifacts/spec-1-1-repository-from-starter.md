@@ -2,7 +2,7 @@
 title: 'Story 1.1: Create the repository from the starter and reshape it'
 type: 'chore'
 created: '2026-11-27'
-status: 'in-review'
+status: 'done'
 baseline_commit: 'e5fa923c4d3018497e366781f7a3fcb04fcb6a51'
 route: 'dispatch'
 review_loop_iteration: 0
